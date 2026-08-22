@@ -1,0 +1,102 @@
+name: release
+
+# Version, tag, changelog, and deploy to Vercel production — in that order, and
+# only if the checks pass first.
+#
+# THE ONLY SECRET THIS NEEDS IS `VERCEL_TOKEN`.
+# `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` below are identifiers, not credentials:
+# they are useless without the token, they appear in `.vercel/project.json` on
+# any machine that has run `vercel link`, and keeping them inline means one
+# secret to configure instead of three.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  VERCEL_ORG_ID: team_RJcQx4a22v5LqjetHv8HhhLY
+  VERCEL_PROJECT_ID: prj_RuTVTV7xmI74MPJAWJmtl03Rj9od
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # A release commit pushes back to main, which would otherwise re-trigger this
+    # workflow forever.
+    if: "!contains(github.event.head_commit.message, 'chore(release):')"
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The version script reads tags and the commits since the last one, so
+          # a shallow clone would make every release look like the first.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Nothing ships that has not passed the gates.
+      - name: Unit tests and mechanical checks
+        run: npm test
+
+      - name: Build and grep the shipped bundle
+        run: npm run check:build
+
+      - name: R11 gate
+        run: npm run verify
+
+      # ── Version ──────────────────────────────────────────────────────────
+      - name: Decide the semantic version
+        id: version
+        run: node scripts/version.mjs
+
+      - name: Commit and tag the release
+        if: steps.version.outputs.released == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json CHANGELOG.md
+          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "${{ steps.version.outputs.tag }}"
+          git push --follow-tags
+
+      - name: Publish the GitHub release
+        if: steps.version.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --notes "See CHANGELOG.md for the entry generated from the conventional commits in this range."
+
+      # ── Deploy ───────────────────────────────────────────────────────────
+      # Every push to main deploys, whether or not it produced a version bump —
+      # a docs-only commit still belongs on the canonical URL.
+      - name: Deploy to Vercel production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN is not set — skipping the deploy."
+            echo "Add it at Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          npx vercel@latest pull --yes --environment=production --token "$VERCEL_TOKEN"
+          npx vercel@latest build --prod --token "$VERCEL_TOKEN"
+          npx vercel@latest deploy --prebuilt --prod --token "$VERCEL_TOKEN" > deployment-url.txt
+          echo "Deployed: $(cat deployment-url.txt)"
+
+      # The deployed headers are what make the privacy claim a browser-enforced
+      # invariant rather than a promise, so they are verified against production
+      # on every deploy rather than trusted.
+      - name: Verify the deployed headers
+        run: GIMBAL_URL=$(cat deployment-url.txt) npm run check:deploy

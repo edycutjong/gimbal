@@ -74,7 +74,7 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
 // token ever reaches the public tree.
 {
   const forbidden = [/\bTODO\b/, /\bTBD\b/, /\bxxx\b/i, /\b0x\.\.\./, /<owner>/, /<[a-z-]+>/];
-  const docs = ['README.md', 'DEMO.md', 'METHODS.md', 'LIMITATIONS.md', 'NOTICE.md'];
+  const docs = ['README.md', 'DEMO.md', 'METHODS.md', 'LIMITATIONS.md', 'NOTICE.md', 'RELEASING.md'];
   for (const name of docs) {
     const path = join(ROOT, name);
     if (!existsSync(path)) {
@@ -92,7 +92,8 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
       const allowed =
         url.startsWith(URL_UNDER_TEST) ||
         url.includes('github.com/google-ai-edge/mediapipe') ||
-        url.includes('storage.googleapis.com/mediapipe-models');
+        url.includes('storage.googleapis.com/mediapipe-models') ||
+        url.includes('conventionalcommits.org');
       if (!allowed) problems.push(`U-DOC: ${name} states a URL that is not canonical: ${url}`);
     }
   }

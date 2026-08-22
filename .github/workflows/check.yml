@@ -1,18 +1,20 @@
 name: check
 
-# There is exactly one workflow and it runs three commands.
+# Runs on every push and pull request. This is the correctness gate.
 #
-# It is a SIGNAL, NOT A GATE: the deploy is decoupled from it, so a red run does
-# not block publishing. The real gate is the pre-submit checklist run by hand.
-# Coupling a production-hitting spec to every push would buy no signal this does
-# not already give, and would tie the workflow to a deploy this deliberately
-# leaves independent.
+# It is deliberately decoupled from the deploy: a red run here does not block
+# publishing, and a green one does not trigger one. Release and deploy live in
+# release.yml, which runs these same commands again before it ships anything.
 
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
@@ -29,12 +31,19 @@ jobs:
 
       # Unit tests against analytic ground truth + the seven mechanical greps.
       # Fully offline; reads only files committed in this repo.
-      - run: npm test
+      - name: Unit tests and mechanical checks
+        run: npm test
 
       # The production bundle, then U-DIST over it.
-      - run: npm run check:build
+      - name: Build and grep the shipped bundle
+        run: npm run check:build
 
       # The R11 gate. Its first step installs Chromium, so a clean clone needs
       # nothing but `npm ci`. Assertions whose fixture is not yet recorded are
       # reported as skipped with a named reason, never as passing.
-      - run: npm run verify
+      - name: R11 gate
+        run: npm run verify
+
+      # The browser-driven accessibility and privacy gates.
+      - name: Accessibility and origin gates
+        run: npx playwright test e2e/a11y.spec.ts e2e/origins.spec.ts

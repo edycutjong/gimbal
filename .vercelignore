@@ -1,0 +1,9 @@
+# The deploy artifact is a static directory built from src/ and public/.
+# Nothing below is needed to build it, and every megabyte here is upload time.
+e2e/
+tests/
+test-results/
+playwright-report/
+fixtures/
+dist/
+.git/

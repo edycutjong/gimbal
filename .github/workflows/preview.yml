@@ -1,0 +1,57 @@
+name: preview
+
+# A shareable preview URL per pull request, with its headers verified.
+#
+# Preview deploys carry the same `vercel.json` headers as production, so a change
+# that would weaken the Content-Security-Policy is caught on the pull request
+# rather than after it reaches the canonical URL.
+
+on:
+  pull_request:
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_ORG_ID: team_RJcQx4a22v5LqjetHv8HhhLY
+  VERCEL_PROJECT_ID: prj_RuTVTV7xmI74MPJAWJmtl03Rj9od
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    # A fork's pull request cannot read the token, and failing loudly there would
+    # be noise rather than signal.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Deploy a preview
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx vercel@latest pull --yes --environment=preview --token "$VERCEL_TOKEN"
+          npx vercel@latest build --token "$VERCEL_TOKEN"
+          url=$(npx vercel@latest deploy --prebuilt --token "$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the preview's headers
+        run: GIMBAL_URL=${{ steps.deploy.outputs.url }} npm run check:deploy
+
+      - name: Comment the preview URL
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "Preview: ${{ steps.deploy.outputs.url }} — CSP, \`application/wasm\` MIME and the immutable \`/model/\` cache all verified against it."
