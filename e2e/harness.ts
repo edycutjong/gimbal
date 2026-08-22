@@ -95,8 +95,8 @@ export async function injectRecordedCamera(page: Page, fixturePath: string, loop
 }
 
 /** Fills the Prescribe form exactly as a judge would, then continues. */
-export async function completePrescribe(page: Page, overrides: Partial<Record<string, string>> = {}): Promise<void> {
-  const values = { ...EVALUATION_CARD, ...overrides };
+export async function completePrescribe(page: Page, overrides: Record<string, string> = {}): Promise<void> {
+  const values: Record<string, string> = { ...EVALUATION_CARD, ...overrides };
   await page.check('#gate-ack');
   for (const [id, value] of Object.entries(values)) {
     await page.fill(`#f-${id}`, value);
