@@ -48,7 +48,10 @@ interface Boundary {
  */
 export class CycleSegmenter {
   private samples: SegmenterSample[] = [];
-  private boundaries: Boundary[] = [];
+  /** The boundary the in-progress cycle started at, or `null` before the first sign change. */
+  private cycleStart: Boundary | null = null;
+  /** Sweeps closed since `cycleStart`. Two sweeps make one cycle. */
+  private sweepsSinceStart = 0;
   private lastSign: -1 | 0 | 1 = 0;
   private lastQualifyingTMs = NaN;
 
@@ -64,10 +67,7 @@ export class CycleSegmenter {
   }
 
   reset(): void {
-    this.samples = [];
-    this.boundaries = [];
-    this.lastSign = 0;
-    this.lastQualifyingTMs = NaN;
+    this.dropInProgress();
   }
 
   /** Returns a completed cycle, or `null` if this frame did not close one. */
@@ -96,34 +96,42 @@ export class CycleSegmenter {
 
     // A sign change — one sweep just closed.
     this.lastSign = sign;
-    this.boundaries.push({ tMs: sample.tMs, index: this.samples.length - 1 });
+    const boundary: Boundary = { tMs: sample.tMs, index: this.samples.length - 1 };
 
-    if (this.boundaries.length < 3) return null;
+    if (this.cycleStart === null) {
+      // The first sign change opens the first cycle. Motion before it is a
+      // partial sweep of unknown extent and is never credited.
+      this.cycleStart = boundary;
+      this.sweepsSinceStart = 0;
+      this.compact(boundary.index);
+      return null;
+    }
 
-    // Two sweeps = one cycle: boundaries[len-3] → boundaries[len-1].
-    const start = this.boundaries[this.boundaries.length - 3] as Boundary;
-    const end = this.boundaries[this.boundaries.length - 1] as Boundary;
-    const cycle = this.buildCycle(start, end);
-    this.compact();
+    this.sweepsSinceStart += 1;
+    if (this.sweepsSinceStart < 2) return null;
+
+    // Two sweeps = one full oscillation. Cycles are NON-OVERLAPPING and share
+    // their endpoints: the boundary that closes one opens the next.
+    const cycle = this.buildCycle(this.cycleStart, boundary);
+    this.cycleStart = boundary;
+    this.sweepsSinceStart = 0;
+    this.compact(boundary.index);
     return cycle;
   }
 
   private dropInProgress(): void {
-    this.boundaries = [];
+    this.cycleStart = null;
+    this.sweepsSinceStart = 0;
     this.lastSign = 0;
     this.samples = [];
     this.lastQualifyingTMs = NaN;
   }
 
-  /** Retains only the samples the next cycle can still need. */
-  private compact(): void {
-    if (this.boundaries.length <= 2) return;
-    const keepFrom = (this.boundaries[this.boundaries.length - 2] as Boundary).index;
+  /** Retains only the samples the in-progress cycle can still need. */
+  private compact(keepFrom: number): void {
+    if (keepFrom <= 0) return;
     this.samples = this.samples.slice(keepFrom);
-    const shift = keepFrom;
-    this.boundaries = this.boundaries
-      .slice(this.boundaries.length - 2)
-      .map((b) => ({ tMs: b.tMs, index: b.index - shift }));
+    if (this.cycleStart) this.cycleStart = { ...this.cycleStart, index: this.cycleStart.index - keepFrom };
   }
 
   private buildCycle(start: Boundary, end: Boundary): Cycle {

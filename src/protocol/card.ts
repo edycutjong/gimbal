@@ -233,6 +233,34 @@ export function parseCard(input: unknown): ProtocolCard {
   };
 }
 
+/**
+ * `#rx=` prescription-link codec.
+ *
+ * SHOULD-tier and DELIBERATELY NOT WIRED to the Prescribe screen. The codec is
+ * built and tested; the screen does not call it, because a link that fills the
+ * eight fields is a path by which parameters arrive without the patient typing
+ * them — and claim C1 (Gimbal has no path to originate a prescription) is
+ * structural, not editorial. Wiring it is a decision for the feature freeze,
+ * with the U-CARD check as the thing that would have to change.
+ */
+export function encodeRxLink(card: ProtocolCard): string {
+  const json = JSON.stringify(card);
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return `#rx=${btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}`;
+}
+
+export function decodeRxLink(hash: string): ProtocolCard {
+  const raw = hash.startsWith('#rx=') ? hash.slice(4) : hash;
+  const b64 = raw.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return parseCard(JSON.parse(new TextDecoder().decode(bytes)));
+}
+
 /** Total prescribed seconds. Arithmetic, not a clinical claim. */
 export function prescribedSeconds(card: ProtocolCard): number {
   return card.blockSeconds.value * card.blockCount.value;
