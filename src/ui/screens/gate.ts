@@ -89,7 +89,10 @@ export function renderGate(host: HTMLElement, props: GateProps): void {
           outcome === 'end-session'
             ? `<p><strong>Tell your PT about this.</strong></p>`
             : outcome === 'rest'
-              ? `<p class="rest-countdown tnum" id="rest-countdown" aria-live="off">60</p>`
+              ? `<p class="rest-countdown tnum" id="rest-countdown" aria-live="off">0:00</p>
+                 <p class="caption">Your clinician's card does not specify how long to rest.
+                    This counts the time you have taken; there is no target, and nothing is waiting on it.
+                    Continue when you are ready.</p>`
               : ''
         }
         ${whyDisclosure(card.symptomStopRule.baselineRise.source)}
@@ -116,14 +119,28 @@ export function renderGate(host: HTMLElement, props: GateProps): void {
   });
 }
 
-/** A 1 Hz numeral, not an animated ring — this is a rest, not a progress bar. */
+/**
+ * A 1 Hz numeral, not an animated ring — this is a rest, not a progress bar.
+ *
+ * It counts UP, and that is a safety decision rather than a stylistic one. The
+ * eight-field protocol card carries NO rest duration, so a countdown would mean
+ * Gimbal had chosen one and displayed it as if a clinician had prescribed it —
+ * the exact behaviour claim C1 exists to make structurally impossible. Counting
+ * elapsed time states a fact about what the patient did; counting down would
+ * state a target nobody wrote.
+ *
+ * Nothing is gated on it. The Continue button is already enabled.
+ */
 function startRestCountdown(host: HTMLElement): void {
   const node = host.querySelector<HTMLElement>('#rest-countdown');
   if (!node) return;
-  let remaining = 60;
+  let elapsed = 0;
   const tick = setInterval(() => {
-    remaining -= 1;
-    node.textContent = String(Math.max(0, remaining));
-    if (remaining <= 0) clearInterval(tick);
+    elapsed += 1;
+    const mm = Math.floor(elapsed / 60);
+    const ss = String(elapsed % 60).padStart(2, '0');
+    node.textContent = `${mm}:${ss}`;
+    // The screen is gone; stop the timer rather than leaking it.
+    if (!node.isConnected) clearInterval(tick);
   }, 1000);
 }
