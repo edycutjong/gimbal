@@ -139,6 +139,15 @@ label {
   margin-bottom: var(--space-1);
 }
 
+/* The 15 px floor applies to EVERY control, not only the ones that show text.
+   A radio, checkbox or range input left at the UA default lands at 13.33 px. */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: var(--t-body);
+}
+
 input[type='number'],
 input[type='text'],
 select {
@@ -222,17 +231,23 @@ details > .disclosure-body {
 }
 
 .checkbox-row input[type='checkbox'] {
-  width: 24px;
-  height: 24px;
-  margin-top: 2px;
+  width: 28px;
+  height: 28px;
+  margin: 0;
   flex: 0 0 auto;
   accent-color: var(--zone-in);
 }
 
+/* The activation area is the control PLUS its label — clicking the label ticks
+   the box — so the row is sized to clear 44 px rather than the glyph alone. */
 .checkbox-row label {
   font-size: var(--t-body);
   color: var(--ink-1);
   margin: 0;
+  min-height: var(--target);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 .settings-row {

@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "node scripts/checks.mjs && vitest run",
     "test:watch": "vitest",
     "verify": "node scripts/verify.mjs",
     "check:build": "vite build && node scripts/check-dist.mjs",

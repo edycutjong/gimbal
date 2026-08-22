@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "exercise": "vorx1-yaw",
+  "stage": { "label": "seated", "selfAttested": true },
+  "frequencyBand": {
+    "value": [1.7, 2.3],
+    "source": "no published parameter could be pinned; this field is clinician-entry only."
+  },
+  "peakVelocityFloor": {
+    "value": 150,
+    "source": "no published parameter could be pinned; this field is clinician-entry only."
+  },
+  "peakVelocityCeiling": {
+    "value": 350,
+    "source": "no published parameter could be pinned; this field is clinician-entry only."
+  },
+  "blockSeconds": {
+    "value": 120,
+    "source": "no published parameter could be pinned; this field is clinician-entry only."
+  },
+  "blockCount": {
+    "value": 3,
+    "source": "no published parameter could be pinned; this field is clinician-entry only."
+  },
+  "symptomStopRule": {
+    "baselineRise": {
+      "value": 3,
+      "source": "no published parameter could be pinned; this field is clinician-entry only."
+    },
+    "absoluteCeiling": {
+      "value": 7,
+      "source": "no published parameter could be pinned; this field is clinician-entry only."
+    }
+  },
+  "enteredBy": "patient-from-clinician-handout"
+}

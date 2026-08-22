@@ -25,24 +25,29 @@ describe('Landolt C 4AFC trials', () => {
   it('draws re-randomisation intervals uniformly in [2.5, 5.0] s over 10⁴ draws', () => {
     const rand = lcg(7);
     const buckets = [0, 0, 0, 0, 0];
+    let outOfRange = 0;
     for (let i = 0; i < 10_000; i++) {
       const ms = nextIntervalMs(rand);
-      expect(ms).toBeGreaterThanOrEqual(MIN_INTERVAL_MS);
-      expect(ms).toBeLessThanOrEqual(MAX_INTERVAL_MS);
+      if (ms < MIN_INTERVAL_MS || ms > MAX_INTERVAL_MS) outOfRange += 1;
       buckets[Math.min(4, Math.floor(((ms - MIN_INTERVAL_MS) / (MAX_INTERVAL_MS - MIN_INTERVAL_MS)) * 5))]! += 1;
     }
+    expect(outOfRange).toBe(0);
     for (const b of buckets) expect(Math.abs(b - 2000)).toBeLessThan(300);
   });
 
   it('never repeats the same orientation consecutively — the hold-one-key cheat is closed', () => {
     const rand = lcg(11);
     let prev = nextOrientation(null, rand);
+    let repeats = 0;
+    let outOfSet = 0;
     for (let i = 0; i < 5000; i++) {
       const next = nextOrientation(prev, rand);
-      expect(next).not.toBe(prev);
-      expect([0, 1, 2, 3]).toContain(next);
+      if (next === prev) repeats += 1;
+      if (![0, 1, 2, 3].includes(next)) outOfSet += 1;
       prev = next;
     }
+    expect(repeats).toBe(0);
+    expect(outOfSet).toBe(0);
   });
 
   it('maps arrow-key direction to gap orientation spatially', () => {
