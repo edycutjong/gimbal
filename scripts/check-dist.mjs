@@ -59,6 +59,12 @@ for (const file of files) {
     if (/\b(openai|anthropic|api\.gemini)\b/i.test(text)) {
       problems.push(`${name}: shipped bundle references an inference provider`);
     }
+    // The product has ONE address, and it is the custom domain. A
+    // `*.vercel.app` string baked into the bundle is a platform artifact that
+    // would outlive a project rename and contradict every document.
+    if (/[\w-]*\.vercel\.app/.test(text)) {
+      problems.push(`${name}: shipped bundle names a *.vercel.app address`);
+    }
   }
 
   for (const url of text.match(/https?:\/\/[^\s'"`)\\]+/g) ?? []) {

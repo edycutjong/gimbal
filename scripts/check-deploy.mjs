@@ -77,7 +77,16 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
     if (!permissions.includes('microphone=()')) {
       problems.push('U-CFG: the deployed Permissions-Policy does not deny the microphone');
     }
-    if (problems.length === 0) ok('U-CFG', 'wasm MIME, immutable cache, CSP and Permissions-Policy all correct');
+    // The SERVED html, not just the source — a stale deployment could still be
+    // handing out a platform address the repo no longer contains.
+    const served = await page.text();
+    const servedPlatformUrl = served.match(/[\w-]*\.vercel\.app/);
+    if (servedPlatformUrl) {
+      problems.push(`U-CFG: the served page names ${servedPlatformUrl[0]} — the canonical URL is ${CANONICAL_URL}`);
+    }
+    if (problems.length === 0) {
+      ok('U-CFG', 'wasm MIME, immutable cache, CSP, Permissions-Policy, and no platform URL in the served page');
+    }
   }
 }
 
@@ -99,6 +108,14 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
     const prose = text.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '');
     for (const pattern of forbidden) {
       if (pattern.test(prose)) problems.push(`U-DOC: ${name} contains a placeholder matching ${pattern}`);
+    }
+    // One canonical URL, and it is the custom domain. A `*.vercel.app` address
+    // is a platform artifact: it changes if the project is renamed, it is not
+    // what a judge is handed, and a second live address is how two documents
+    // begin to disagree.
+    const platformUrl = text.match(/[\w-]*\.vercel\.app/);
+    if (platformUrl) {
+      problems.push(`U-DOC: ${name} names ${platformUrl[0]} — the canonical URL is ${CANONICAL_URL}`);
     }
     for (const url of text.match(/https?:\/\/[^\s'"`)\]]+/g) ?? []) {
       const allowed =

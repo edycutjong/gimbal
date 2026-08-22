@@ -16,7 +16,7 @@
  * requests — which matters in a project whose headline claim is zero network
  * requests.
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -53,6 +53,7 @@ const isComment = (line) => {
   return t.startsWith('*') || t.startsWith('//') || t.startsWith('/*');
 };
 
+const docFiles = ['README.md', 'DEMO.md', 'METHODS.md', 'LIMITATIONS.md', 'NOTICE.md', 'RELEASING.md'];
 const srcFiles = walk('src', (f) => f.endsWith('.ts') && !f.includes('.test.'));
 const styleFiles = walk('src/styles', (f) => f.endsWith('.css'));
 const cardFiles = walk('public/cards', (f) => f.endsWith('.json'));
@@ -209,7 +210,7 @@ check('U-COUNT', 'the test count printed in README is the count the suite report
 });
 
 // ── The claims that must stay greppable ──────────────────────────────────
-check('greppable', 'no LLM, no third-party origin, two live regions, CSP intact', () => {
+check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact', () => {
   const problems = [];
   for (const file of srcFiles) {
     const text = read(rel(file));
@@ -220,6 +221,18 @@ check('greppable', 'no LLM, no third-party origin, two live regions, CSP intact'
     for (const url of text.match(/https?:\/\/[^\s'"`)]+/g) ?? []) {
       const allowed = url.includes('w3.org') || url.includes('storage.googleapis.com');
       if (!allowed) problems.push(`${rel(file)}: references ${url}`);
+    }
+  }
+
+  // ONE canonical URL. A `*.vercel.app` address is a platform artifact, not the
+  // product's address: it changes if the project is renamed, it is not the
+  // domain a judge is given, and a second live URL is exactly how two documents
+  // start disagreeing. The custom domain is the only address this repo names.
+  const surfaces = [...docFiles, 'index.html', 'vercel.json', ...srcFiles.map(rel)];
+  for (const name of surfaces) {
+    if (!existsSync(join(ROOT, name))) continue;
+    if (/[\w-]*\.vercel\.app/.test(read(name))) {
+      problems.push(`${name}: names a *.vercel.app address; the canonical URL is the custom domain`);
     }
   }
 
