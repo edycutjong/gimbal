@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import stopRuleSource from '../src/protocol/stopRule.ts?raw';
 import { evaluateStopRule, type StopRuleOutcome } from '../src/protocol/stopRule.ts';
 import { testCard } from './helpers.ts';
 
@@ -59,8 +59,10 @@ describe('evaluateStopRule — exhaustive over the 0–10 × 0–10 integer grid
   });
 
   it('contains no magnitude of its own — the only constant in the module is zero', () => {
-    const src = readFileSync(new URL('../src/protocol/stopRule.ts', import.meta.url), 'utf8');
-    const fn = src.slice(src.indexOf('export function evaluateStopRule'), src.indexOf('/** The sentence printed'));
+    const fn = stopRuleSource.slice(
+      stopRuleSource.indexOf('export function evaluateStopRule'),
+      stopRuleSource.indexOf('/** The sentence printed'),
+    );
     const numerals = fn.match(/(?<![\w.])\d+(?:\.\d+)?/g) ?? [];
     for (const n of numerals) expect(n).toBe('0');
   });

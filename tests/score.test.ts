@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+// `?raw` rather than node:fs, so the check costs no fifth dev dependency —
+// and the "1 runtime, 4 dev" claim in package.json stays greppable evidence.
+import scoreSource from '../src/dsp/score.ts?raw';
 import { scoreCycle } from '../src/dsp/score.ts';
 import { INSTRUMENT_LIMITS } from '../src/dsp/limits.ts';
 import { ALL_OUTCOMES, type CycleOutcome } from '../src/dsp/types.ts';
@@ -93,10 +95,12 @@ describe('scoreCycle — the credit / refusal gate', () => {
   });
 
   it('embeds no thresholds — every clinical value arrives from the card, every limit from INSTRUMENT_LIMITS', () => {
-    const src = readFileSync(new URL('../src/dsp/score.ts', import.meta.url), 'utf8');
-    const body = src
+    const body = scoreSource
       .split('\n')
-      .filter((l) => !l.trimStart().startsWith('*') && !l.trimStart().startsWith('//') && !l.trimStart().startsWith('/*'))
+      .filter(
+        (l: string) =>
+          !l.trimStart().startsWith('*') && !l.trimStart().startsWith('//') && !l.trimStart().startsWith('/*'),
+      )
       .join('\n');
     // The only bare numerals permitted in the module body are the unit
     // conversion 1000 (ms->s) and 0 (the dose contribution of a refusal).

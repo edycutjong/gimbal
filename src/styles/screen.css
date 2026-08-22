@@ -1,0 +1,661 @@
+/* ── Shell ──────────────────────────────────────────────────────────────── */
+
+main {
+  min-height: 100dvh;
+  padding: var(--space-5);
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.screen[hidden] {
+  display: none;
+}
+
+h1 {
+  font-size: var(--t-h1);
+  font-weight: 620;
+  line-height: 1.15;
+  margin: 0 0 var(--space-2);
+}
+
+h2 {
+  font-size: var(--t-h2);
+  font-weight: 600;
+  line-height: 1.25;
+  margin: var(--space-5) 0 var(--space-2);
+}
+
+p {
+  max-width: var(--measure);
+  margin: 0 0 var(--space-3);
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.caption {
+  font-size: var(--t-label);
+  color: var(--ink-3);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Focus rings are NEVER removed, and --focus is a hue used for nothing else, so
+   a focus ring can never be mistaken for a zone state. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -3rem;
+  background: var(--surface-2);
+  color: var(--ink-1);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  z-index: 20;
+  transition: top 120ms ease;
+}
+
+.skip-link:focus {
+  top: var(--space-4);
+}
+
+/* ── Controls ───────────────────────────────────────────────────────────── */
+
+button {
+  font: inherit;
+  font-size: var(--t-body);
+  min-height: var(--target);
+  padding: var(--space-2) var(--space-5);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform 90ms ease, background-color 120ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--surface-1);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.text-button {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--edge-strong);
+  border-radius: 0;
+  padding: var(--space-2) var(--space-1);
+  color: var(--ink-2);
+}
+
+button.primary {
+  border-color: var(--ink-2);
+}
+
+fieldset {
+  border: 1.5px solid var(--edge);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin: 0 0 var(--space-4);
+}
+
+legend {
+  font-size: var(--t-label);
+  color: var(--ink-2);
+  padding: 0 var(--space-2);
+}
+
+label {
+  display: block;
+  font-size: var(--t-label);
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: var(--space-1);
+}
+
+input[type='number'],
+input[type='text'],
+select {
+  font: inherit;
+  font-size: var(--t-body);
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--space-3);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--radius);
+}
+
+/* The unit is a static suffix, never part of the value. */
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field-unit {
+  font-size: var(--t-label);
+  color: var(--ink-3);
+  min-width: 3.5rem;
+}
+
+/* Validation is inline, on blur, non-blocking. No red, no shake, no modal. */
+.field-error {
+  font-size: var(--t-label);
+  color: var(--ink-2);
+  margin-top: var(--space-1);
+  border-left: 2px solid var(--edge-strong);
+  padding-left: var(--space-2);
+}
+
+details {
+  margin-top: var(--space-1);
+}
+
+summary {
+  font-size: var(--t-label);
+  color: var(--ink-3);
+  cursor: pointer;
+  min-height: var(--target);
+  display: flex;
+  align-items: center;
+}
+
+details > .disclosure-body {
+  font-size: var(--t-label);
+  color: var(--ink-2);
+  padding: var(--space-2);
+  border-left: 2px solid var(--edge);
+  max-width: var(--measure);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 0 var(--space-5);
+}
+
+.gate-card {
+  background: var(--surface-1);
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+.checkbox-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  margin-top: var(--space-4);
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+  flex: 0 0 auto;
+  accent-color: var(--zone-in);
+}
+
+.checkbox-row label {
+  font-size: var(--t-body);
+  color: var(--ink-1);
+  margin: 0;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.theme-picker {
+  display: flex;
+  gap: var(--space-1);
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.theme-picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--target);
+  padding: 0 var(--space-2);
+  margin: 0;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+}
+
+.radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.radio-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target);
+  padding: 0 var(--space-3);
+  margin: 0;
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius);
+  color: var(--ink-1);
+  font-size: var(--t-body);
+}
+
+.wordmark {
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+/* ── Setup ──────────────────────────────────────────────────────────────── */
+
+.setup-grid {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+
+.check-card {
+  background: var(--surface-1);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+
+.check-verdict {
+  font-size: var(--t-readout-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+video.framing {
+  width: 320px;
+  max-width: 100%;
+  transform: scaleX(-1);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.framing-wrap {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+}
+
+.framing-oval {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+input[type='range'] {
+  width: 100%;
+  min-height: var(--target);
+  accent-color: var(--zone-in);
+}
+
+/* ── Block screen ───────────────────────────────────────────────────────── */
+
+#screen-block {
+  height: 100dvh;
+  overflow: hidden;
+  padding: 0;
+  display: grid;
+  grid-template-rows: 1fr auto auto auto;
+  align-content: center;
+  justify-items: center;
+}
+
+.ring-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(88vmin, 100%);
+  aspect-ratio: 1;
+}
+
+.ring-stage svg.ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(135deg);
+}
+
+/* THE QUIET FIELD: nothing renders within 2.5 x the optotype diameter of its
+   centre. Ever. No badge, no toast, no tooltip, no counter — any element that
+   earns a saccade has broken the therapy it is measuring AND corrupted the
+   measurement of it. */
+.quiet-field {
+  position: absolute;
+  width: calc(var(--opto-d) * 5);
+  height: calc(var(--opto-d) * 5);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.optotype {
+  width: var(--opto-d);
+  height: var(--opto-d);
+  color: var(--optotype);
+  opacity: 0.78;
+  transition: opacity 250ms linear;
+}
+
+.optotype[data-window='open'] {
+  opacity: 1;
+}
+
+.cycle-strip {
+  width: min(80vmin, 100%);
+  height: 28px;
+  margin-top: var(--space-3);
+}
+
+.status-line {
+  font-size: var(--t-label);
+  color: var(--ink-2);
+  min-height: 1.5em;
+  text-align: center;
+  padding: 0 var(--space-4);
+}
+
+.dose-readout {
+  font-size: var(--t-display);
+  font-weight: 620;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.dose-sub {
+  font-size: var(--t-label);
+  color: var(--ink-2);
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.presence-tile {
+  position: fixed;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  width: 140px;
+  border-radius: var(--radius);
+  filter: brightness(0.6) grayscale(0.4);
+  opacity: 0.5;
+  transform: scaleX(-1);
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+
+/* The ONE place the block screen gets brighter — and it does so exactly when the
+   user needs to reposition. */
+.presence-tile[data-alert='true'] {
+  filter: none;
+  opacity: 1;
+  outline: 2px solid var(--edge-strong);
+}
+
+.key-legend {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  font-size: var(--t-label);
+  color: var(--ink-3);
+  text-align: right;
+}
+
+.paused-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface-0);
+  font-size: var(--t-h2);
+  color: var(--ink-1);
+  z-index: 10;
+}
+
+/* ── Gate ───────────────────────────────────────────────────────────────── */
+
+.symptom-scale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border: none;
+  padding: 0;
+}
+
+.symptom-scale label {
+  display: grid;
+  place-items: center;
+  width: var(--target);
+  height: var(--target);
+  margin: 0;
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--radius);
+  font-size: var(--t-body);
+  color: var(--ink-1);
+  cursor: pointer;
+}
+
+.symptom-scale input {
+  position: absolute;
+  opacity: 0;
+  width: var(--target);
+  height: var(--target);
+  margin: 0;
+  cursor: pointer;
+}
+
+.symptom-scale label:has(input:checked) {
+  background: var(--surface-2);
+  border-color: var(--ink-1);
+  border-width: 2.5px;
+}
+
+.symptom-scale label:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.scale-anchors {
+  display: flex;
+  justify-content: space-between;
+  max-width: 32rem;
+  font-size: var(--t-label);
+  color: var(--ink-3);
+  margin-top: var(--space-1);
+}
+
+.outcome-halt {
+  color: var(--halt);
+}
+
+.rest-countdown {
+  font-size: var(--t-readout);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Report and ledger ──────────────────────────────────────────────────── */
+
+.report {
+  max-width: 60rem;
+}
+
+.report table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.report caption {
+  text-align: left;
+  font-size: var(--t-label);
+  color: var(--ink-2);
+  padding-bottom: var(--space-2);
+}
+
+.report th,
+.report td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--edge);
+  font-size: var(--t-label);
+}
+
+.report th {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.report td.num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Delivered = SOLID inside an OUTLINED prescribed track. Monochrome-safe by
+   construction: nothing depends on hue. */
+.dose-bar {
+  display: block;
+  width: 100%;
+  height: 20px;
+}
+
+.honesty-box {
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin: var(--space-5) 0;
+  max-width: var(--measure);
+  font-size: var(--t-body); /* body size. NEVER small print. */
+}
+
+.citations {
+  font-size: var(--t-label);
+  color: var(--ink-2);
+  max-width: var(--measure);
+}
+
+.citations li {
+  margin-bottom: var(--space-2);
+}
+
+.example-banner {
+  border: 1.5px solid var(--edge-strong);
+  border-left-width: 5px;
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--t-label);
+  color: var(--ink-1);
+  max-width: var(--measure);
+}
+
+.chip {
+  display: inline-block;
+  font-size: var(--t-label);
+  border: 1px solid var(--edge-strong);
+  border-radius: 3px;
+  padding: 0 var(--space-2);
+  color: var(--ink-2);
+  letter-spacing: 0.04em;
+}
+
+.sparkline {
+  width: 100%;
+  max-width: 40rem;
+  height: 120px;
+}
+
+.button-row {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: var(--space-5) 0;
+}
+
+dialog {
+  background: var(--surface-1);
+  color: var(--ink-1);
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  max-width: 32rem;
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
+.banner {
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--t-label);
+  max-width: var(--measure);
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+/*
+ * The distinction that matters is DECORATION vs DATA. Decoration goes; data
+ * never does, because suppressing a live measurement to satisfy a motion
+ * preference would be silently withholding the instrument's output — a worse
+ * accessibility outcome than the motion is. What changes instead is that the
+ * ring's tween becomes a discrete 10 Hz update: same information, one third of
+ * the perceived movement.
+ *
+ * NOTHING IN THIS APPLICATION FLASHES, media query or not. WCAG 2.3.1's
+ * three-flash threshold is a hard architectural constraint here, and there is no
+ * state in the app whose only representation is a flash.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

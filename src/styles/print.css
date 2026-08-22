@@ -1,0 +1,157 @@
+/*
+ * The printed report.
+ *
+ * The report is THE SAME DOCUMENT on screen and on paper. There is no separate
+ * export renderer, no jsPDF, no html2canvas — `window.print()` plus this
+ * stylesheet. That is the largest single complexity kill in the build and it
+ * produces a BETTER artifact: vector text, selectable, and readable by a screen
+ * reader as a real document.
+ *
+ * Designed print-first. Designing the other way round is what produces the
+ * discovery, on the last day, that the report paginates.
+ */
+
+@page {
+  size: letter;
+  margin: 0.5in;
+}
+
+@media print {
+  :root {
+    --surface-0: #fff;
+    --surface-1: #fff;
+    --surface-2: #fff;
+    --ink-1: #000;
+    --ink-2: #000;
+    --ink-3: #000;
+    --edge: #999;
+    --edge-strong: #000;
+    --zone-in: #000;
+    --zone-out: #000;
+    --refused: #666;
+    --halt: #000;
+    --optotype: #000;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 9.5pt;
+    line-height: 1.35;
+  }
+
+  main {
+    max-width: none;
+    min-height: 0;
+    padding: 0;
+  }
+
+  /* Everything that is not the report is not the artifact. */
+  .no-print,
+  .settings-row,
+  .skip-link,
+  .presence-tile,
+  .key-legend,
+  button,
+  dialog {
+    display: none !important;
+  }
+
+  .report {
+    max-width: none;
+  }
+
+  .report h1 {
+    font-size: 13pt;
+  }
+
+  .report h2 {
+    font-size: 10.5pt;
+    margin: 8pt 0 3pt;
+  }
+
+  .report p,
+  .honesty-box {
+    max-width: none;
+    font-size: 9.5pt;
+  }
+
+  .report table,
+  .report th,
+  .report td {
+    font-size: 9pt;
+  }
+
+  .dose-total {
+    font-size: 22pt;
+  }
+
+  /*
+   * <details> disclosures are FORCED OPEN in print. A citation hidden behind a
+   * click is worth nothing on paper — which is the entire point of putting a
+   * citation on every criterion in the first place.
+   */
+  details {
+    display: block;
+  }
+
+  details > summary {
+    display: none;
+  }
+
+  details > .disclosure-body {
+    display: block !important;
+    border-left: 1px solid #999;
+    font-size: 8pt;
+  }
+
+  .citations,
+  .citations li {
+    font-size: 8pt; /* the floor on paper; nothing prints below 8 pt */
+  }
+
+  /* Pagination is a build gate, not a hope. */
+  .block-row,
+  .histogram-row,
+  .honesty-box,
+  .report tr,
+  .report-band {
+    break-inside: avoid;
+  }
+
+  /*
+   * `print-color-adjust: exact` on EXACTLY TWO elements — the delivered-dose
+   * bars and the refusal histogram bars — and even those are legible with all
+   * colour stripped, because delivered is a SOLID bar inside an OUTLINED
+   * prescribed track and the histogram bars are labelled with their counts.
+   */
+  .dose-bar,
+  .histogram-bar {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Browsers strip CSS-only SVG colour when printing, unpredictably. */
+  .dose-bar rect,
+  .histogram-bar rect,
+  .sparkline polyline,
+  .sparkline circle {
+    stroke: #000;
+  }
+
+  /* A label that vanishes when the PT prints the page is not a label. */
+  .example-banner {
+    border: 1pt solid #000;
+    display: block !important;
+  }
+
+  tr[data-provenance='example'] td:first-child::before {
+    content: 'EXAMPLE ';
+    font-size: 7.5pt;
+    letter-spacing: 0.06em;
+  }
+
+  a[href]::after {
+    content: '';
+  }
+}
