@@ -50,23 +50,44 @@ export function validateExampleRows(input: unknown): { rows: PersistedSession[];
   return { rows };
 }
 
+/**
+ * The honest message when the fixture is simply not there yet.
+ *
+ * A static host answering an unknown path with `index.html` would otherwise
+ * surface as a JSON syntax error, which tells a reader nothing true. The
+ * example ledger cannot be generated — it is frozen from real recorded sessions
+ * — so "it has not been recorded yet" is the accurate statement, and it is the
+ * one the interface makes.
+ */
+export const NOT_RECORDED_YET =
+  'No example ledger has been recorded yet. It is frozen from real sessions the developer performed, ' +
+  'never generated, so there is nothing to show until those recordings exist. Run a session and your ' +
+  'own report appears here.';
+
 export async function loadExampleLedger(): Promise<LoadOutcome> {
   try {
     // Same-origin, already cached at load, so this works offline.
     const response = await fetch(EXAMPLE_LEDGER_PATH);
     if (!response.ok) {
-      return { ok: false, added: 0, reason: `the example ledger could not be read (${response.status})`, sessions: [] };
+      return { ok: false, added: 0, reason: NOT_RECORDED_YET, sessions: [] };
     }
-    const { rows, reason } = validateExampleRows(await response.json());
+    // A single-page host answers an unknown path with the app's own HTML.
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('json')) {
+      return { ok: false, added: 0, reason: NOT_RECORDED_YET, sessions: [] };
+    }
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      return { ok: false, added: 0, reason: NOT_RECORDED_YET, sessions: [] };
+    }
+    const { rows, reason } = validateExampleRows(payload);
     if (reason) return { ok: false, added: 0, reason, sessions: [] };
+    if (rows.length === 0) return { ok: false, added: 0, reason: NOT_RECORDED_YET, sessions: [] };
     const added = addExampleSessions(rows);
     return { ok: true, added, sessions: rows };
-  } catch (err) {
-    return {
-      ok: false,
-      added: 0,
-      reason: `the example ledger could not be read: ${(err as Error).message}`,
-      sessions: [],
-    };
+  } catch {
+    return { ok: false, added: 0, reason: NOT_RECORDED_YET, sessions: [] };
   }
 }

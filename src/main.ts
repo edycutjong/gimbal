@@ -97,6 +97,8 @@ let runner: BlockRunner | null = null;
 let viewingSession: PersistedSession | null = null;
 /** Where `[ Back to report ]` returns to when the ledger was reached from the report. */
 let ledgerReturn: Screen = 'report';
+/** A visible reason on the ledger when a requested load did not happen. */
+let ledgerNotice: string | null = null;
 
 function show(screen: Screen): void {
   currentScreen = screen;
@@ -398,11 +400,15 @@ async function openReport(): Promise<void> {
 async function openExampleReport(): Promise<void> {
   const outcome = await loadExampleLedger();
   if (!outcome.ok) {
-    announce(outcome.reason ?? 'The example ledger could not be loaded.');
+    // Shown on screen, not only announced — a reader who is not using a screen
+    // reader deserves the same sentence.
+    ledgerNotice = outcome.reason ?? 'The example ledger could not be loaded.';
+    announce(ledgerNotice);
     ledgerReturn = currentScreen;
     showLedger();
     return;
   }
+  ledgerNotice = null;
   announce(`Example ledger loaded. ${outcome.added} developer-recorded sessions added, labelled example.`);
   const first = outcome.sessions[0];
   if (!first) {
@@ -431,6 +437,8 @@ function showLedger(): void {
     device: viewingSession?.device ?? deviceSignature(),
     unknownSchemaCount,
     storageUnavailable: unavailable,
+    notice: ledgerNotice,
+    hasReport: viewingSession !== null,
     theme,
     onLoadExamples: () => void openExampleReport(),
     onClearAll: () => {

@@ -23,6 +23,10 @@ export interface LedgerProps {
   device: DeviceSignature;
   unknownSchemaCount: number;
   storageUnavailable: boolean;
+  /** A visible reason when a requested load did not happen. Shown, not only announced. */
+  notice: string | null;
+  /** False when there is no report to return to, so the button does not promise one. */
+  hasReport: boolean;
   theme: ThemeName | null;
   onLoadExamples: () => void;
   onClearAll: () => void;
@@ -51,6 +55,7 @@ export function renderLedger(host: HTMLElement, props: LedgerProps): void {
           } from a newer version of Gimbal are present and not shown.</p>`
         : ''
     }
+    ${props.notice ? `<p class="banner">${esc(props.notice)}</p>` : ''}
     ${banner ? `<p class="example-banner">${esc(banner)}</p>` : ''}
 
     ${
@@ -102,7 +107,9 @@ export function renderLedger(host: HTMLElement, props: LedgerProps): void {
     }
 
     <div class="button-row no-print">
-      <button type="button" class="primary" id="back-to-report">Back to report</button>
+      <button type="button" class="primary" id="back-to-report">${
+        props.hasReport ? 'Back to report' : 'Back to the start'
+      }</button>
       <button type="button" id="clear-all">Clear all data</button>
     </div>
 
