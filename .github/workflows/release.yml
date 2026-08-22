@@ -4,10 +4,13 @@ name: release
 # only if the checks pass first.
 #
 # THE ONLY SECRET THIS NEEDS IS `VERCEL_TOKEN`.
-# `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` below are identifiers, not credentials:
-# they are useless without the token, they appear in `.vercel/project.json` on
-# any machine that has run `vercel link`, and keeping them inline means one
-# secret to configure instead of three.
+#
+# `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` and `GIMBAL_CANONICAL_URL` are repository
+# VARIABLES, not secrets: they are identifiers, useless without the token, and
+# they appear in `.vercel/project.json` on any machine that has run
+# `vercel link`. The literal fallbacks mean a fresh fork still builds without
+# configuring anything, while the variables let this repo be re-pointed at a
+# different Vercel project without editing a workflow.
 
 on:
   push:
@@ -19,8 +22,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  VERCEL_ORG_ID: team_RJcQx4a22v5LqjetHv8HhhLY
-  VERCEL_PROJECT_ID: prj_RuTVTV7xmI74MPJAWJmtl03Rj9od
+  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID || 'team_RJcQx4a22v5LqjetHv8HhhLY' }}
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID || 'prj_RuTVTV7xmI74MPJAWJmtl03Rj9od' }}
+  GIMBAL_CANONICAL_URL: ${{ vars.GIMBAL_CANONICAL_URL || 'https://gimbal.edycu.dev' }}
 
 jobs:
   release:

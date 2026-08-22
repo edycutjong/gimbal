@@ -14,8 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VERCEL_ORG_ID: team_RJcQx4a22v5LqjetHv8HhhLY
-  VERCEL_PROJECT_ID: prj_RuTVTV7xmI74MPJAWJmtl03Rj9od
+  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID || 'team_RJcQx4a22v5LqjetHv8HhhLY' }}
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID || 'prj_RuTVTV7xmI74MPJAWJmtl03Rj9od' }}
+  # U-DOC checks the docs against the CANONICAL url, never against this preview's
+  # own throwaway address — otherwise a correct README fails on every preview.
+  GIMBAL_CANONICAL_URL: ${{ vars.GIMBAL_CANONICAL_URL || 'https://gimbal.edycu.dev' }}
 
 jobs:
   preview:

@@ -48,14 +48,29 @@ Try it without changing anything:
 node scripts/version.mjs --dry-run
 ```
 
-## Secrets
+## Secrets and variables
 
 **One secret: `VERCEL_TOKEN`**, at Settings → Secrets and variables → Actions.
 
-`VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` are inline in the workflows on purpose.
-They are identifiers, not credentials — useless without the token, and present in
-`.vercel/project.json` on any machine that has run `vercel link`. Keeping them
-inline means one secret to configure instead of three.
+Three repository **variables**, not secrets, because they are identifiers rather
+than credentials — useless without the token, and present in
+`.vercel/project.json` on any machine that has run `vercel link`:
+
+| Variable | Purpose |
+|---|---|
+| `VERCEL_ORG_ID` | which Vercel team to deploy into |
+| `VERCEL_PROJECT_ID` | which project |
+| `GIMBAL_CANONICAL_URL` | what `U-DOC` treats as the one canonical URL |
+
+Each has a literal fallback in the workflow, so a fresh clone builds without
+configuring anything, while the variables let the repo be re-pointed at a
+different Vercel project without editing a workflow file.
+
+`GIMBAL_CANONICAL_URL` is deliberately separate from the URL being inspected.
+`U-CFG` asks *is this deployment configured correctly* and takes `GIMBAL_URL`;
+`U-DOC` asks *do the docs state only the canonical URL* and takes this. A preview
+deployment has its own throwaway address, and conflating the two would fail a
+README that is correct.
 
 ## Rollback
 
