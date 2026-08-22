@@ -18,7 +18,19 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
+
+/** The deployment being inspected — production, or a per-PR preview. */
 const URL_UNDER_TEST = process.env.GIMBAL_URL;
+
+/**
+ * The ONE canonical URL (rule: one canonical fact, zero cross-doc
+ * contradictions). Deliberately NOT `URL_UNDER_TEST`: a preview deployment has
+ * its own throwaway address, and the docs must keep naming the canonical one.
+ * U-CFG asks "is this deployment configured correctly"; U-DOC asks "do the docs
+ * state only the canonical URL". Conflating the two makes every preview run
+ * fail on a README that is correct.
+ */
+const CANONICAL_URL = process.env.GIMBAL_CANONICAL_URL ?? 'https://gimbal.edycu.dev';
 
 if (!URL_UNDER_TEST) {
   process.stderr.write(
@@ -90,7 +102,7 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
     }
     for (const url of text.match(/https?:\/\/[^\s'"`)\]]+/g) ?? []) {
       const allowed =
-        url.startsWith(URL_UNDER_TEST) ||
+        url.startsWith(CANONICAL_URL) ||
         url.includes('github.com/google-ai-edge/mediapipe') ||
         url.includes('storage.googleapis.com/mediapipe-models') ||
         url.includes('conventionalcommits.org');

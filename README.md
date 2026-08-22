@@ -6,6 +6,8 @@
 
 *No LLM. No server. No account. No upload path. On purpose.*
 
+**[https://gimbal.edycu.dev](https://gimbal.edycu.dev)**
+
 </div>
 
 ---
@@ -47,12 +49,16 @@ stopwatch.
 
 ## Try it in about a minute
 
+Open **[gimbal.edycu.dev](https://gimbal.edycu.dev)** — nothing to install.
+
+Or run it locally:
+
 ```bash
 npm ci
 npm run dev
 ```
 
-Then open the page and:
+Either way:
 
 1. Tick the box confirming a clinician prescribed the exercise.
 2. Type the eight numbers below.

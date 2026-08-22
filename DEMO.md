@@ -5,12 +5,14 @@ refuse you by name.**
 
 ## Reproduce, exactly
 
+Open **[gimbal.edycu.dev](https://gimbal.edycu.dev)**, or run it locally:
+
 ```bash
 npm ci
 npm run dev
 ```
 
-Open the page and:
+Then:
 
 1. Tick the box confirming a clinician prescribed the exercise.
 2. Type the eight numbers from `README.md`.

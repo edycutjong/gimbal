@@ -31,6 +31,19 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Fail FAST. Discovering a missing token after the version has been
+      # bumped, committed, tagged and pushed leaves a released tag with nothing
+      # deployed behind it — the one state that is annoying to unpick.
+      - name: Require the deploy secret before doing anything
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN is not set. Add it at Settings → Secrets and variables → Actions."
+            echo "It is the only secret this workflow needs; ORG_ID and PROJECT_ID are inline."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           # The version script reads tags and the commits since the last one, so
@@ -85,11 +98,6 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "VERCEL_TOKEN is not set — skipping the deploy."
-            echo "Add it at Settings → Secrets and variables → Actions."
-            exit 1
-          fi
           npx vercel@latest pull --yes --environment=production --token "$VERCEL_TOKEN"
           npx vercel@latest build --prod --token "$VERCEL_TOKEN"
           npx vercel@latest deploy --prebuilt --prod --token "$VERCEL_TOKEN" > deployment-url.txt
