@@ -2,6 +2,12 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.1.3 — 2026-08-24
+
+### Fixes
+
+- **prescribe:** a comma must never become a ten-fold dose
+
 ## 1.1.2 — 2026-08-24
 
 ### Fixes
