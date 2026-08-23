@@ -2,6 +2,12 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.1.2 — 2026-08-24
+
+### Fixes
+
+- **test:** assert the comma-decimal SAFETY property, not platform behaviour
+
 ## 1.1.1 — 2026-08-24
 
 ### Fixes
