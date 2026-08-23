@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/edycutjong/gimbal/security/advisories/new
+    about: Please report vulnerabilities privately, never in a public issue. See SECURITY.md.
+  - name: What Gimbal deliberately does not do
+    url: https://github.com/edycutjong/gimbal/blob/main/LIMITATIONS.md
+    about: The limitations list, the regulatory status, and the two provisional instrument thresholds.

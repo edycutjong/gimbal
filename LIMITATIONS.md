@@ -51,3 +51,19 @@ a tracking-spike recording that separates deliberately-good from
 deliberately-degraded conditions. Until that recording exists they are
 placeholders, `PROVISIONAL_FROM_SPIKE` in `src/dsp/limits.ts` names exactly
 which ones, and no claim is made that they are calibrated.
+
+## Regulatory status
+
+**Gimbal is not a medical device.** It does not diagnose, treat, or provide
+clearance for any condition. It measures whether a prescribed exercise was
+performed at the parameters a clinician wrote down, and reports that
+measurement.
+
+This paragraph used to sit at the foot of `LICENSE`, and moving it here was a
+correction rather than a demotion: GitHub's licence detector reads the whole of
+`LICENSE`, and any text appended after the MIT body drops the file below the
+match threshold, so the repository reported its licence as `NOASSERTION`
+instead of `MIT`. A licence a machine cannot identify is a licence nobody can
+rely on. `LICENSE` is now the unmodified MIT text and nothing else; the
+regulatory statement lives on the page that already carries every other
+boundary this project states.

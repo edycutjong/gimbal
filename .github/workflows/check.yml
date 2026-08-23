@@ -29,7 +29,7 @@ jobs:
 
       - run: npm ci
 
-      # Unit tests against analytic ground truth + the seven mechanical greps.
+      # Unit tests against analytic ground truth + the eight mechanical greps.
       # Fully offline; reads only files committed in this repo.
       - name: Unit tests and mechanical checks
         run: npm test
@@ -38,8 +38,17 @@ jobs:
       - name: Build and grep the shipped bundle
         run: npm run check:build
 
-      # The R11 gate. Its first step installs Chromium, so a clean clone needs
-      # nothing but `npm ci`. Assertions whose fixture is not yet recorded are
+      # The DSP correctness gate — all six credit/refusal outcomes driven
+      # end-to-end from an analytic signal — followed by the frame-budget
+      # timings. Also fully offline. The TIMINGS are not asserted, because a
+      # timing assertion on a shared runner is a flaky assertion; the COUNTS are,
+      # and they are byte-deterministic.
+      - name: DSP correctness gate and frame budget
+        run: npm run bench
+
+      # The R11 gate. It downloads a Chromium build if the runner has none — the
+      # one network access in the proof suite, stated at the top of
+      # scripts/verify.mjs. Assertions whose fixture is not yet recorded are
       # reported as skipped with a named reason, never as passing.
       - name: R11 gate
         run: npm run verify

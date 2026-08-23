@@ -1,0 +1,33 @@
+# Dependency updates.
+#
+# Grouped, monthly, and no major bumps — a major is a migration, not
+# maintenance, and it breaks CI on a frozen submission. Security ALERTS are a
+# separate mechanism and are unaffected by anything in this file; they need to be
+# switched on at Settings → Code security (see `.github/SECURITY.md`).
+#
+# There are five dependencies in total, so this will be quiet. That is the
+# intent: "1 runtime, 4 dev, npm audit 0 vulnerabilities" is greppable evidence,
+# and the way it stays true is by not accumulating dependencies.
+
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ['*']
