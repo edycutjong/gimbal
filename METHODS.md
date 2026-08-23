@@ -337,23 +337,393 @@ the printed report.
 
 ## 11. Sources
 
-**No citation in this document is asserted that has not been opened.** The
-guideline documents relevant to this domain are the *Consensus statement on
-concussion in sport: the 6th International Conference on Concussion in Sport*
-(the Amsterdam consensus statement), the *Living Concussion Guidelines*, and the
-*PedsConcussion Living Guideline for Pediatric Concussion*.
+**No citation below was written before it was opened.** Every one carries a DOI
+or PMID, and every entry says what the source supports **and what it does not** —
+because the second half is where a reference list stops being decoration.
 
-For the VORx1 protocol material specifically — gaze-stabilization parameters,
-staged progression, retinal slip as the VOR-adaptation error signal, and the
-dynamic-visual-acuity task form the Landolt C check borrows — this document
-makes no citation claim: **stated as background from vestibular-rehabilitation
-practice; no specific published source has been verified for this claim, and no
-numeric threshold is drawn from it.**
+Read §11.6 first if you read only one part of this section. It is the list of
+things this literature does **not** license, and it is longer than the list of
+things it does.
 
-For every numeric field on the protocol card: **no published parameter could be
-pinned; this field is clinician-entry only.** That sentence is what the app
-prints beside a field whose source the patient left blank, and it is the honest
-statement rather than a gesture at a literature.
+### 11.1 That the problem exists: cervicovestibular rehabilitation is indicated
 
-Every signal-processing number in this document is derived inline from
-arithmetic that is shown.
+**[G1]** Patricios JS, Schneider KJ, Dvorak J, et al. *Consensus statement on
+concussion in sport: the 6th International Conference on Concussion in Sport —
+Amsterdam, October 2022.* Br J Sports Med. 2023;57(11):695–711.
+doi:10.1136/bjsports-2023-106898 · PMID 37316210
+
+> "If dizziness, neck pain and/or headaches persist for more than 10 days,
+> cervicovestibular rehabilitation is recommended."
+> "For children, adolescents and adults with dizziness/balance problems, either
+> vestibular rehabilitation or cervicovestibular rehabilitation may be of
+> benefit."
+
+**Note the hedged verb in the second sentence.** *May be of benefit* is what the
+consensus says, and it is what this document says. [G1] prescribes no dose, no
+exercise velocity, no device and no home-program format.
+
+**[G2]** *Living Concussion Guidelines: Guideline for Concussion & Prolonged
+Symptoms for Adults 18 Years of Age or Older*, §10 (Vestibular & Vision
+Dysfunction), fourth edition, living guideline. Ontario Neurotrauma Foundation /
+Ontario Ministry of Health. Recommendation **10.5**, evidence level **A**:
+
+> "Vestibular rehabilitation therapy is recommended for patients experiencing
+> functionally limiting dizziness."
+
+A living web guideline has no volume, page or DOI, and its recommendation
+numbering can change between updates. Accessed 2026-08-23 at
+`concussionsontario.org`.
+
+**[G3]** Reed N\*, Zemek R\*, Dawson J, et al. *Living Guideline for Pediatric
+Concussion.* 2024. doi:10.17605/OSF.IO/3VWN9 (\*co-first authors)
+
+Cited here **only** to record that a pediatric guideline exists and that Gimbal
+does not attempt to encode it — see `LIMITATIONS.md`. No specific pediatric
+recommendation is attributed to it.
+
+**[R1]** Schneider KJ, Meeuwisse WH, Nettel-Aguirre A, et al. *Cervicovestibular
+rehabilitation in sport-related concussion: a randomised controlled trial.*
+Br J Sports Med. 2014;48(17):1294–1298. doi:10.1136/bjsports-2013-093267 ·
+PMID 24855132
+
+n = 31, aged 12–30, persistent dizziness / neck pain / headache after
+sport-related concussion, up to 8 weeks of weekly physiotherapy. 73 % (11/15) of
+the treatment group were medically cleared within 8 weeks against 7 % (1/14) of
+the control group.
+
+**What [R1] does not support:** it is a small single-centre trial of a
+**therapist-delivered combined cervical + vestibular** programme. It does not
+isolate gaze stabilization, specifies no head velocity, and says nothing about
+home-exercise delivery or adherence.
+
+### 11.2 That the dose is the thing: it is written in minutes and repetitions
+
+**[D1]** Hall CD, Herdman SJ, Whitney SL, et al. *Vestibular Rehabilitation for
+Peripheral Vestibular Hypofunction: An Updated Clinical Practice Guideline From
+the Academy of Neurologic Physical Therapy of the American Physical Therapy
+Association.* J Neurol Phys Ther. 2022;46(2):118–177.
+doi:10.1097/NPT.0000000000000382 · PMID 34864777
+
+> "Based on moderate to weak evidence, clinicians **may prescribe** weekly clinic
+> visits plus a home exercise program of gaze stabilization exercises consisting
+> of a minimum of: (1) 3 times per day for a total of at least 12 minutes daily
+> for individuals with acute/subacute unilateral vestibular hypofunction; (2) 3
+> to 5 times per day for a total of at least 20 minutes daily for 4 to 6 weeks
+> for individuals with chronic unilateral vestibular hypofunction; (3) 3 to 5
+> times per day for a total of 20 to 40 minutes daily for approximately 5 to 7
+> weeks for individuals with bilateral vestibular hypofunction."
+
+**This is the single most load-bearing citation in the project, and it is also
+the one most easily mis-cited.** Three qualifiers travel with it and are never
+dropped:
+
+1. The evidence grade is the guideline's own — **"moderate to weak"** — and the
+   verb is **"may prescribe"**, not "should".
+2. The population is **peripheral vestibular hypofunction, not concussion.**
+   Carrying this dose across to concussion is an extrapolation [D1] does not make
+   and Gimbal does not make either.
+3. **[D1] specifies no head velocity.** Gimbal's peak-velocity floor and ceiling
+   are **not** drawn from it. They are card fields, typed in by the patient from
+   their clinician's handout, and the report says so.
+
+What [D1] does establish, and it is all Gimbal needs from it: **gaze-stabilization
+exercise is prescribed as a quantity — sessions per day, minutes per day, weeks —
+exactly like a drug.** A quantity that is prescribed is a quantity that can be
+under-delivered, and nothing in the clinical pathway measures it.
+
+**[D2]** Academy of Neurologic Physical Therapy. *APTA's Updated Evidence-Based
+Clinical Practice Guideline for Peripheral Vestibular Hypofunction* — the
+three-page clinical **algorithm** summarising [D1]. Reached from `neuropt.org` →
+Practice Resources → ANPT Clinical Practice Guidelines → Peripheral Vestibular
+Hypofunction → **CPG Summaries**, where it is linked as *"CPG Outcome Assessment
+Measures and Treatment Algorithms"* rather than by its own title. Accessed
+2026-08-23.
+
+**Why cite the algorithm as well as the paper.** Not because it grades anything
+the abstract does not — it grades *less*. [D1]'s abstract carries the evidence
+statement quoted above (*"moderate to weak"*, *"may prescribe"*) and the
+algorithm's dose boxes carry **no grade at all**. The algorithm is cited for two
+narrower things: it breaks the dose out by presentation, which the abstract
+compresses into one sentence, and it prints two recommendations in a form that
+can be quoted exactly.
+
+| Presentation | Home gaze-stability dose |
+|---|---|
+| Acute / subacute unilateral | minimum **3×/day, at least 12 min/day** |
+| Chronic unilateral | **3–5×/day, at least 20 min/day, for 4–6 weeks** |
+| Bilateral | **3–5×/day, 20–40 min/day, for 5–7 weeks** |
+
+**The grade on that dose, stated here so the table above cannot be misread.** In
+the parent guideline the dose is **Action Statement 6b: evidence quality II, II
+and III; recommendation strength *weak*** — the weakest form the guideline uses.
+The algorithm page prints the boxes without that grade, and printing them next to
+anything marked *Level I* would invite exactly the wrong reading. **The dose is
+weak evidence. It is quoted here as proof that a dose is *prescribed at all*,
+never as proof that this particular dose is right.**
+
+The two graded recommendations on that page are separate boxes, and they belong
+to different claims:
+
+> **STRONG RECOMMENDATION (LEVEL I)** that "voluntary saccadic or smooth pursuit
+> eye exercises should **NOT** be offered in isolation as gaze stabilization
+> exercises. It is more effective to use the adaptation and substitution forms of
+> gaze stability exercises."
+
+**Verified against the parent guideline: Action Statement 4, evidence quality I,
+recommendation strength strong.** The algorithm and the paper agree, and this is
+the one load-bearing recommendation in this entry.
+
+> **STRONG RECOMMENDATION (LEVEL I)** for use of targeted exercise techniques for
+> acute and chronic unilateral peripheral vestibular hypofunction.
+
+**This second one does not survive checking, and saying so is cheaper than being
+caught.** The algorithm prints *Level I / strong*; the parent guideline grades
+the same claim **Action Statement 5: evidence quality II, recommendation strength
+*moderate*** — *"clinicians **may provide** targeted exercise techniques."* The
+discrepancy is ANPT's own, between its summary sheet and its guideline, and it is
+recorded here rather than inherited silently. **Gimbal relies on the first
+recommendation only.**
+
+**That first recommendation is the strongest single sentence in this reference
+list, and it is what makes Gimbal's most-questioned design decision the correct
+one.**
+Gimbal refuses to do eye tracking — see §1's note that the 478-landmark mesh
+includes 10 iris landmarks and Gimbal reads none of them. The obvious criticism
+is that a *gaze*-stabilization tool that does not measure gaze is missing the
+point. [D2] says the opposite at Level I: eye movement **in isolation, without
+head movement, is not the exercise.** What matters is the head movement coupled
+to a held visual target — which is exactly and only what Gimbal measures.
+
+The same algorithm lists **Dynamic Visual Acuity** and the **Gaze Stabilization
+Test** as the recommended objective measures on the "visual blurring with head
+movement" branch. That is the lane §11.5's optotype task borrows its *shape*
+from, and it is why it borrows from there rather than from anywhere else.
+
+**What [D2] still does not do:** it names no head velocity, and it is still
+scoped to peripheral vestibular hypofunction rather than concussion. Both
+qualifiers from [D1] carry over unchanged.
+
+### 11.3 That the delivered dose is not the prescribed dose
+
+**[A1]** Nicolson PJA, Hinman RS, Wrigley TV, Stratford PW, Bennell KL.
+*Self-reported Home Exercise Adherence: A Validity and Reliability Study Using
+Concealed Accelerometers.* J Orthop Sports Phys Ther. 2018;48(12):943–950.
+doi:10.2519/jospt.2018.8275 · PMID 30053792
+
+54 adults aged 45+ with chronic knee pain, 12-week home quadriceps programme,
+paper diary and an 11-point self-rating measured against a triaxial accelerometer
+**concealed inside the ankle cuff weight**:
+
+> "exercise adherence was significantly overestimated in diaries"
+
+Diary median **220** exercises against accelerometer **176** (P < .001).
+Diary-to-accelerometer agreement r = 0.52; the self-report rating scale was worse
+still (r = 0.23–0.39) with inadequate test–retest reliability.
+
+**[A2]** Argent R, Daly A, Caulfield B. *Patient Involvement With Home-Based
+Exercise Programs: Can Connected Health Interventions Influence Adherence?*
+JMIR Mhealth Uhealth. 2018;6(3):e47. doi:10.2196/mhealth.8518 · PMID 29496655
+
+> "Evidence suggests that noncompliance to these home exercises in
+> musculoskeletal cohorts can be between 30% and 50%."
+> "there is no gold standard for the measurement of adherence to unsupervised
+> home-based exercise, as the significant proportion of outcome measures used in
+> the literature rely on patient self-report and are therefore susceptible to
+> bias."
+
+**What [A1] and [A2] do not support:** both are **musculoskeletal, not
+vestibular**. No study measuring *vestibular* home-exercise adherence against an
+objective reference was found, and none is claimed. [A2] is a Viewpoint article,
+so the 30–50 % figure is a narrative estimate, not pooled evidence. Neither paper
+shows that objective monitoring *improves* adherence or outcomes — [A2]
+explicitly frames that as an opportunity rather than a finding, and Gimbal makes
+no claim that it does either.
+
+**[A1]'s own caution, which cuts against the tidy summary and is therefore
+printed here rather than left out.** Its abstract reports that "a Bland-Altman
+plot indicated **large between-participant variability in agreement**", and it
+concludes that self-reported adherence has "questionable validity and variable
+levels of agreement". **The finding is that the bias is unstable from person to
+person — not that diaries inflate by a fixed factor.** Dividing the two medians
+gives 1.25, and this document deliberately does **not** quote that ratio as
+[A1]'s result: the paper states no percentage anywhere, and a number the source
+did not compute must not be attributed to it.
+
+That instability is the stronger argument anyway. A fixed inflation factor could
+be corrected for on paper. One that varies per person cannot — which is why the
+delivered dose has to be *measured* on the person in front of you rather than
+inferred from what they report.
+
+### 11.4 Why measuring the *kinematics* is the right thing to measure
+
+**[V1]** Gonshor A, Jones GM. *Short-term adaptive changes in the human
+vestibulo-ocular reflex arc.* J Physiol. 1976;256(2):361–379.
+doi:10.1113/jphysiol.1976.sp011329 · PMID 16992507
+
+**[V1b]** Gonshor A, Jones GM. *Extreme vestibulo-ocular adaptation induced by
+prolonged optical reversal of vision.* J Physiol. 1976;256(2):381–414.
+doi:10.1113/jphysiol.1976.sp011330 · PMID 16992508 — the companion paper, named
+in full because one of the quotations below is **its** sentence and not [V1]'s
+
+Repeated vestibular stimulation **alone** produced "no consistent change of VOR
+gain"; combined with reversed visual input it produced "a substantial (approx.
+25 %) and highly significant (P ≪ 0.001) reduction of VOR gain", attributed to
+"an adaptive change in the VOR induced at least in part by **retinal image
+slip**" — all three verbatim from **[V1]**, pp. 361–379.
+
+The fourth sentence usually quoted alongside them, that the changes were "always
+goal-directed towards the requirements of retinal image stabilization during head
+movement", is verbatim from **[V1b]**, pp. 381–414 — *not* from [V1]. Split out
+because a reader resolving it against the first title would not find it.
+
+Retinal slip is the error signal. **Head motion without a visual target is not
+the exercise** — which is why Gimbal's optotype task runs *during* the motion and
+not before or after it.
+
+**[V2]** Todd CJ, Schubert MC, Figtree WVC, Migliaccio AA. *Incremental
+Vestibulo-ocular Reflex Adaptation Training Dynamically Tailored for Each
+Individual.* J Neurol Phys Ther. 2019;43(Suppl 2):S2–S7.
+doi:10.1097/NPT.0000000000000269 · PMID 30883486
+
+> "Our data suggest that 17°/s retinal image slip … is sufficient to drive robust
+> VOR adaptation."
+
+A specific head-impulse laser paradigm in 8 healthy subjects. **Not a general
+clinical threshold, and not a number Gimbal uses anywhere.**
+
+**[V3]** Rinaudo CN, Schubert MC, Figtree WVC, Todd CJ, Migliaccio AA. *Human
+vestibulo-ocular reflex adaptation is frequency selective.* J Neurophysiol.
+2019;122(3):984–993. doi:10.1152/jn.00162.2019 · PMID 31339801
+
+> "if one seeks to increase the higher-frequency VOR response, where it is
+> physiologically most relevant, then higher-frequency head movements are
+> required during training."
+
+**[V4]** Hübner PP, Khan SI, Migliaccio AA. *Velocity-selective adaptation of the
+horizontal and cross-axis vestibulo-ocular reflex in the mouse.* Exp Brain Res.
+2014;232(10):3035–3046. doi:10.1007/s00221-014-3988-8 · PMID 24862508
+
+"pronounced velocity selectivity of VOR adaptation" — the gain difference after
+adaptation "was maximal when the sinusoidal testing stimulus **matched** the
+adaptation training stimulus peak velocity."
+
+**[V3] and [V4] together are the argument for this whole instrument, and they
+must be stated in exactly the form the evidence takes: adaptation is SPECIFIC TO
+THE PARAMETERS IT WAS TRAINED AT.** Frequency-selectivity is demonstrated in
+humans [V3]; velocity-selectivity is demonstrated **in mouse** [V4]. It follows
+that *the head movement performed has to match the head movement the prescription
+intended* — and therefore that the frequency and peak velocity a patient actually
+achieves at home are not incidental to the therapy, they are the therapy's active
+parameters. That is the entire reason Gimbal measures °/s and Hz rather than
+minutes.
+
+**What [V3] and [V4] do NOT support, stated plainly because it is the tempting
+over-claim:** they do **not** say that faster head movement produces greater
+adaptation. Nothing in this reference list says that. The supported claim is
+matching, not maximising — which is also why Gimbal enforces a **band with a
+ceiling** rather than a floor alone, and why it refuses `too-fast` as readily as
+`too-slow`.
+
+### 11.5 The optotype task, and what Gimbal borrowed from it
+
+**[O1]** Herdman SJ, Schubert MC, Das VE, Tusa RJ. *Recovery of dynamic visual
+acuity in unilateral vestibular hypofunction.* Arch Otolaryngol Head Neck Surg.
+2003;129(8):819–824. doi:10.1001/archotol.129.8.819 · PMID 12925338
+
+Prospective, randomised, double-blind, 21 patients: "Patients who performed
+vestibular exercises showed a significant improvement in DVA-predictable
+(P < .001) and DVA-unpredictable (P < .001), while those performing placebo
+exercises did not."
+
+**[O2]** Schubert MC, Migliaccio AA, Clendaniel RA, Allak A, Carey JP. *Mechanism
+of Dynamic Visual Acuity Recovery With Vestibular Rehabilitation.* Arch Phys Med
+Rehabil. 2008;89(3):500–507. doi:10.1016/j.apmr.2007.11.010 · PMID 18295629 ·
+PMCID PMC2951478
+
+The method matters more here than the result — and it has to be quoted with its
+seams showing, because the two fragments below come from **different sub-tests**
+and are easy to splice into one sentence that no source contains. The static
+acuity test uses "a single optotype (the letter E, randomly rotated each trial by
+0°, 90°, 180°, or 270°)". The **dynamic** component presents "an optotype E
+randomly oriented in 1 of 4 directions", displayed "when head velocity was
+between 120° and 180°/s" — and, elided from that quotation for brevity but
+recorded here so the elision is not silent, the mirrored −180° to −120° window
+for the other direction, and a display-duration criterion.
+
+**This is the precedent for the shape of Gimbal's measurement, and it is the only
+thing claimed from it:** the established dynamic-visual-acuity paradigm presents
+a **forced-choice orientation judgement on a single optotype, gated on measured
+head velocity**. A four-alternative gap-orientation task during motion, credited
+only inside a velocity window, is that paradigm's shape — not an invention, and
+not a clinical equivalent either.
+
+**[O3]** Herdman SJ, Tusa RJ, Blatt P, Suzuki A, Venuto PJ, Roberts D.
+*Computerized dynamic visual acuity test in the assessment of vestibular
+deficits.* Am J Otol. 1998;19(6):790–796. PMID 9831156
+
+Test validation in 42 healthy subjects and 55 vestibular patients: reliability
+**ICC** = 0.87 and 0.83 — intraclass correlation coefficients, which is what the
+source reports, not Pearson's r; sensitivity 94.5 %, specificity 95.2 %.
+
+**[O4]** BS EN ISO 8596:2018+A1:2020 — *Ophthalmic optics. Visual acuity testing.
+Standard and clinical optotypes and their presentation* (underlying edition
+ISO 8596:2017).
+
+> "specifies a range of Landolt ring optotypes and describes a method for
+> measuring distance visual acuity under photopic conditions for the purposes of
+> certification or licensing"
+
+and, in the same scope, that it is "neither intended as a standard for clinical
+measurements nor for the certification of blindness or partial sight."
+
+**[O4] therefore supports exactly one sentence: the Landolt ring is the
+standardised optotype.** It does **not** make Gimbal's task an ISO-conformant
+measurement, and Gimbal reports no acuity score at all — see `LIMITATIONS.md`.
+Sourcing note: iso.org and the ANSI webstore refused automated access (HTTP 403);
+the designation, title and scope wording above were read from the BSI reseller
+listing, which reproduces the ISO scope verbatim. This is the one entry in §11
+not read from a primary source, and it is also the one carrying the least weight
+— it supports a single sentence about which optotype is standardised. The Landolt ring's precise
+geometry (gap = 1/5 of the outer diameter) is **not** verified here and is not
+relied on.
+
+**[O5]** Skerswetat J, He J, Shah JB, Aycardi N, Freeman M, Bex PJ. *A new,
+adaptive, self-administered, and generalizable method used to measure visual
+acuity.* Optom Vis Sci. 2024;101(7):451–463. doi:10.1097/OPX.0000000000002160 ·
+PMID 39110980 · PMCID PMC11323045
+
+> "Observers who are non-literate or unfamiliar with the Roman alphabet may be
+> asked to identify the orientation of the gap of tumbling E or Landolt C
+> optotypes in four or eight alternative forced choice tasks"
+
+Forced-choice optotype presentation is established practice. The chance level
+that follows from it — **25 % for four alternatives** — is arithmetic, and it is
+printed on the report beside the tally rather than left for a reader to work out.
+
+### 11.6 What this literature does NOT license — the boundary, in one place
+
+Every line here is a claim Gimbal could plausibly have made and does not.
+
+| Not claimed | Why not |
+|---|---|
+| That any number on the protocol card comes from a guideline | **No published parameter could be pinned for any of the eight fields.** Every one is clinician-entry only, with a mandatory `source` string, and check `U-SRC` fails the build if one is empty. [D1] gives a dose in *minutes and sessions*; it gives no velocity band and no frequency band. |
+| That the dose in [D1] applies to concussion | [D1]'s population is peripheral vestibular hypofunction. Gimbal makes the extrapolation nowhere, and neither does [D1]. |
+| That faster head movement produces better outcomes | Not supported by [V3], [V4] or anything else opened. The supported claim is parameter **matching**, which is why the card has a ceiling. |
+| That the VOR gain deficit is velocity-dependent in hypofunction | Searched and **not verified** — the vHIT literature sampled was mixed rather than settled. Not asserted. |
+| That vestibular home-exercise adherence specifically is poor | [A1] and [A2] are musculoskeletal. The vestibular-specific version of that measurement was not found and is not claimed. |
+| That measuring adherence improves it | [A2] frames this as an opportunity, not a finding. Gimbal measures delivery; it makes no outcome claim whatsoever. |
+| That eye tracking would make Gimbal better | The opposite is the Level I recommendation. [D2]: voluntary saccadic or smooth-pursuit eye exercises "should **NOT** be offered in isolation as gaze stabilization exercises." Gimbal's refusal to read the iris is not a shortcut around a hard problem; it is the guideline's own position, and §11.5 is how functional gaze is evidenced without measuring it. |
+| That Gimbal performs a dynamic visual acuity test | It does not. It reports **no logMAR score and none can be reported** — the browser supplies neither viewing distance nor display pixel pitch. [O1]–[O3] are cited for the paradigm's *shape*, not as a claim of equivalence. |
+| That the optotype task is ISO-conformant | [O4] explicitly disclaims clinical use, and Gimbal claims none. |
+| That DVA is validated as a concussion outcome measure | [O1]–[O3] are peripheral vestibular hypofunction. Not claimed. |
+| Any agreement, accuracy, correlation or validation figure for Gimbal itself | **No such measurement exists.** See §7.3 and `LIMITATIONS.md`. |
+
+### 11.7 And the arithmetic
+
+Every signal-processing number in this document is derived inline from arithmetic
+that is shown, and cites nothing, because it needs to cite nothing: `sin(x)/x`
+is not a matter of opinion. **The separation is deliberate and it runs through
+the whole system.** Instrument limits are derived and labelled as instrument
+limits (§7). Clinical thresholds come from the card and are labelled with their
+source. And the literature above establishes *why the measurement is worth
+making* — never *what number to enforce*.
