@@ -24,6 +24,36 @@ import { velocityCentre } from '../protocol/card.ts';
  */
 
 const SWEEP_FRACTION = 0.75; // 270° of 360°
+const SWEEP_DEG = 360 * SWEEP_FRACTION;
+
+/**
+ * Where the ARC's `f` point lands, in screen degrees clockwise from three
+ * o'clock. A `<circle>` dasharray begins at three o'clock (0°) and runs
+ * clockwise; `svg.ring` then carries `rotate(135deg)` from screen.css.
+ */
+export function arcAngleDeg(fraction: number): number {
+  return 135 + fraction * SWEEP_DEG;
+}
+
+/**
+ * The element-level rotation that puts the committed tick on the arc's `f`
+ * point. The tick is authored at the element's own twelve o'clock — 270° in the
+ * same convention — and inherits the same 135° element rotation, so the two
+ * cancel to `f·270 − 270`.
+ *
+ * These two functions exist as a PAIR so that a unit test can assert they agree
+ * without a DOM. They disagreed by exactly 135° until 2026-08-23, which put the
+ * committed marker — the one number the patient is meant to learn to trust —
+ * a fifth of a turn away from the velocity it was reporting.
+ */
+export function markerRotationDeg(fraction: number): number {
+  return -SWEEP_DEG + fraction * SWEEP_DEG;
+}
+
+/** Where the tick ends up on screen, given `markerRotationDeg`. */
+export function markerAngleDeg(fraction: number): number {
+  return 270 + markerRotationDeg(fraction) + 135;
+}
 
 export interface DialElements {
   svg: SVGSVGElement;
@@ -43,11 +73,15 @@ export function createDial(card: ProtocolCard): { html: string; max: number } {
   const bandStart = frac(card.peakVelocityFloor.value) * arc;
   const bandLen = (frac(card.peakVelocityCeiling.value) - frac(card.peakVelocityFloor.value)) * arc;
 
+  // The track is `--edge`, the decorative-rule token, not `--surface-2`. On the
+  // warm-paper palette `--surface-2` (#fbf8f2) against `--surface-1` (#f6f2ea)
+  // is a 1.03:1 difference, so the unfilled part of the sweep simply did not
+  // exist in Light: the ring appeared to be nothing but its prescribed band.
   return {
     max,
     html: `<svg class="ring" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
   <circle class="ring-track" cx="50" cy="50" r="${r}" fill="none"
-          stroke="var(--surface-2)" stroke-width="6"
+          stroke="var(--edge)" stroke-width="6"
           stroke-dasharray="${arc.toFixed(3)} ${c.toFixed(3)}" stroke-linecap="butt" />
   <circle class="ring-band" cx="50" cy="50" r="${r}" fill="none"
           stroke="var(--edge-strong)" stroke-width="6"
@@ -98,7 +132,19 @@ export class Dial {
    * to trust, and the report's numbers come from the marker's series.
    */
   setCommitted(peakOmega: number, credited: boolean): void {
-    const angle = -135 + this.fraction(peakOmega) * 270;
+    // −270, not −135.
+    //
+    // The tick is authored pointing at the element's own twelve o'clock, and the
+    // whole `svg.ring` then carries a further `rotate(135deg)` from screen.css so
+    // that the arc — which a `<circle>` dasharray starts at three o'clock — has
+    // its prescribed band centred on the top. Subtracting 135 here left that
+    // element rotation counted twice, and the committed marker sat 135° round
+    // from the velocity it was reporting: at 0 °/s it pointed at the middle of
+    // the band, and at band centre it pointed at half past four.
+    //
+    // `markerRotationDeg` and `arcAngleDeg` are a tested pair — see
+    // tests/dial.test.ts, which asserts they agree at every tenth.
+    const angle = markerRotationDeg(this.fraction(peakOmega));
     this.els.marker.setAttribute('transform', `rotate(${angle.toFixed(2)} 50 50)`);
     this.els.marker.setAttribute('stroke', credited ? 'var(--zone-in)' : 'var(--refused)');
     this.els.marker.setAttribute('opacity', '1');
