@@ -1,6 +1,6 @@
 {
   "name": "gimbal",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "A webcam dose meter that proves you actually did your prescribed vestibular rehab at therapeutic velocity.",

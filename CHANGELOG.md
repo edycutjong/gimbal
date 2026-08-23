@@ -2,6 +2,22 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.1.0 — 2026-08-24
+
+### Features
+
+- **landing:** give / its own visual language, built around the gap
+- **bench:** drive all six gate outcomes end-to-end, and close the air-gap gap
+- **assets:** a visual identity drawn from the refusal, not from the category
+
+### Fixes
+
+- **license:** restore the unmodified MIT text so GitHub recognises it
+
+### Documentation
+
+- **readme:** rebuild the top matter around the animated hero
+
 ## 1.0.0 — 2026-08-23
 
 First stable release. The version line starts here by decision rather than by
