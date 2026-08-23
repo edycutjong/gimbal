@@ -117,4 +117,23 @@ jobs:
       # invariant rather than a promise, so they are verified against production
       # on every deploy rather than trusted.
       - name: Verify the deployed headers
-        run: GIMBAL_URL=$(cat deployment-url.txt) npm run check:deploy
+        # VERIFY THE CANONICAL DOMAIN, NOT THE PER-DEPLOY URL.
+        #
+        # `vercel deploy` prints the immutable `*-<hash>-<team>.vercel.app`
+        # address, which sits behind Deployment Protection — every asset on it
+        # answers 404 to an unauthenticated fetch, so U-CFG failed on
+        # `/model/vision_wasm_internal.wasm` for a deployment that was in fact
+        # correct. The canonical domain is also the thing that actually has to
+        # be right: it is the address in the README, in the submission, and in
+        # a judge's browser.
+        #
+        # The alias moves a beat after the deploy returns, so this waits for it
+        # rather than racing it.
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "$GIMBAL_CANONICAL_URL/" || echo 000)
+            [ "$code" = "200" ] && break
+            echo "canonical domain not serving yet (HTTP $code), attempt $attempt"
+            sleep 10
+          done
+          GIMBAL_URL="$GIMBAL_CANONICAL_URL" npm run check:deploy

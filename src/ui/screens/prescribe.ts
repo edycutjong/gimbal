@@ -181,6 +181,63 @@ export function renderPrescribe(host: HTMLElement, props: PrescribeProps): void 
       refresh();
     });
     input.addEventListener('input', refresh);
+
+    /**
+     * A COMMA MUST NEVER BECOME A TEN-FOLD DOSE.
+     *
+     * Most of the world writes 1.7 as `1,7`. On a `<input type="number">` the
+     * browser sanitises its own value, and what it does with a comma depends on
+     * the ICU data it was built with: macOS Chromium canonicalises `1,7` to
+     * `1.7`, and Linux Chromium DROPS THE SEPARATOR AND RETURNS `17`. Not
+     * rejected, not flagged — `validity.valid` is true. A patient entering the
+     * frequency band their clinician wrote as 1,7 Hz would have silently
+     * prescribed themselves 17 Hz, and every downstream refusal would then be
+     * measured against a band ten times too high.
+     *
+     * The comma is intercepted before the browser can see it and written as the
+     * canonical separator instead. `setRangeText`/`selectionStart` are not
+     * available on number inputs, so the insertion is done on `value` directly;
+     * a second separator is dropped rather than appended, which is what the
+     * native control does with a second `.` anyway.
+     */
+    let separatorPending = false;
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === ',') {
+        event.preventDefault();
+        // The separator cannot be written yet: `1.` is not a valid
+        // floating-point number, and assigning it to a number input clears the
+        // field outright — trading a ten-fold dose for an empty one. It is held
+        // until the digit that makes it valid arrives.
+        separatorPending = !input.value.includes('.') && input.value !== '';
+        return;
+      }
+      if (!separatorPending) return;
+      if (!/^[0-9]$/.test(event.key)) {
+        // Anything other than a digit abandons the pending separator, so a
+        // stray comma cannot silently attach itself to a later keystroke.
+        separatorPending = false;
+        return;
+      }
+      event.preventDefault();
+      separatorPending = false;
+      input.value = `${input.value}.${event.key}`;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    input.addEventListener('blur', () => {
+      separatorPending = false;
+    });
+
+    // The same substitution for a pasted value — paste bypasses keydown, and a
+    // handout transcribed into the clipboard is exactly how `1,7` arrives.
+    input.addEventListener('paste', (event) => {
+      const pasted = event.clipboardData?.getData('text');
+      if (!pasted || !pasted.includes(',')) return;
+      event.preventDefault();
+      input.value = pasted.trim().replace(',', '.');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
   }
 
   for (const input of all<HTMLInputElement>(host, 'input[name="stage"], #gate-ack')) {
