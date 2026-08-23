@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Gimbal">
+  <!--
+    The mark is the instrument: a 270 degree velocity sweep with the prescribed
+    band centred on twelve o'clock, and the committed marker sitting in it.
+    Same geometry as src/ui/dial.ts, so the icon is a drawing of the product
+    rather than a logo invented beside it.
+
+    Hard-coded hexes, not custom properties: a favicon is rendered by the browser
+    chrome outside any document, where :root tokens do not exist. These two are
+    the Dark-theme values of --zone-in and --edge-strong.
+  -->
+  <rect width="64" height="64" rx="12" fill="#0b0e12" />
+  <g transform="rotate(135 32 32)">
+    <circle cx="32" cy="32" r="21" fill="none" stroke="#2a3542" stroke-width="7"
+            stroke-dasharray="98.96 32.99" stroke-linecap="butt" />
+    <circle cx="32" cy="32" r="21" fill="none" stroke="#5e7186" stroke-width="7"
+            stroke-dasharray="0 39.58 52.78 200" stroke-linecap="butt" />
+  </g>
+  <line x1="32" y1="5" x2="32" y2="18" stroke="#5bd6ae" stroke-width="4" stroke-linecap="round" />
+</svg>

@@ -3,50 +3,643 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Gimbal — gaze stabilization dose meter</title>
+    <title>Gimbal — a dose meter for prescribed vestibular rehab</title>
     <meta
       name="description"
-      content="A webcam dose meter that proves you actually did your prescribed vestibular rehab at therapeutic velocity. Everything runs on your device."
+      content="Turn your head lazily and watch the counter refuse you by name. Gimbal is a webcam dose meter that proves prescribed gaze-stabilization exercise was actually delivered, at therapeutic velocity. Nothing leaves your device."
     />
+    <link rel="canonical" href="https://gimbal.edycu.dev/" />
+
     <!--
-      The CSP is also set as a response header in production (vercel.json). This
-      meta copy is what protects the dev server and any static host that does not
-      apply headers. `connect-src 'self'` is what turns "no data leaves the
-      device" from a promise into a browser-enforced invariant.
-      `'wasm-unsafe-eval'` is the ONLY relaxation, required by MediaPipe's WASM
-      instantiation, and it is documented in METHODS.md as such rather than
-      quietly widened to 'unsafe-eval'.
+      BYTE-IDENTICAL to the policy on /app. `connect-src 'self'` is what turns
+      "no data leaves the device" from a promise into a browser-enforced
+      invariant, and a landing page with a looser policy than the app would be
+      the easiest possible way for that claim to quietly stop being true on the
+      page that states it. Check `greppable` in scripts/checks.mjs asserts both
+      copies.
+
+      The response header in vercel.json is this policy PLUS
+      `frame-ancestors 'none'`, and the difference is not drift: the CSP spec
+      ignores `frame-ancestors` in a meta tag, so it can only be delivered as a
+      header. The header is a strict superset by exactly that one directive.
     -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'"
     />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='38' fill='none' stroke='%235bd6ae' stroke-width='10' stroke-dasharray='180 60'/%3E%3C/svg%3E" />
-  </head>
-  <body>
-    <a class="skip-link" href="#screen-title">Skip to the main content</a>
 
-    <main>
-      <section id="screen-prescribe" class="screen" aria-labelledby="screen-title"></section>
-      <section id="screen-setup" class="screen" hidden></section>
-      <section id="screen-block" class="screen" hidden></section>
-      <section id="screen-gate" class="screen" hidden></section>
-      <section id="screen-report" class="screen" hidden></section>
-      <section id="screen-ledger" class="screen" hidden></section>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Gimbal" />
+    <meta property="og:url" content="https://gimbal.edycu.dev/" />
+    <meta property="og:title" content="Gimbal — a dose meter for prescribed vestibular rehab" />
+    <meta
+      property="og:description"
+      content="Turn your head lazily and watch the counter refuse you by name. A webcam dose meter that proves the prescribed exercise was delivered at therapeutic velocity. Nothing leaves your device."
+    />
+    <meta property="og:image" content="https://gimbal.edycu.dev/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Gimbal: a velocity dial with its committed marker snapped off the top and the line 'Rep not counted — too slow (below 150 degrees per second; measured 91 degrees per second).'"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Gimbal — a dose meter for prescribed vestibular rehab" />
+    <meta
+      name="twitter:description"
+      content="Turn your head lazily and watch the counter refuse you by name. A webcam dose meter that proves the prescribed exercise was delivered at therapeutic velocity."
+    />
+    <meta name="twitter:image" content="https://gimbal.edycu.dev/og.png" />
+    <!-- X reads `twitter:image:alt`, not `og:image:alt`; without it the card
+         ships to screen-reader users with no description at all. -->
+    <meta
+      name="twitter:image:alt"
+      content="Gimbal: a velocity dial with its committed marker snapped off the top and the line 'Rep not counted — too slow (below 150 degrees per second; measured 91 degrees per second).'"
+    />
+
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body class="landing">
+    <a class="skip-link" href="#main">Skip to the main content</a>
+
+    <header class="lp-head">
+      <a class="lp-brand" href="/" aria-label="Gimbal, home">
+        <svg class="lp-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+          <circle cx="20" cy="20" r="15" fill="none" stroke="var(--edge-strong)" stroke-width="4"
+                  stroke-dasharray="70.7 23.6" transform="rotate(135 20 20)" />
+          <circle cx="20" cy="20" r="15" fill="none" stroke="var(--zone-in)" stroke-width="4"
+                  stroke-dasharray="0 28.3 37.7 100" transform="rotate(135 20 20)" />
+          <line x1="20" y1="2" x2="20" y2="10" stroke="var(--ink-1)" stroke-width="2.5" />
+        </svg>
+        <span class="wordmark">Gimbal</span>
+      </a>
+      <div class="lp-head-right">
+        <div id="theme-slot">
+          <noscript>
+            <p class="lp-foot-note">Theme follows your system setting; the picker needs JavaScript.</p>
+          </noscript>
+        </div>
+        <a class="lp-headlink" href="#try">Open it</a>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <!-- ── Hero ───────────────────────────────────────────────────────── -->
+      <!--
+        The hero's children are FLAT, not wrapped in a text column, so that the
+        source order can be the mobile order — claim, then proof, then the rest —
+        while the desktop grid still puts the claim left and the instrument
+        right. A wrapper div would force the phone to read the entire lede and
+        both buttons before reaching the thing the headline is about.
+      -->
+      <section class="lp-hero">
+        <p class="lp-eyebrow">Vestibular rehabilitation · VORx1, yaw · one browser tab, no server</p>
+
+        <h1 class="lp-h1">
+          Turn your head lazily and watch the counter
+          <em>refuse you by name.</em>
+        </h1>
+
+        <!--
+          The replay is built and driven by src/landing/main.ts.
+
+          Every word of prose on this page is static, so the argument survives
+          with scripting off — but the hero's PICTURE does not, and an empty
+          half-fold beside a headline about watching a counter refuse you is a
+          worse first impression than no panel at all. The `<noscript>` below is
+          the same moment in words, using the same instrument styling, and it
+          says which part is missing rather than pretending nothing is.
+        -->
+        <div id="replay-slot" class="lp-replay-slot">
+          <noscript>
+            <figure class="lp-replay lp-replay-static">
+              <p class="lp-replay-tag">
+                <span class="chip">Illustration</span>
+                <span>Not a measurement. The animated version of this panel needs JavaScript; the sentence it prints is below, verbatim.</span>
+              </p>
+              <div class="lp-replay-panel">
+                <div class="lp-replay-readout">
+                  <p class="lp-readout-label">Delivered dose</p>
+                  <p class="lp-readout-value"><span class="tnum">0.0</span><span class="lp-readout-unit">s in zone</span></p>
+                  <p class="lp-readout-sub">of <span class="tnum">60</span> s prescribed · <span class="tnum">0</span> of <span class="tnum">10</span> reps credited</p>
+                </div>
+                <div class="lp-replay-foot">
+                  <p class="lp-replay-status" data-refused="true">Rep not counted — too slow (below 150 °/s; measured 91 °/s).</p>
+                  <p class="lp-strip-note">The dose numeral did not move. That is the whole product.</p>
+                </div>
+              </div>
+            </figure>
+          </noscript>
+        </div>
+
+        <p class="lp-lede">
+          Gimbal is a webcam <strong>dose meter</strong> for prescribed gaze-stabilization
+          exercise. It does not choose your therapy, set your parameters, or diagnose
+          anything. It measures whether the exercise your clinician prescribed was
+          actually delivered — at the velocity that makes it a dose rather than a movement.
+        </p>
+
+        <div class="lp-cta-row" id="try">
+          <a class="lp-cta lp-cta-primary" href="/app?demo">
+            Open it with an example prescription
+            <span class="lp-cta-sub">eight fields pre-filled and labelled</span>
+          </a>
+          <a class="lp-cta lp-cta-secondary" href="/app">
+            Start with a blank card
+            <span class="lp-cta-sub">the real entry path</span>
+          </a>
+        </div>
+
+        <!--
+          The only honest form of social proof this project has.
+
+          There are no users, no downloads, no clinicians and no testimonials,
+          and inventing one would fail this event's safety criterion outright.
+          What exists instead is three numbers a reader can check in about a
+          minute — which is a better claim than a quote from a stranger anyway.
+        -->
+        <ul class="lp-facts">
+          <li><span class="lp-fact-n tnum">0</span><span>network requests during a session</span></li>
+          <li><span class="lp-fact-n tnum">88</span><span>automated tests, plus 8 source checks</span></li>
+          <li><span class="lp-fact-n tnum">1</span><span>runtime dependency, 0 vulnerabilities</span></li>
+        </ul>
+      </section>
+
+      <!-- ── 01 ─────────────────────────────────────────────────────────── -->
+      <section class="lp-section" aria-labelledby="s-dose">
+        <div class="lp-rail">
+          <span class="lp-num">01</span>
+          <span class="lp-rail-label">The premise</span>
+        </div>
+        <div class="lp-body">
+          <h2 id="s-dose">A rep is not a dose.</h2>
+          <p>
+            Gaze-stabilization exercise is prescribed with <strong>parameters</strong>, exactly like
+            a drug: a head-frequency band, a peak-velocity floor and ceiling, a block
+            length, a number of blocks. Two of those numbers are angular velocities,
+            and they are the part a stopwatch cannot see.
+          </p>
+          <p>
+            The clinic measures none of them at home. The only instrument is the question
+            <em>“how did the home exercises go?”</em>, answered from memory, in
+            minutes-claimed. Every other tool in this space watches, asks, or chats.
+            <strong>None of them measure the quantity the prescription is actually written in.</strong>
+          </p>
+
+          <figure class="lp-figure">
+            <div id="band-figure" class="lp-band-figure">
+              <noscript>
+                <p class="lp-figure-fallback">
+                  The plot needs JavaScript. Its ten points are the trace above: three reps
+                  at <span class="tnum">91</span>, <span class="tnum">88</span> and
+                  <span class="tnum">104 °/s</span> fall below the
+                  <span class="tnum">150 °/s</span> floor, six land inside the
+                  <span class="tnum">150–350 °/s</span> band, and one at
+                  <span class="tnum">251 °/s</span> is refused inside the band because
+                  tracking quality fell to <span class="tnum">0.38</span>.
+                </p>
+              </noscript>
+            </div>
+            <figcaption>
+              A diagram of the scoring rule: the band edges come from the card, and the dots
+              are the same trace the panel above replays. The three dots below the floor are
+              the reps a minutes-counter would have credited in full.
+            </figcaption>
+          </figure>
+
+          <p class="lp-pull">
+            Gimbal does not argue with the numbers on your handout. It holds you to them.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── 02 ─────────────────────────────────────────────────────────── -->
+      <section class="lp-section" aria-labelledby="s-refuse">
+        <div class="lp-rail">
+          <span class="lp-num">02</span>
+          <span class="lp-rail-label">The product</span>
+        </div>
+        <div class="lp-body">
+          <h2 id="s-refuse">Two refusal reasons. One without the other reads as a bug.</h2>
+          <p>
+            A dose meter that credits everything is a stopwatch. So the interesting
+            surface of this product is the set of things it declines to count — and
+            there are two kinds, which is the whole point.
+          </p>
+
+          <div class="lp-two">
+            <article class="lp-reason">
+              <p class="lp-reason-kind">Reason one · about the movement</p>
+              <p class="lp-quote"><code>Rep not counted — too slow (below 150 °/s; measured 91 °/s).</code></p>
+              <p>
+                Proves the velocity is measured and the band is enforced. Both numbers are
+                shown: the threshold that came off your card, and what was actually
+                measured. Never a bare verdict.
+              </p>
+            </article>
+            <article class="lp-reason">
+              <p class="lp-reason-kind">Reason two · about the instrument</p>
+              <p class="lp-quote"><code>Rep not counted — tracking unreliable. Try more light.</code></p>
+              <p>
+                Head-pose fidelity at 2 Hz on a cheap webcam is the biggest technical risk
+                in this build, and it is answered by <strong>refusing to emit rather than by
+                smoothing</strong>. Cover part of your face, or dim the room, and the
+                instrument declines to produce a number it cannot stand behind.
+              </p>
+            </article>
+          </div>
+
+          <h3>A refusal is never red</h3>
+          <p>
+            Red says <em>you did something wrong</em>. Two of the five refusal reasons are
+            the instrument's condition, not the patient's — and telling someone who slowed down
+            because they got dizzy that they made an <em>error</em> is clinically backwards.
+            A refused rep is drawn as an <strong>absence</strong>: an unfilled, hatched cell,
+            with the reason in words, and the dose numeral simply does not advance.
+          </p>
+
+          <h3>And nothing happens when you get it right</h3>
+          <p>
+            There is no celebration, no streak, no badge, no confetti. In-zone is the
+            <strong>resting state</strong>; out-of-zone is the only thing that produces
+            change. A reward loop that encourages <em>more</em> of a symptom-limited therapy
+            is clinically wrong, so the quiet is deliberate — it is the design thesis, not a
+            missing feature.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── 03 ─────────────────────────────────────────────────────────── -->
+      <section class="lp-section" aria-labelledby="s-privacy">
+        <div class="lp-rail">
+          <span class="lp-num">03</span>
+          <span class="lp-rail-label">The privacy proof</span>
+        </div>
+        <div class="lp-body">
+          <h2 id="s-privacy">Zero network requests. Verifiable in fifteen seconds.</h2>
+          <p>
+            Open DevTools → Network. Clear it. Run a full session. <strong>Zero requests.</strong>
+            Not “no personal data”, not “anonymised telemetry” — no requests at all, after the
+            page and its model have loaded.
+          </p>
+          <p>
+            This is enforced by the browser rather than by a promise. The
+            <code>Content-Security-Policy</code> below ships as a response header
+            <em>and</em> as a meta tag on both pages, and <code>connect-src 'self'</code> means
+            a future commit that added an upload would be <strong>blocked</strong>, not merely
+            caught in review.
+          </p>
+          <pre class="lp-code"><code>Content-Security-Policy:
+  default-src 'self';
+  script-src  'self' 'wasm-unsafe-eval';
+  connect-src 'self';
+  font-src    'self';
+  object-src  'none';
+  base-uri    'none'
+
+Permissions-Policy:
+  camera=(self), microphone=(), geolocation=(), interest-cohort=()</code></pre>
+          <ul class="lp-list">
+            <li>
+              The MediaPipe WASM runtime and the <code>face_landmarker</code> model bundle
+              (<span class="tnum">3,758,596</span> bytes) are <strong>vendored same-origin and
+              committed</strong>. Nothing is fetched from a CDN, which is what makes the
+              DevTools proof honest rather than a stunt.
+            </li>
+            <li>
+              <code>'wasm-unsafe-eval'</code> is the only relaxation in the policy. It is
+              required by MediaPipe's WASM instantiation and named as such in
+              <code>METHODS.md</code>, never quietly widened to <code>'unsafe-eval'</code>.
+            </li>
+            <li>
+              The <code>Permissions-Policy</code> header denies the microphone outright. The
+              <code>AudioContext</code> is output-only — Gimbal makes sound, it never listens.
+            </li>
+            <li>
+              There is no server, no account, no database, no clinician portal, and no
+              “email my PT” button. Each of those would falsify the claim above. A share
+              link is an upload with better manners.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ── 04 ─────────────────────────────────────────────────────────── -->
+      <section class="lp-section" aria-labelledby="s-report">
+        <div class="lp-rail">
+          <span class="lp-num">04</span>
+          <span class="lp-rail-label">The artifact</span>
+        </div>
+        <div class="lp-body">
+          <h2 id="s-report">One letter page, which is the entire output.</h2>
+          <p>
+            Finish a session — or press <kbd>Esc</kbd>, which ends it instantly with no
+            confirmation and no penalty, because stopping on symptom provocation is the
+            clinically correct behaviour — and you get the page a physical therapist
+            actually receives.
+          </p>
+
+          <figure class="lp-figure">
+            <div id="report-figure" class="lp-report-figure">
+              <noscript>
+                <p class="lp-figure-fallback">
+                  The wireframe needs JavaScript. Top to bottom the page carries: a header, a
+                  delivered-versus-prescribed bar per block, a six-row refusal histogram, the
+                  gaze tally with chance printed beside it, the symptom entries, a “Why?”
+                  disclosure on every criterion, and the limitations at body size.
+                </p>
+              </noscript>
+            </div>
+            <figcaption>
+              Layout of the printed page. Every number on a real report comes from the
+              session that produced it; this diagram shows only where each one sits.
+            </figcaption>
+          </figure>
+
+          <ul class="lp-list">
+            <li>Solid fill inside an outlined track, so the delivered-versus-prescribed bar survives a monochrome printer.</li>
+            <li><strong>chance = 25 %</strong> beside the gaze tally, because four response options means one answer in four is free.</li>
+            <li>The <strong>“Why?” disclosures are forced open by the print stylesheet</strong> — a citation behind a click is worth nothing on paper.</li>
+            <li>The limitations at <strong>body size</strong>, never as fine print, which is also why they are reproduced in full on this page.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ── 05 ─────────────────────────────────────────────────────────── -->
+      <section class="lp-section lp-section-limits" aria-labelledby="s-limits">
+        <div class="lp-rail">
+          <span class="lp-num">05</span>
+          <span class="lp-rail-label">The boundary</span>
+        </div>
+        <div class="lp-body">
+          <h2 id="s-limits">What this is not.</h2>
+          <p>
+            Verbatim, at body size, in the same words the printed report uses. This block is
+            byte-compared against <code>src/report/limitations.ts</code> by a check in
+            <code>npm test</code>, so the page and the artifact cannot drift apart.
+          </p>
+          <ul class="lp-limits">
+<!-- LIMITATIONS-BODY-START -->
+<li>Stage is self-reported. Gimbal measures head kinematics, not posture.</li>
+<li>Gimbal does not measure eye movement. It measures whether a Landolt C gap could be resolved during head motion.</li>
+<li>No visual-acuity (logMAR) score is reported, and none can be: the browser supplies neither viewing distance nor display pixel pitch.</li>
+<li>One exercise only — VORx1, yaw axis. It does not implement return-to-learn or return-to-sport protocols, and it does not attempt to encode the PedsConcussion Living Guideline for Pediatric Concussion.</li>
+<li>There is no age gate and no age-specific claim.</li>
+<li>Single device, single camera, one stated lighting condition. Sessions recorded on a different camera, browser or resolution are stored but never plotted on the same trend line.</li>
+<li>Verified in desktop Chromium only — the end-to-end suite declares one browser project. The layout is responsive down to 360 px, but phone, tablet and other browsers are untested, and no support for them is claimed.</li>
+<li>Data lives in one browser profile. There is no cross-device history, no clinician-side view, and no upload path of any kind. Clear it with one button.</li>
+<li>Every parameter on this page was typed in by the patient from their clinician. Gimbal did not originate any of them.</li>
+<li>No concussion patient has used this, and no clinician has reviewed it. It has been run by the person who built it, on one machine, and by nobody else. Nothing here has been validated against an independent sensor or against any clinical outcome.</li>
+<li>This is not a diagnosis and not a clearance. It supplements your clinician; it does not replace them.</li>
+<!-- LIMITATIONS-BODY-END -->
+          </ul>
+
+          <div class="honesty-box">
+            <h3 class="lp-honesty-h">What has not been measured yet</h3>
+            <p>
+              <strong>No bench-agreement figure appears anywhere in this project, because
+              none has been recorded.</strong> The intended validation is a phone gyroscope
+              logged rigidly at the temple while the webcam runs Gimbal, the two traces
+              aligned by cross-correlation and compared per cycle. The tolerance for that
+              comparison is already committed, and it was chosen so that deleting the
+              central-difference bias correction makes it fail.
+            </p>
+            <p>
+              Two instrument thresholds — <code>qFloor</code> and
+              <code>deadbandFraction</code> — are likewise provisional.
+              <code>PROVISIONAL_FROM_SPIKE</code> in <code>src/dsp/limits.ts</code> names
+              exactly which ones, and the report says so on its face rather than presenting
+              a guess as a calibrated threshold.
+            </p>
+            <p class="lp-honesty-close">
+              Until that recording exists, the honest statement is that it does not exist.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 06 ─────────────────────────────────────────────────────────── -->
+      <section class="lp-section" aria-labelledby="s-eng">
+        <div class="lp-rail">
+          <span class="lp-num">06</span>
+          <span class="lp-rail-label">The engineering</span>
+        </div>
+        <div class="lp-body">
+          <h2 id="s-eng">Small enough to audit in an afternoon.</h2>
+          <dl class="lp-stats">
+            <div class="lp-stat">
+              <dt>Automated tests</dt>
+              <dd class="tnum">88</dd>
+              <p>plus 8 mechanical source checks, all inside <code>npm test</code></p>
+            </div>
+            <div class="lp-stat">
+              <dt>Runtime dependencies</dt>
+              <dd class="tnum">1</dd>
+              <p><code>@mediapipe/tasks-vision</code> — and 4 dev, greppable in <code>package.json</code></p>
+            </div>
+            <div class="lp-stat">
+              <dt>Known vulnerabilities</dt>
+              <dd class="tnum">0</dd>
+              <p>reported by <code>npm audit</code></p>
+            </div>
+            <div class="lp-stat">
+              <dt>Backend services</dt>
+              <dd class="tnum">0</dd>
+              <p>no server, no account, no database, no upload path</p>
+            </div>
+          </dl>
+
+          <pre class="lp-code"><code>npm ci
+npm test            # unit tests + the source checks
+npm run check:build # builds the bundle, then greps it</code></pre>
+
+          <p>
+            <strong>No flags.</strong> No environment variables, no keys, no account, no
+            seeded state, no <code>--dry-run</code>. The judged capability executes for real
+            on the default path or it does not execute at all, and a check in
+            <code>npm test</code> fails the build if one of those tokens ever appears in
+            <code>README.md</code> or <code>DEMO.md</code>.
+          </p>
+
+          <ul class="lp-list">
+            <li>
+              A hand-written 256-point Hann FFT, tested against
+              <code>sin(2π·2·t)</code> at 30 fps with a bin width of exactly
+              <span class="tnum">30/256 = 0.1172 Hz</span> — and it returns
+              <em>no peak</em>, not <code>NaN</code>, for an all-zero input.
+            </li>
+            <li>
+              A 3-point central difference under-reports peak velocity by exactly
+              <span class="tnum">2.90 %</span> at 2 Hz / 30 fps; the published correction is
+              <span class="tnum">×1.0299</span>, and a test asserts it is applied
+              <strong>once, not twice</strong>.
+            </li>
+            <li>
+              A test greps the scoring module and <strong>fails if any numeral other than
+              <span class="tnum">0</span> and <span class="tnum">1000</span> appears in
+              it</strong> — which is how “every clinical threshold comes from the card” is
+              checked rather than believed.
+            </li>
+            <li>
+              <strong>No LLM anywhere</strong>, including “just for the report summary”. The
+              output is a count, and a count has no use for a generative model — while one
+              call would import the entire hallucination surface into a build judged on
+              safety.
+            </li>
+            <li>
+              <strong>No framework.</strong> Vite and vanilla TypeScript. The only code path
+              being judged is a 30 Hz measurement loop, and a virtual-DOM diff inside it is
+              pure downside.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ── 07 ─────────────────────────────────────────────────────────── -->
+      <section class="lp-section" aria-labelledby="s-faq">
+        <div class="lp-rail">
+          <span class="lp-num">07</span>
+          <span class="lp-rail-label">Straight answers</span>
+        </div>
+        <div class="lp-body">
+          <h2 id="s-faq">Questions this gets asked.</h2>
+          <div class="lp-faq">
+            <details>
+              <summary>Do I need a clinician to use this?</summary>
+              <div class="disclosure-body">
+                Yes. Gimbal is for people whose clinician prescribed gaze-stabilization
+                exercises. The first screen is a gate you have to tick, and the eight
+                parameter fields ship <strong>empty</strong> — no defaults, no presets, no
+                “suggest typical values” button. Anything else would be prescription
+                origination, which is the single behaviour a safety criterion in this
+                domain treats as disqualifying.
+              </div>
+            </details>
+            <details>
+              <summary>Then what is the example prescription on this page?</summary>
+              <div class="disclosure-body">
+                An evaluation convenience, and it says so on screen. Opening
+                <code>/app?demo</code> fills the eight fields from a set of numbers
+                published for evaluation, shows a persistent banner labelling them as an
+                example, and stamps <code>EXAMPLE</code> beside every value. It does
+                <strong>not</strong> tick the clinician gate for you, and the values print
+                on the report labelled as an example rather than as clinician-sourced.
+                <code>/app</code> with no query string is the real entry path and is still
+                completely empty.
+              </div>
+            </details>
+            <details>
+              <summary>Does it track my eyes?</summary>
+              <div class="disclosure-body">
+                No, and that absence is deliberate. Webcam iris tracking during 250 °/s head
+                motion is not a solved problem on commodity hardware, and any error in it is
+                confounded with the rotation being measured. Instead a Landolt C
+                re-randomises every 2.5–5.0 s and you answer its gap orientation with an
+                arrow key <em>during</em> the motion: a forced-choice task that demonstrates
+                functional gaze without claiming to measure it.
+              </div>
+            </details>
+            <details>
+              <summary>Where does my data go?</summary>
+              <div class="disclosure-body">
+                Nowhere. Video is processed in the tab and discarded frame by frame; no
+                frames are stored. Session history lives in one browser profile's
+                <code>localStorage</code> and is cleared with one button. There is no
+                cross-device history and no upload path of any kind — see section 03 for
+                how to verify that yourself in fifteen seconds.
+              </div>
+            </details>
+            <details>
+              <summary>Is any of this clinically validated?</summary>
+              <div class="disclosure-body">
+                No, and nothing on this page says otherwise. No accuracy figure, no
+                correlation, no agreement statistic, and no user, patient or adoption
+                number appears anywhere in this project, because none has been measured.
+                Section 05 states exactly which recording would produce the first one.
+              </div>
+            </details>
+            <details>
+              <summary>What does it need to run?</summary>
+              <div class="disclosure-body">
+                A browser with a webcam, on a machine fast enough to hold the frame rate the
+                <em>prescription</em> requires — the sampling floor is derived from the upper
+                edge of your card's frequency band, never from whatever your hardware happens
+                to manage. A ten-second light-and-frame-rate check runs before the first
+                block and names the reason if your machine does not clear it.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Final CTA ──────────────────────────────────────────────────── -->
+      <section class="lp-final" aria-labelledby="s-final">
+        <h2 id="s-final">Thirty seconds is enough.</h2>
+        <p>
+          Open it, turn your head gently, and watch the ledger acquire a hole with your
+          name on the reason. Then speed up into the band, and watch nothing at all happen.
+        </p>
+        <div class="lp-cta-row">
+          <a class="lp-cta lp-cta-primary" href="/app?demo">
+            Open it with an example prescription
+            <span class="lp-cta-sub">eight fields pre-filled and labelled</span>
+          </a>
+          <a class="lp-cta lp-cta-secondary" href="/app">
+            Start with a blank card
+            <span class="lp-cta-sub">type your clinician's eight numbers</span>
+          </a>
+        </div>
+        <p class="lp-final-note">
+          Not a diagnostic device. It supplements your clinician; it does not replace them.
+        </p>
+      </section>
     </main>
 
-    <!--
-      TWO live regions, and no more.
-      Polite: zone state, refusals (coalesced), screen changes, setup verdicts.
-      Assertive: EXACTLY two events — the end-session stop-rule outcome, and
-      sustained tracking loss.
-    -->
-    <div id="live-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
-    <div id="live-alert" class="visually-hidden" role="alert" aria-live="assertive" aria-atomic="true"></div>
+    <footer class="lp-foot">
+      <div class="lp-foot-grid">
+        <div>
+          <p class="lp-foot-brand"><span class="wordmark">Gimbal</span></p>
+          <p>A dose meter for prescribed gaze-stabilization exercise. VORx1, yaw axis, one browser tab.</p>
+        </div>
+        <!--
+          THE REPOSITORY IS PRIVATE UNTIL SUBMISSION, and a link that 404s
+          without saying why reads as a broken project rather than as a closed
+          door. Every link into it is grouped under one heading that states the
+          fact once, and each carries `rel="nofollow"` so a crawler does not
+          record five dead ends either.
+        -->
+        <nav aria-label="Project documents">
+          <p class="lp-foot-h">Read the build</p>
+          <p class="lp-foot-note">
+            The repository is private until the submission deadline
+            (<span class="tnum">4 September 2026</span>); these open then.
+          </p>
+          <ul>
+            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal#readme">README — the whole argument</a></li>
+            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal/blob/main/METHODS.md">METHODS — the derivations</a></li>
+            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal/blob/main/LIMITATIONS.md">LIMITATIONS — in full</a></li>
+            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal/blob/main/DEMO.md">DEMO — what to watch for</a></li>
+            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal">Source on GitHub</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Application">
+          <p class="lp-foot-h">Open it</p>
+          <p class="lp-foot-note">Live now. No account, no key, no flags.</p>
+          <ul>
+            <li><a href="/app?demo">With an example prescription</a></li>
+            <li><a href="/app">With a blank card</a></li>
+            <li><a href="/fonts/Inter-OFL.txt">Typeface licence (SIL OFL 1.1)</a></li>
+          </ul>
+        </nav>
+      </div>
+      <p class="lp-foot-legal">
+        MIT licensed. Third-party attribution in <code>NOTICE.md</code>.
+        No data is collected by this site, so there is nothing to have a policy about.
+      </p>
+    </footer>
 
-    <!-- One <video>, shared by the setup framing preview and the block presence tile. -->
-    <video id="camera" playsinline muted hidden></video>
-
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/landing/main.ts"></script>
   </body>
 </html>
