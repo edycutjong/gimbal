@@ -7,3 +7,5 @@ playwright-report/
 fixtures/
 dist/
 .git/
+.github/
+docs/

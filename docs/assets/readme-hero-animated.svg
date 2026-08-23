@@ -1,0 +1,290 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320"
+     role="img"
+     aria-label="Gimbal — the amber arc stalls short of the green band; the marker commits slate and the dose numeral holds.">
+
+<!-- NAMING NOTE. XML forbids a double hyphen inside a comment, so every custom property
+     named in the prose below appears WITHOUT its leading dashes: `zone-in` here means the
+     token spelled with two dashes in the markup. Attribute values are unaffected. This is
+     not pedantry — a double hyphen in a comment makes the whole file fail XML parsing,
+     which is exactly how an SVG that renders fine in a browser breaks in a strict
+     consumer. qa-frames.cjs parses all three SVGs with DOMParser for this reason. -->
+
+<!-- STORYBOARD (dur 8s — this file's single master dur)
+  0-10%    steady state: the plate, the mark, the outlined wordmark, the tagline, the evidence
+                         rail and the tech line; the dial with its prescribed band lit and the
+                         committed marker already slate at half speed; the ledger of hatched
+                         holes; the status line naming the reason; the dose numeral at 0.000.
+                         THIS FRAME IS THE STATIC HERO. Every element above is opacity 1 in
+                         markup, so a paused context, an RSS reader or GitHub's camo proxy
+                         showing frame 0 as a still shows a complete banner.
+  10-25%   trigger:      a new rep starts. The amber live arc leaves 0 degrees per second at
+                         the seven-o'clock end of the sweep and grows clockwise across bare
+                         track.                                              data-story="beat-2"
+  25-55%   mechanism:    The amber arc stalls short of the green band; the marker commits slate
+                         and the dose numeral holds.                         data-story="beat-3"
+  55-80%   resolution:   the arc retracts to zero. The marker and the unreached band both hold,
+                         and the 47.5 degrees of bare track between them is all that is left on
+                         screen. A new hatched hole arrives in the ledger. The numeral has not
+                         moved.                                              data-story="beat-4"
+  80-100%  breathe and seam fade: the new hole fades out by 95.5% so the restart never cuts.
+
+  THE 3-SECOND WINDOW. The held state is on screen for 100% of the loop, not 40%, because the
+  committed marker and the unreached band are part of the poster. A reader who arrives at any
+  moment sees a marker that did not reach the band. The loop shows them the rep that put it
+  there.
+
+  MOTION BUDGET, DELIBERATELY THE SMALLEST IN THE SUITE. No beam sweep, no glow breath, no
+  pulsing badge, no comet head. This is a concussion product and its own thesis is that being
+  in the band is uneventful; a hero that celebrates would be arguing against the software it
+  advertises. What moves is exactly the mechanism: one arc, one hole.
+-->
+
+<title>Gimbal — the amber arc stalls short of the green band; the marker commits slate and the dose numeral holds.</title>
+
+<defs>
+  <!-- The only blur in this file. One feGaussianBlur, referenced twice, well inside the
+       three-filter budget, and its region is bounded. -->
+  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="52" />
+  </filter>
+
+  <pattern id="hole" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#98a2b0" stroke-width="1.8" />
+  </pattern>
+
+  <pattern id="graticule" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#5e7186" stroke-width="1" opacity="0.09" />
+  </pattern>
+
+  <clipPath id="plateClip">
+    <rect x="0" y="0" width="1280" height="320" rx="16" />
+  </clipPath>
+</defs>
+
+<style>
+  /* Tokens, local to this file. It renders inside an img element on GitHub, fully
+     isolated from any page stylesheet, so the values are literal. They are the
+     Dark-palette values from build/src/styles/themes.css, unchanged. */
+  svg {
+    --surface-0: #0b0e12;
+    --surface-1: #141922;
+    --edge: #2a3542;
+    --edge-strong: #5e7186;
+    --ink-1: #e6edf3;
+    --ink-2: #a8b4c0;
+    --ink-3: #7c8895;
+    --zone-in: #5bd6ae;
+    --zone-out: #d9a63c;
+    --refused: #98a2b0;
+  }
+
+  /* System stacks only. The wordmark and the dose numeral are outlined vector
+     paths a few lines below; everything else here is a small label, which hard
+     rule 3 permits to use the platform's own faces. The measured values are set
+     in monospace because that is what the product does with measured values. */
+  .ui   { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  .aurora-a { animation: drift-a 15s ease-in-out infinite alternate; }
+  .aurora-b { animation: drift-b 19s ease-in-out infinite alternate; }
+  @keyframes drift-a { from { transform: translate(0, 0); } to { transform: translate(46px, -22px); } }
+  @keyframes drift-b { from { transform: translate(0, 0); } to { transform: translate(-38px, 18px); } }
+
+  /* The status line's left rule THICKENS at the commit instant — it never thins and
+     never disappears. The first cut of this file wiped it in from scaleY(0.18), which
+     meant frame 0 — the poster, the frame GitHub's camo proxy can serve as a still —
+     showed a 13 px stub of a 74 px rule and read as a rendering fault. A beat may add
+     to the poster; it may not subtract from it. Base state is scaleX(1), so
+     `animation: none` under reduced motion leaves the rule exactly as authored. */
+  .rule { transform-box: fill-box; transform-origin: 0% 50%; animation: rule-swell 8s linear infinite; }
+  @keyframes rule-swell {
+    0%, 26% { transform: scaleX(1); }
+    30%, 38% { transform: scaleX(2.6); }
+    48%, 100% { transform: scaleX(1); }
+  }
+
+  /* REDUCED MOTION IS A CORRECTNESS REQUIREMENT HERE, NOT A COURTESY.
+     Vestibular patients get symptomatic from motion, and this banner advertises
+     a product for exactly those patients. CSS `animation: none` alone would not
+     be enough — SMIL ignores it and would keep the arc sweeping — so the whole
+     story layer is also removed from the render tree. What is left is the poster,
+     which is the complete static hero: the marker committed short of the band,
+     the ledger of holes, the numeral at 0.000, the reason in words. Nothing is
+     lost by stilling it, because the residue was always the message. */
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+    .motion { display: none !important; }
+  }
+</style>
+
+<g clip-path="url(#plateClip)">
+  <!-- ── BRAND LAYER. Everything below is opacity 1 in markup: this is the poster. ── -->
+  <rect x="0" y="0" width="1280" height="320" fill="var(--surface-0)" />
+
+  <!-- ambient depth, drawn in the decorative-rule token: it costs the luminance
+       budget nothing, because edge sits at 3.4% relative luminance. There is no
+       glow in this file and no beam sweep. A moving band of light across the field
+       is the single most common photophobia trigger in this vocabulary. -->
+  <g filter="url(#soft)" opacity="0.75">
+    <circle class="aurora-a" cx="250" cy="60" r="150" fill="var(--edge)" />
+    <circle class="aurora-b" cx="1010" cy="290" r="170" fill="var(--edge)" />
+  </g>
+
+  <rect x="0" y="0" width="1280" height="320" fill="url(#graticule)" />
+
+  <!-- ── left: the brand ─────────────────────────────────────────────────────── -->
+  <g transform="translate(0,14)">
+    <!-- the mark: the same three shapes as icon.svg, at the same angles -->
+    <g transform="translate(35.21,26.63) scale(1.51)">
+      <path d="M 18.565 47.435 A 19 19 0 1 1 45.435 47.435" fill="none" stroke="var(--edge)" stroke-width="5" />
+      <path d="M 25.502 16.146 A 19 19 0 0 1 38.498 16.146" fill="none" stroke="var(--zone-in)" stroke-width="7" />
+      <path d="M 22.207 29.944 L 9.273 24.586" stroke="var(--refused)" stroke-width="4.2" />
+    </g>
+
+    <!-- THE WORDMARK IS OUTLINED VECTOR PATHS, cut from the very file the product
+         vendors at build/public/fonts/InterVariable.woff2, instanced at wght 700 and
+         opsz 32. Not a text element: a webfont text node renders as Times inside
+         GitHub's img sandbox, and a lookalike from a CDN would make the banner and
+         the app two different brands. 59.1 units tall, which is ≥56 and therefore
+         still legible at GitHub's ~350 px mobile width. -->
+    <g transform="translate(133.54,103)" fill="var(--ink-1)">
+      <path d="M30.16 0.94Q21.91 0.94 15.68 -2.81Q9.45 -6.56 5.96 -13.32Q2.46 -20.08 2.46 -29.06Q2.46 -38.36 6.05 -45.12Q9.65 -51.88 15.90 -55.51Q22.15 -59.14 29.96 -59.14Q34.96 -59.14 39.38 -57.68Q43.79 -56.21 47.21 -53.50Q50.62 -50.78 52.81 -47.03Q55.00 -43.28 55.55 -38.71H43.36Q42.89 -40.94 41.78 -42.75Q40.66 -44.57 38.96 -45.86Q37.27 -47.15 35.10 -47.83Q32.93 -48.52 30.31 -48.52Q25.43 -48.52 21.89 -46.15Q18.36 -43.79 16.46 -39.43Q14.57 -35.08 14.57 -29.06Q14.57 -23.09 16.48 -18.75Q18.40 -14.41 21.95 -12.05Q25.51 -9.69 30.47 -9.69Q34.53 -9.69 37.62 -11.23Q40.70 -12.77 42.44 -15.55Q44.18 -18.32 44.18 -22.03L47.03 -21.80H31.48V-30.94H55.94V-23.52Q55.94 -16.29 52.64 -10.78Q49.34 -5.27 43.52 -2.17Q37.70 0.94 30.16 0.94Z M62.93 0.00V-41.25H74.45V0.00ZM68.67 -46.45Q65.82 -46.45 63.95 -48.18Q62.07 -49.92 62.07 -52.58Q62.07 -55.23 63.95 -56.97Q65.82 -58.71 68.63 -58.71Q71.48 -58.71 73.36 -56.97Q75.23 -55.23 75.23 -52.58Q75.23 -49.92 73.36 -48.18Q71.48 -46.45 68.67 -46.45Z M82.58 0.00V-41.25H93.67V-31.95H92.97Q94.06 -35.39 96.05 -37.64Q98.05 -39.88 100.66 -41.00Q103.28 -42.11 106.17 -42.11Q110.90 -42.11 114.38 -39.39Q117.85 -36.68 118.59 -31.95H117.38Q118.16 -35.12 120.16 -37.38Q122.15 -39.65 125.02 -40.88Q127.89 -42.11 131.25 -42.11Q135.23 -42.11 138.38 -40.39Q141.52 -38.67 143.32 -35.37Q145.12 -32.07 145.12 -27.34V0.00H133.63V-25.23Q133.63 -28.95 131.62 -30.78Q129.61 -32.62 126.64 -32.62Q124.45 -32.62 122.81 -31.64Q121.17 -30.66 120.29 -28.93Q119.41 -27.19 119.41 -24.84V0.00H108.32V-25.55Q108.32 -28.75 106.41 -30.68Q104.49 -32.62 101.45 -32.62Q99.41 -32.62 97.75 -31.66Q96.09 -30.70 95.10 -28.85Q94.10 -26.99 94.10 -24.34V0.00Z M176.91 0.86Q174.22 0.86 171.88 0.08Q169.53 -0.70 167.70 -2.32Q165.86 -3.95 164.69 -6.33H164.65V0.00H153.28V-58.20H164.80V-35.55H164.84Q166.17 -37.77 167.97 -39.22Q169.77 -40.66 172.05 -41.39Q174.34 -42.11 176.99 -42.11Q182.27 -42.11 186.27 -39.39Q190.27 -36.68 192.52 -31.86Q194.77 -27.03 194.77 -20.66Q194.77 -14.22 192.54 -9.38Q190.31 -4.53 186.33 -1.84Q182.34 0.86 176.91 0.86ZM173.95 -8.52Q176.76 -8.52 178.81 -9.94Q180.86 -11.37 182.01 -14.08Q183.16 -16.80 183.16 -20.66Q183.16 -24.53 182.01 -27.25Q180.86 -29.96 178.81 -31.39Q176.76 -32.81 173.95 -32.81Q171.05 -32.81 168.85 -31.31Q166.64 -29.80 165.45 -27.09Q164.26 -24.38 164.26 -20.66Q164.26 -16.99 165.45 -14.26Q166.64 -11.52 168.85 -10.02Q171.05 -8.52 173.95 -8.52Z M213.71 0.70Q209.61 0.70 206.41 -0.66Q203.20 -2.03 201.37 -4.79Q199.53 -7.54 199.53 -11.64Q199.53 -15.12 200.82 -17.44Q202.11 -19.77 204.36 -21.19Q206.60 -22.62 209.51 -23.36Q212.42 -24.10 215.62 -24.38Q219.41 -24.77 221.64 -25.12Q223.87 -25.47 224.84 -26.13Q225.82 -26.80 225.82 -28.12V-28.40Q225.82 -29.92 225.00 -31.07Q224.18 -32.23 222.68 -32.89Q221.17 -33.55 219.06 -33.55Q216.95 -33.55 215.33 -32.89Q213.71 -32.23 212.77 -31.02Q211.84 -29.80 211.68 -28.20H200.86Q201.13 -32.46 203.38 -35.59Q205.62 -38.71 209.69 -40.41Q213.75 -42.11 219.41 -42.11Q223.63 -42.11 226.95 -41.15Q230.27 -40.20 232.56 -38.36Q234.84 -36.52 236.02 -33.91Q237.19 -31.29 237.19 -27.97V0.00H225.94V-5.82H225.78Q224.69 -3.79 223.09 -2.34Q221.48 -0.90 219.18 -0.10Q216.88 0.70 213.71 0.70ZM216.91 -7.30Q219.69 -7.30 221.70 -8.32Q223.71 -9.34 224.80 -11.09Q225.90 -12.85 225.90 -15.08V-19.22Q225.39 -18.95 224.57 -18.69Q223.75 -18.44 222.66 -18.22Q221.56 -18.01 220.27 -17.77Q218.98 -17.54 217.62 -17.34Q215.62 -17.03 214.02 -16.39Q212.42 -15.74 211.48 -14.67Q210.55 -13.59 210.55 -11.95Q210.55 -10.51 211.33 -9.45Q212.11 -8.40 213.55 -7.85Q215.00 -7.30 216.91 -7.30Z M256.84 -58.20V0.00H245.31V-58.20Z" />
+    </g>
+
+    <!-- Broken after "prescribed", not after "for". A line ending on a preposition
+         reads as a wrap rather than as a decision. -->
+    <text class="ui" x="48" y="140" font-size="21" fill="var(--ink-2)">A webcam dose meter for prescribed</text>
+    <text class="ui" x="48" y="167" font-size="21" fill="var(--ink-2)">vestibular rehab.</text>
+
+    <!-- the evidence rail, the same three numbers the shipped landing page prints -->
+    <text class="mono" x="48" y="214" font-size="22" fill="var(--ink-3)">
+      <tspan fill="var(--ink-1)">0</tspan> requests · <tspan fill="var(--ink-1)">88</tspan> tests · <tspan fill="var(--ink-1)">1</tspan> dependency
+    </text>
+
+    <!-- Three names, spelled out. The first cut read "TypeScript · MediaPipe · WASM ·
+         Web Audio", which fits 520 units only because WebAssembly is abbreviated — and
+         the static hero, the OG card and the Devpost thumbnail all spell it in full. One
+         banner abbreviating what its own siblings spell out is the kind of drift a judge
+         who opens two surfaces in one sitting actually notices. Dropping the fourth name
+         costs less than abbreviating the third. -->
+    <text class="mono" x="48" y="250" font-size="19" fill="var(--ink-3)">TypeScript · MediaPipe · WebAssembly</text>
+  </g>
+
+  <!-- ── right: the instrument ───────────────────────────────────────────────── -->
+  <g transform="translate(599.5,10) scale(0.72)">
+    <path d="M 72.218 227.782 A 110 110 0 1 1 227.782 227.782"
+          fill="none" stroke="var(--edge)" stroke-width="26" stroke-linecap="butt" />
+    <path d="M 112.378 46.634 A 110 110 0 0 1 187.622 46.634"
+          fill="none" stroke="var(--zone-in)" stroke-width="36" stroke-linecap="butt" />
+
+    <!-- STORY. The live arc: amber, because a rep below the floor is outside the band
+         for its entire sweep and setLive paints it zone-out the whole way. -->
+    <g class="motion">
+    <!-- ORDER MATTERS INSIDE THE PATH BELOW, and not for style. The poster audit in
+         qa-frames.cjs looks back 400 characters from any SMIL opacity animate whose
+         t=0 value is 0, hunting for the data-story tag that declares the element part
+         of the story rather than an accidentally-invisible brand element. Put the long
+         dashoffset animate — or a long comment — between the two and the tag falls out
+         of range and the lint fires. Opacity gate first, always, and no prose in the
+         gap.
+
+       A SECOND RULE FROM THE SAME PLACE: the opacity gate holds at 1 all the way
+       through the retract and fades only over the last four percent. Cross-fading
+       WHILE the arc shrinks made the final stub a muddy half-transparent brown
+       against the track, which read as a rendering artefact rather than as an arc
+       returning to zero. The head coming back down to 0 degrees per second is
+       physically what happens after a peak; it should look deliberate. -->
+      <path d="M 72.218 227.782 A 110 110 0 0 1 48.373 107.905"
+            data-story="beat-2" opacity="0"
+            fill="none" stroke="var(--zone-out)" stroke-width="26" stroke-linecap="butt"
+            pathLength="100" stroke-dasharray="100">
+        <animate attributeName="opacity" dur="8s" repeatCount="indefinite"
+                 keyTimes="0;0.045;0.10;0.30;0.55;0.74;0.78;1"
+                 values="0;0;1;1;1;1;0;0" />
+        <animate attributeName="stroke-dashoffset" dur="8s" repeatCount="indefinite"
+                 calcMode="spline"
+                 keyTimes="0;0.10;0.30;0.55;0.78;1"
+                 keySplines=".4 0 .6 1;.45 0 .3 1;0 0 1 1;.5 0 .6 1;0 0 1 1"
+                 values="100;100;0;0;100;100" />
+      </path>
+
+      <!-- the commit: a wider slate halo behind the marker, for three tenths of a
+           second. Geometry, not gain — C-1 forbids carrying this beat on brightness. -->
+      <path d="M 76.09 119.385 L 18.809 95.659"
+            data-story="beat-3" opacity="0"
+            stroke="var(--refused)" stroke-width="42" stroke-linecap="butt">
+        <animate attributeName="opacity" dur="8s" repeatCount="indefinite"
+                 keyTimes="0;0.27;0.31;0.44;1"
+                 values="0;0;0.28;0;0" />
+      </path>
+    </g>
+
+    <!-- the committed marker is BRAND, not story: it is the residue, it is what the
+         poster must show, and it holds for the whole loop -->
+    <path d="M 76.09 119.385 L 18.809 95.659"
+          stroke="var(--refused)" stroke-width="22" stroke-linecap="butt" />
+  </g>
+
+  <!-- the readout. THE NUMERAL IS OUTLINED TOO, from the same font file, because a
+       dose readout that renders in a different face than the wordmark is two brands
+       on one banner. -->
+  <text class="mono" x="812" y="58" font-size="20" fill="var(--ink-3)" letter-spacing="0.8">Delivered dose</text>
+  <g transform="translate(810.09,128)" fill="var(--ink-1)">
+    <path d="M20.16 0.73Q14.50 0.73 10.41 -2.10Q6.33 -4.93 4.12 -10.14Q1.91 -15.35 1.91 -22.52Q1.91 -29.73 4.10 -34.94Q6.30 -40.14 10.38 -42.99Q14.47 -45.83 20.16 -45.83Q25.82 -45.83 29.93 -43.00Q34.03 -40.17 36.22 -34.95Q38.42 -29.73 38.42 -22.52Q38.42 -15.35 36.22 -10.14Q34.03 -4.93 29.93 -2.10Q25.82 0.73 20.16 0.73ZM20.16 -6.72Q23.10 -6.72 25.22 -8.63Q27.34 -10.54 28.49 -14.08Q29.64 -17.62 29.64 -22.52Q29.64 -27.46 28.49 -31.00Q27.34 -34.54 25.22 -36.46Q23.10 -38.39 20.16 -38.39Q17.23 -38.39 15.09 -36.46Q12.96 -34.54 11.82 -31.00Q10.69 -27.46 10.69 -22.52Q10.69 -17.62 11.82 -14.08Q12.96 -10.54 15.09 -8.63Q17.23 -6.72 20.16 -6.72Z M47.89 0.54Q45.77 0.54 44.27 -0.95Q42.78 -2.45 42.78 -4.60Q42.78 -6.75 44.27 -8.25Q45.77 -9.75 47.89 -9.75Q50.04 -9.75 51.54 -8.25Q53.04 -6.75 53.04 -4.60Q53.04 -2.45 51.54 -0.95Q50.04 0.54 47.89 0.54Z M75.65 0.73Q69.99 0.73 65.91 -2.10Q61.82 -4.93 59.61 -10.14Q57.40 -15.35 57.40 -22.52Q57.40 -29.73 59.59 -34.94Q61.79 -40.14 65.88 -42.99Q69.96 -45.83 75.65 -45.83Q81.31 -45.83 85.42 -43.00Q89.52 -40.17 91.71 -34.95Q93.91 -29.73 93.91 -22.52Q93.91 -15.35 91.71 -10.14Q89.52 -4.93 85.42 -2.10Q81.31 0.73 75.65 0.73ZM75.65 -6.72Q78.59 -6.72 80.71 -8.63Q82.83 -10.54 83.98 -14.08Q85.13 -17.62 85.13 -22.52Q85.13 -27.46 83.98 -31.00Q82.83 -34.54 80.71 -36.46Q78.59 -38.39 75.65 -38.39Q72.72 -38.39 70.58 -36.46Q68.45 -34.54 67.31 -31.00Q66.18 -27.46 66.18 -22.52Q66.18 -17.62 67.31 -14.08Q68.45 -10.54 70.58 -8.63Q72.72 -6.72 75.65 -6.72Z M115.98 0.73Q110.32 0.73 106.23 -2.10Q102.14 -4.93 99.93 -10.14Q97.72 -15.35 97.72 -22.52Q97.72 -29.73 99.92 -34.94Q102.11 -40.14 106.20 -42.99Q110.29 -45.83 115.98 -45.83Q121.64 -45.83 125.74 -43.00Q129.84 -40.17 132.04 -34.95Q134.23 -29.73 134.23 -22.52Q134.23 -15.35 132.04 -10.14Q129.84 -4.93 125.74 -2.10Q121.64 0.73 115.98 0.73ZM115.98 -6.72Q118.91 -6.72 121.03 -8.63Q123.15 -10.54 124.30 -14.08Q125.45 -17.62 125.45 -22.52Q125.45 -27.46 124.30 -31.00Q123.15 -34.54 121.03 -36.46Q118.91 -38.39 115.98 -38.39Q113.04 -38.39 110.91 -36.46Q108.77 -34.54 107.64 -31.00Q106.50 -27.46 106.50 -22.52Q106.50 -17.62 107.64 -14.08Q108.77 -10.54 110.91 -8.63Q113.04 -6.72 115.98 -6.72Z M156.30 0.73Q150.64 0.73 146.55 -2.10Q142.47 -4.93 140.26 -10.14Q138.05 -15.35 138.05 -22.52Q138.05 -29.73 140.24 -34.94Q142.44 -40.14 146.52 -42.99Q150.61 -45.83 156.30 -45.83Q161.96 -45.83 166.06 -43.00Q170.17 -40.17 172.36 -34.95Q174.56 -29.73 174.56 -22.52Q174.56 -15.35 172.36 -10.14Q170.17 -4.93 166.06 -2.10Q161.96 0.73 156.30 0.73ZM156.30 -6.72Q159.24 -6.72 161.36 -8.63Q163.48 -10.54 164.63 -14.08Q165.78 -17.62 165.78 -22.52Q165.78 -27.46 164.63 -31.00Q163.48 -34.54 161.36 -36.46Q159.24 -38.39 156.30 -38.39Q153.37 -38.39 151.23 -36.46Q149.10 -34.54 147.96 -31.00Q146.83 -27.46 146.83 -22.52Q146.83 -17.62 147.96 -14.08Q149.10 -10.54 151.23 -8.63Q153.37 -6.72 156.30 -6.72Z" />
+  </g>
+  <g transform="translate(995.21,128)" fill="var(--ink-2)">
+    <path d="M7.95 0.38Q5.95 0.38 4.38 -0.24Q2.81 -0.86 1.88 -2.04Q0.94 -3.21 0.79 -4.86H5.04Q5.16 -3.85 5.89 -3.28Q6.62 -2.71 7.88 -2.71Q9.08 -2.71 9.77 -3.16Q10.46 -3.62 10.46 -4.34Q10.46 -4.95 9.93 -5.33Q9.40 -5.71 8.45 -5.89L5.74 -6.42Q3.49 -6.86 2.31 -8.00Q1.14 -9.14 1.14 -10.93Q1.14 -12.39 1.94 -13.49Q2.74 -14.59 4.21 -15.19Q5.68 -15.79 7.71 -15.79Q9.71 -15.79 11.21 -15.15Q12.70 -14.52 13.54 -13.35Q14.38 -12.19 14.43 -10.56H10.43Q10.42 -11.50 9.70 -12.11Q8.98 -12.73 7.82 -12.73Q6.71 -12.73 6.08 -12.25Q5.45 -11.78 5.45 -11.09Q5.45 -10.49 5.95 -10.11Q6.45 -9.73 7.32 -9.54L10.25 -8.96Q12.60 -8.51 13.70 -7.48Q14.81 -6.45 14.81 -4.73Q14.81 -3.19 13.94 -2.04Q13.07 -0.89 11.52 -0.26Q9.98 0.38 7.95 0.38Z" />
+  </g>
+  <text class="ui" x="812" y="158" font-size="19" fill="var(--ink-2)">what a lazy rep earns</text>
+
+  <!-- ── the ledger ──────────────────────────────────────────────────────────── -->
+  <g>
+    <rect x="610" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="645" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="680" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="715" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="750" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="785" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="820" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="855" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="890" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="925" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="960" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="995" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="1030" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="1065" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="1100" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="1135" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+    <rect x="1170" y="196" width="26" height="18" fill="url(#hole)" stroke="var(--refused)" stroke-width="1" />
+
+    <!-- STORY: the newest hole. Every other cell here is a hole too, and that is not
+         a stylistic choice — the numeral above reads 0.000 s, so one filled cell
+         would make this banner contradict itself. -->
+    <g class="motion">
+      <rect x="1205" y="196" width="26" height="18" data-story="beat-4" opacity="0"
+            fill="url(#hole)" stroke="var(--refused)" stroke-width="1">
+        <animate attributeName="opacity" dur="8s" repeatCount="indefinite"
+                 keyTimes="0;0.55;0.62;0.90;0.955;1"
+                 values="0;0;1;1;0;0" />
+      </rect>
+    </g>
+  </g>
+
+  <!-- ── the reason, in words ────────────────────────────────────────────────── -->
+  <rect x="610" y="224" width="622" height="74" rx="6" fill="var(--surface-1)" />
+  <rect class="rule" x="610" y="224" width="4" height="74" fill="var(--refused)" />
+  <text class="mono" x="634" y="254" font-size="20" fill="var(--ink-1)">Rep not counted — too slow</text>
+  <!-- The parenthetical drops to ink-2. It is a support line, not the verdict, and the
+       first measured C-2 pass put this file at 3.02% of pixel area above 70% relative
+       luminance against a cap of 3. The fix is the design, never the cap: a budget moved
+       to fit the art is a fabricated pass. ink-2 still clears AAA on surface-1 at 8.35:1. -->
+  <text class="mono" x="634" y="280" font-size="20" fill="var(--ink-2)">(below <tspan fill="var(--zone-out)">150 °/s</tspan>; measured <tspan fill="var(--zone-out)">91 °/s</tspan>).</text>
+
+  <!-- The illustration stamp, in the same discipline the shipped landing page uses:
+       the 150 and the 91 below are a scripted trace, not a session that happened, and
+       every surface in this suite that prints them also prints this word. Top-right
+       corner, where a document stamp goes — it sat mid-canvas in the first cut and read
+       as an orphaned caption belonging to the readout. -->
+  <text class="mono" x="1232" y="46" font-size="19" fill="var(--ink-3)" text-anchor="end" letter-spacing="1.4">ILLUSTRATION</text>
+</g>
+</svg>

@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"
+     role="img"
+     aria-label="Gimbal — the amber arc stalls short of the green band; the marker commits slate and the dose numeral holds.">
+
+<!-- NAMING NOTE. XML forbids a double hyphen inside a comment, so every custom property
+     named in the prose below appears WITHOUT its leading dashes: `zone-in` here means the
+     token spelled with two dashes in the markup. Attribute values are unaffected. This is
+     not pedantry — a double hyphen in a comment makes the whole file fail XML parsing,
+     which is exactly how an SVG that renders fine in a browser breaks in a strict
+     consumer. qa-frames.cjs parses all three SVGs with DOMParser for this reason. -->
+
+<!-- STORYBOARD (dur 6s — this file's single master dur)
+  0-10%    steady state: the plate, the 270 degree track, the prescribed band lit green at
+                         twelve o'clock, and the committed marker already slate at half speed.
+                         THIS FRAME IS icon.svg, EXACTLY. Every element is opacity 1 in markup,
+                         so a paused context or a still of frame 0 is the finished mark.
+  10-25%   trigger:      a rep begins. The amber live arc leaves 0 degrees per second at the
+                         lower-left end of the sweep and grows clockwise.   data-story="beat-2"
+  25-55%   mechanism:    The amber arc stalls short of the green band; the marker commits slate
+                         and the dose numeral holds.                        data-story="beat-3"
+                         (No numeral is drawn here — this file carries no text at all — but the
+                         sentence is the contract, and what it names as the after-state is what
+                         holds on screen: slate, short of green.)
+  55-80%   resolution:   the arc retracts to nothing. The marker and the unreached band hold,
+                         and the 47.5 degrees of bare track between them is the only thing left.
+  80-100%  breathe and seam fade: one slow slate breath on the marker, gone by 92%, so the
+                         restart never cuts.
+
+  NO TEXT, ANYWHERE. This is the brand story with the wordmark removed, per the file contract.
+  The static icon.svg remains the favicon and the raster source; this file is for README and
+  documentation embeds only.
+
+  THE BREATH IS SLATE, NOT A GLOW. refused sits at 35.7% relative luminance, below every
+  other semantic token in the system. A bright bloom at the end of the loop would put a large
+  area above 40% and break the luminance budget this palette exists to hold — and it would be
+  a celebration, which is the one thing a dose meter for a symptom-limited therapy must not do.
+-->
+
+<title>Gimbal — the amber arc stalls short of the green band; the marker commits slate and the dose numeral holds.</title>
+
+<defs>
+  <!-- The only blur in this file. Bounded region, single feGaussianBlur, well inside
+       the three-filter budget. -->
+  <filter id="breath" x="-45%" y="-45%" width="190%" height="190%">
+    <feGaussianBlur stdDeviation="14" />
+  </filter>
+</defs>
+
+<style>
+  /* Tokens local to this file: it renders inside an img element, isolated from any
+     page stylesheet. Values are the Dark palette from build/src/styles/themes.css. */
+  svg {
+    --surface-0: #0b0e12;
+    --edge: #2a3542;
+    --zone-in: #5bd6ae;
+    --zone-out: #d9a63c;
+    --refused: #98a2b0;
+  }
+
+  /* REDUCED MOTION IS A CORRECTNESS REQUIREMENT HERE, NOT A COURTESY. Vestibular
+     patients get symptomatic from motion. `animation: none` alone would not be
+     enough — SMIL ignores it and the arc would keep sweeping — so the story layer
+     is removed from the render tree as well. What is left is the poster, which is
+     icon.svg exactly: the marker short of the band, and the gap between them. */
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+    .motion { display: none !important; }
+  }
+</style>
+
+<!-- ── BRAND LAYER. Opacity 1 in markup — this is the poster. ─────────────────── -->
+<rect width="512" height="512" rx="96" fill="var(--surface-0)" />
+
+<path d="M 149.934 374.066 A 150 150 0 1 1 362.066 374.066"
+      fill="none" stroke="var(--edge)" stroke-width="38" stroke-linecap="butt" />
+
+<!-- ── STORY. Amber, because a rep below the floor is outside the band for its
+     entire sweep, and setLive paints it zone-out the whole way. ────────────── -->
+<g class="motion">
+  <!-- ORDER MATTERS INSIDE THE PATH BELOW, and not for style. The poster audit in
+       qa-frames.cjs looks back 400 characters from any SMIL opacity animate whose
+       t=0 value is 0, hunting for the data-story tag that declares the element part
+       of the story rather than an accidentally-invisible brand element. Put the long
+       dashoffset animate — or a long comment — between the two and the tag falls out
+       of range and the lint fires. Opacity gate first, always, and no prose in the
+       gap.
+
+     A SECOND RULE FROM THE SAME PLACE: the opacity gate holds at 1 all the way
+     through the retract and fades only over the last four percent. Cross-fading
+     WHILE the arc shrinks made the final stub a muddy half-transparent brown
+     against the track, which read as a rendering artefact rather than as an arc
+     returning to zero. The head coming back down to 0 degrees per second is
+     physically what happens after a peak; it should look deliberate. -->
+  <path d="M 149.934 374.066 A 150 150 0 0 1 117.418 210.597"
+        data-story="beat-2" opacity="0"
+        fill="none" stroke="var(--zone-out)" stroke-width="38" stroke-linecap="butt"
+        pathLength="100" stroke-dasharray="100">
+    <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+             keyTimes="0;0.045;0.10;0.30;0.55;0.74;0.78;1"
+             values="0;0;1;1;1;1;0;0" />
+    <animate attributeName="stroke-dashoffset" dur="6s" repeatCount="indefinite"
+             calcMode="spline"
+             keyTimes="0;0.10;0.30;0.55;0.78;1"
+             keySplines=".4 0 .6 1;.45 0 .3 1;0 0 1 1;.5 0 .6 1;0 0 1 1"
+             values="100;100;0;0;100;100" />
+  </path>
+
+  <!-- the commit, and then the breath: one blurred slate duplicate of the marker,
+       popping at the instant the cycle is scored and breathing once more before the
+       seam. Geometry and softness, never gain — C-1 forbids carrying this beat on
+       brightness, because the two state hues differ by only 1.26:1 in luminance by
+       design and a bright step would strobe in a dizziness-prone reader's periphery. -->
+  <path d="M 178.394 235.855 L 76.767 193.759"
+        data-story="beat-3" opacity="0"
+        stroke="var(--refused)" stroke-width="54" stroke-linecap="butt"
+        filter="url(#breath)">
+    <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+             keyTimes="0;0.26;0.30;0.42;0.70;0.80;0.92;1"
+             values="0;0;0.34;0.05;0.05;0.22;0;0" />
+  </path>
+</g>
+
+<!-- The prescribed band. Drawn AFTER the live arc so the arc can never paint over
+     the target it failed to reach. -->
+<path d="M 204.697 127.046 A 150 150 0 0 1 307.303 127.046"
+      fill="none" stroke="var(--zone-in)" stroke-width="52" stroke-linecap="butt" />
+
+<!-- The committed marker is BRAND, not story: it is the residue, it is what the
+     poster must show, and it holds for 100% of the loop. -->
+<path d="M 178.394 235.855 L 76.767 193.759"
+      stroke="var(--refused)" stroke-width="32" stroke-linecap="butt" />
+</svg>
