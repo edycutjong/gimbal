@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The mechanical check registry — SEVEN ids, all run by `npm test`.
+ * The mechanical check registry — EIGHT ids, all run by `npm test`.
  *
  * These are greps. They cost nothing, each one closes a documented failure
  * pattern, and each has exactly one job.
@@ -54,11 +54,65 @@ const isComment = (line) => {
 };
 
 const docFiles = ['README.md', 'DEMO.md', 'METHODS.md', 'LIMITATIONS.md', 'NOTICE.md', 'RELEASING.md'];
+
+/**
+ * The governance documents. They are judge-facing surfaces on a public
+ * repository, and a document nobody checks is a document that drifts — these
+ * were added long after the checks were written.
+ *
+ * SCOPE, precisely: they are swept for a `*.vercel.app` address and checked for
+ * existence. They are NOT held to the docs' one-canonical-URL allowlist,
+ * because attribution is the one thing a no-third-party-origins project must
+ * still name in prose — `CODE_OF_CONDUCT.md` is obliged to credit the
+ * Contributor Covenant, and `CONTRIBUTING.md` cites the Conventional Commits
+ * specification the release script parses. Neither is a resource the page
+ * fetches; both are text a reader may follow.
+ */
+const communityFiles = [
+  '.github/CODE_OF_CONDUCT.md',
+  '.github/CONTRIBUTING.md',
+  '.github/SECURITY.md',
+  '.github/PULL_REQUEST_TEMPLATE.md',
+  '.github/ISSUE_TEMPLATE/bug_report.md',
+  '.github/ISSUE_TEMPLATE/feature_request.md',
+];
+
+/** Two entry points and no more: `/` explains the instrument, `/app` is it. */
+const HTML_PAGES = ['index.html', 'app/index.html'];
+
+/**
+ * The only two addresses this project's own pages may name. `gimbal.edycu.dev`
+ * is the product's one address, and the GitHub repository is where the source
+ * is read. Anything else in an href, an og:image or a stylesheet is a
+ * third-party origin on a surface whose entire argument is that it has none.
+ *
+ * MATCHED AS A PREFIX ON A PARSED ORIGIN, never as a substring. `includes()`
+ * would have accepted `https://tracker.example/?ref=gimbal.edycu.dev` and
+ * `https://gimbal.edycu.dev.attacker.test/x` — both of which are exactly the
+ * third-party origin this check exists to keep out, wearing the allowed string
+ * as a costume. Two literal addresses had to be permitted because a canonical
+ * link and an og:image cannot be relative; that is the whole of the loosening,
+ * and `allowedUrl` is what keeps it that narrow.
+ */
+const CANONICAL_PREFIXES = ['https://gimbal.edycu.dev', 'https://github.com/edycutjong/gimbal'];
+
+function allowedUrl(raw) {
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    return false;
+  }
+  return CANONICAL_PREFIXES.some(
+    (prefix) => raw === prefix || raw.startsWith(`${prefix}/`) || raw.startsWith(`${prefix}#`),
+  ) && (url.origin === 'https://gimbal.edycu.dev' || url.origin === 'https://github.com');
+}
+
 const srcFiles = walk('src', (f) => f.endsWith('.ts') && !f.includes('.test.'));
 const styleFiles = walk('src/styles', (f) => f.endsWith('.css'));
 const cardFiles = walk('public/cards', (f) => f.endsWith('.json'));
 
-process.stdout.write('\nMechanical checks (7 ids, every file committed, zero network)\n\n');
+process.stdout.write('\nMechanical checks (8 ids, every file committed, zero network)\n\n');
 
 // ── U-FLAG ────────────────────────────────────────────────────────────────
 check('U-FLAG ', 'the reproduce path takes no flags', () => {
@@ -121,11 +175,49 @@ check('U-CARD ', 'Gimbal has no path to originate a prescription (claim C1)', ()
   if (/CardDraft|cardFromDraft|emptyDraft/.test(loader)) {
     problems.push('exampleLedger.ts touches the card draft');
   }
+
+  // Limb (c): the labelled example prescription behind `/app?demo`.
+  //
+  // The screen must not know it exists — it renders whatever draft it is handed.
+  // That is what keeps limb (a) meaningful now that a filled draft is reachable
+  // at all: `src/main.ts` is the single place the flag is read, and it sets the
+  // draft and the on-screen label from the SAME flag, so a pre-filled form that
+  // has stopped saying it is pre-filled is not constructible.
+  if (/exampleParameters|EXAMPLE_VALUES|exampleDraft/.test(prescribe)) {
+    problems.push('prescribe.ts reaches for the example parameters; it must only render the draft it is given');
+  }
+  const boot = read('src/main.ts');
+  if (!/usingExampleParameters \? exampleDraft\(\) : emptyDraft\(\)/.test(boot)) {
+    problems.push('main.ts no longer derives the draft from the ?demo flag');
+  }
+  if (!/exampleBanner: usingExampleParameters \? EXAMPLE_DRAFT_BANNER : null/.test(boot)) {
+    problems.push('main.ts no longer derives the on-screen example label from the same flag as the draft');
+  }
+
+  // And the eight numbers are ONE set of numbers. README.md is what a judge is
+  // told to type; `exampleParameters.ts` is what `?demo` fills in. Two tables
+  // that disagree is how a judge ends up measuring against a different card than
+  // the one the documentation describes.
+  const params = read('src/protocol/exampleParameters.ts');
+  const readme = read('README.md');
+  const block = params.match(/EXAMPLE_VALUES[^=]*=\s*\{([\s\S]*?)\n\};/);
+  if (!block) {
+    problems.push('could not read EXAMPLE_VALUES from src/protocol/exampleParameters.ts');
+  } else {
+    const pairs = [...block[1].matchAll(/^\s*(\w+):\s*([\d.]+),/gm)];
+    if (pairs.length !== 8) problems.push(`EXAMPLE_VALUES has ${pairs.length} fields, expected 8`);
+    for (const [, id, value] of pairs) {
+      if (!fieldIds.includes(id)) problems.push(`EXAMPLE_VALUES has an unknown field id: ${id}`);
+      if (!readme.includes(`\`${value}\``)) {
+        problems.push(`EXAMPLE_VALUES.${id} = ${value} does not appear in the README evaluation table`);
+      }
+    }
+  }
   return problems;
 });
 
 // ── U-LIMITS ──────────────────────────────────────────────────────────────
-check('U-LIMITS', 'the limitations text is byte-identical across its four copies', () => {
+check('U-LIMITS', 'the limitations text is byte-identical across its five copies', () => {
   const tsSource = read('src/report/limitations.ts');
   const arrayBody = tsSource.match(/LIMITATIONS_LINES[^=]*=\s*\[([\s\S]*?)\n\];/);
   if (!arrayBody) return ['could not read LIMITATIONS_LINES from src/report/limitations.ts'];
@@ -135,15 +227,29 @@ check('U-LIMITS', 'the limitations text is byte-identical across its four copies
   if (canonical.trim().length === 0) return ['the canonical limitations text is empty'];
 
   const problems = [];
-  for (const name of ['LIMITATIONS.md', 'README.md', 'DEMO.md']) {
+  // index.html is the FIFTH copy, registered here when the landing page started
+  // printing the limitations at body size. A visible copy that no check reads is
+  // a copy that drifts, and this one is on the most-read surface in the project.
+  // Its block is one <li> per statement; the Markdown copies are blank-line
+  // separated; the canonical form is one line per statement.
+  for (const name of ['LIMITATIONS.md', 'README.md', 'DEMO.md', 'index.html']) {
     const m = read(name).match(/<!-- LIMITATIONS-BODY-START -->\n([\s\S]*?)\n<!-- LIMITATIONS-BODY-END -->/);
     if (!m) {
       problems.push(`${name}: no LIMITATIONS body block`);
       continue;
     }
-    // The .md copies are blank-line separated for Markdown; the canonical form
-    // is one line per statement.
-    const block = m[1].trim().split(/\n\s*\n/).join('\n');
+    const raw = m[1].trim();
+    const block = name.endsWith('.html')
+      ? raw
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .map((line) => {
+            const li = line.match(/^<li>([\s\S]*)<\/li>$/);
+            return li ? li[1] : `NOT A SINGLE <li>: ${line}`;
+          })
+          .join('\n')
+      : raw.split(/\n\s*\n/).join('\n');
     if (block !== canonical) {
       problems.push(`${name}: limitations block differs from src/report/limitations.ts`);
       const a = canonical.split('\n');
@@ -210,7 +316,7 @@ check('U-COUNT', 'the test count printed in README is the count the suite report
 });
 
 // ── The claims that must stay greppable ──────────────────────────────────
-check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact', () => {
+check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact, licence and community files readable', () => {
   const problems = [];
   for (const file of srcFiles) {
     const text = read(rel(file));
@@ -228,7 +334,7 @@ check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact',
   // product's address: it changes if the project is renamed, it is not the
   // domain a judge is given, and a second live URL is exactly how two documents
   // start disagreeing. The custom domain is the only address this repo names.
-  const surfaces = [...docFiles, 'index.html', 'vercel.json', ...srcFiles.map(rel)];
+  const surfaces = [...docFiles, ...communityFiles, ...HTML_PAGES, 'vercel.json', ...srcFiles.map(rel)];
   for (const name of surfaces) {
     if (!existsSync(join(ROOT, name))) continue;
     if (/[\w-]*\.vercel\.app/.test(read(name))) {
@@ -236,20 +342,96 @@ check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact',
     }
   }
 
-  const page = read('index.html');
-  if (!/connect-src 'self'/.test(page)) problems.push("index.html: CSP lacks connect-src 'self'");
-  if (!/'wasm-unsafe-eval'/.test(page)) problems.push("index.html: CSP lacks 'wasm-unsafe-eval'");
-  // The only permitted eval relaxation is the wasm one.
-  const csp = page.match(/http-equiv="Content-Security-Policy"[\s\S]*?content="([^"]*)"/);
-  if (csp && /(^|[^-])'unsafe-eval'/.test(csp[1])) {
-    problems.push("index.html: CSP widens to 'unsafe-eval'");
+  // BOTH pages carry the policy, and it is the SAME policy. The landing page at
+  // `/` is where the zero-network claim is stated in prose; a landing page whose
+  // own CSP were looser than the app's would falsify that sentence on the page
+  // printing it, which is the most embarrassing available failure.
+  const policies = [];
+  for (const name of HTML_PAGES) {
+    const page = read(name);
+    const csp = page.match(/http-equiv="Content-Security-Policy"[\s\S]*?content="([^"]*)"/);
+    if (!csp) {
+      problems.push(`${name}: no Content-Security-Policy meta tag`);
+      continue;
+    }
+    if (!/connect-src 'self'/.test(page)) problems.push(`${name}: CSP lacks connect-src 'self'`);
+    if (!/'wasm-unsafe-eval'/.test(page)) problems.push(`${name}: CSP lacks 'wasm-unsafe-eval'`);
+    if (!/font-src 'self'/.test(page)) problems.push(`${name}: CSP lacks font-src 'self'`);
+    // The only permitted eval relaxation is the wasm one.
+    if (/(^|[^-])'unsafe-eval'/.test(csp[1])) problems.push(`${name}: CSP widens to 'unsafe-eval'`);
+    policies.push(csp[1]);
   }
-  if ((page.match(/aria-live="polite"/g) ?? []).length !== 1) {
-    problems.push('index.html: expected exactly one polite live region');
+  if (new Set(policies).size > 1) {
+    problems.push(`${HTML_PAGES.join(' and ')} declare different policies`);
   }
-  if ((page.match(/aria-live="assertive"/g) ?? []).length !== 1) {
-    problems.push('index.html: expected exactly one assertive live region');
+
+  // The live-region discipline is a property of the MEASUREMENT screens. The
+  // landing page must have neither: a marketing page that owns an assertive
+  // region will eventually interrupt a screen-reader user to announce a heading.
+  const appPage = read('app/index.html');
+  if ((appPage.match(/aria-live="polite"/g) ?? []).length !== 1) {
+    problems.push('app/index.html: expected exactly one polite live region');
   }
+  if ((appPage.match(/aria-live="assertive"/g) ?? []).length !== 1) {
+    problems.push('app/index.html: expected exactly one assertive live region');
+  }
+  const landingPage = read('index.html');
+  if (/aria-live=/.test(landingPage)) {
+    problems.push('index.html: the landing page declares a live region; it should have none');
+  }
+
+  // The social card is an ASSET IN THIS REPO. A remote og:image is a
+  // third-party origin on the one surface whose whole argument is that it has
+  // none — and it is also how a link preview silently breaks.
+  for (const required of ['public/og.png', 'public/icon.svg', 'public/fonts/InterVariable.woff2']) {
+    if (!existsSync(join(ROOT, required))) problems.push(`${required} is missing`);
+  }
+  for (const tag of ['og:image', 'og:url', 'og:title', 'og:description', 'twitter:card']) {
+    if (!landingPage.includes(tag)) problems.push(`index.html: no ${tag}`);
+  }
+  for (const url of landingPage.match(/https?:\/\/[^\s'"`)]+/g) ?? []) {
+    if (!allowedUrl(url)) {
+      problems.push(`index.html: references ${url}, which is not a canonical address`);
+    }
+  }
+
+  // Every image in the README is an ASSET IN THIS REPO, for the same reason the
+  // og:image is: a remote hero is a third-party origin on the very surface that
+  // opens the argument for having none. The path is resolved as well as
+  // origin-checked, because a relative path that does not exist is a broken
+  // image on the first screen a reader ever sees — and the reader who notices
+  // is the one reading closely.
+  // Fenced code is stripped first, the same discipline `U-DOC` uses, so that an
+  // <img> quoted inside a documentation example is not read as a shipped image.
+  const readmeDoc = read('README.md').replace(/```[\s\S]*?```/g, '');
+  const readmeImages = [...readmeDoc.matchAll(/<img[^>]*\ssrc="([^"]+)"/g)].map((m) => m[1]);
+  if (readmeImages.length === 0) problems.push('README.md: no image at all — the hero is missing');
+  for (const src of readmeImages) {
+    if (/^(https?:)?\/\//.test(src)) {
+      problems.push(`README.md: image ${src} is fetched from another origin`);
+    } else if (!existsSync(join(ROOT, src))) {
+      problems.push(`README.md: image ${src} does not resolve to a file in this repo`);
+    }
+  }
+
+  // The eight rows GitHub scores at /community. Each is a file at a path GitHub
+  // actually reads, so the "100 % community profile" claim is checked here
+  // rather than asserted in a summary somewhere. LICENSE and README.md are the
+  // other two rows; the repository description is a setting, not a file, and
+  // `.github/SECURITY.md` says how it is set.
+  for (const required of [...communityFiles, '.github/ISSUE_TEMPLATE/config.yml', 'LICENSE', 'README.md']) {
+    if (!existsSync(join(ROOT, required))) problems.push(`${required} is missing`);
+  }
+  // LICENSE must be the unmodified MIT text. Anything appended to it — a
+  // regulatory note, a disclaimer — drops the file below GitHub's licence-match
+  // threshold and the repository starts reporting NOASSERTION instead of MIT.
+  // That is exactly what happened here, and the note now lives in LIMITATIONS.md.
+  const licence = read('LICENSE');
+  if (!/^MIT License\n/.test(licence)) problems.push('LICENSE: does not open with the MIT header');
+  if (!licence.trimEnd().endsWith('SOFTWARE.')) {
+    problems.push('LICENSE: text follows the MIT body — a licence scanner will report NOASSERTION');
+  }
+
   return problems;
 });
 

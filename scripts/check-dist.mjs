@@ -68,18 +68,63 @@ for (const file of files) {
   }
 
   for (const url of text.match(/https?:\/\/[^\s'"`)\\]+/g) ?? []) {
+    // MATCHED ON A PARSED ORIGIN, never as a substring or a bare prefix.
+    // `startsWith('https://gimbal.edycu.dev')` accepts
+    // `https://gimbal.edycu.dev.attacker.test/x`, and `includes('w3.org')`
+    // accepts `https://cdn.example/?ref=w3.org` — both of which are exactly the
+    // third-party origin this scan exists to catch, wearing an allowed string
+    // as a costume. `openapi.vercel.sh` was permitted here and appears nowhere
+    // in `dist/`; a dead allowance only ever widens a check, so it is gone.
+    let origin = null;
+    let path = '';
+    try {
+      const parsed = new URL(url);
+      origin = parsed.origin;
+      path = parsed.pathname;
+    } catch {
+      /* not a URL we can parse — fall through and fail it */
+    }
     const allowed =
-      url.includes('w3.org') ||
-      url.includes('openapi.vercel.sh') ||
-      (isVendored && (url.includes('mediapipe') || url.includes('google') || url.includes('emscripten')));
+      // The XML namespace literal in the SVG the report renders. A namespace is
+      // an identifier, not a fetch, and no browser resolves it.
+      origin === 'http://www.w3.org' ||
+      // The landing page's canonical link, og:url and og:image are ABSOLUTE by
+      // necessity — a link-preview scraper resolves nothing relative — and the
+      // repository link is where a reader goes to check the claims. These are
+      // addresses the bundle NAMES, not origins it CONTACTS: `connect-src
+      // 'self'` still means the page can reach neither of them at runtime.
+      // Nothing else is permitted, which is what keeps a CDN, a font host or an
+      // analytics endpoint out of the one surface that argues it has none.
+      origin === 'https://gimbal.edycu.dev' ||
+      (origin === 'https://github.com' && path.startsWith('/edycutjong/gimbal')) ||
+      (isVendored &&
+        origin !== null &&
+        /(^|\.)(mediapipe\.dev|google\.com|googleapis\.com|googlesource\.com|emscripten\.org|github\.io|chromium\.org)$/.test(
+          new URL(url).hostname,
+        ));
     if (!allowed) problems.push(`${name}: shipped bundle references ${url}`);
   }
 }
 
-// The model bundle and the WASM runtime must actually be in the deploy artifact.
-for (const required of ['dist/model/face_landmarker.64184e22.task', 'dist/model/vision_wasm_internal.wasm']) {
+// Both entry points, the model, the WASM runtime and the vendored typeface must
+// all actually be in the deploy artifact.
+for (const required of [
+  'dist/index.html',
+  'dist/app/index.html',
+  'dist/og.png',
+  'dist/icon.svg',
+  'dist/fonts/InterVariable.woff2',
+  'dist/model/face_landmarker.64184e22.task',
+  'dist/model/vision_wasm_internal.wasm',
+]) {
   if (!existsSync(join(ROOT, required))) problems.push(`${required} is missing from the build output`);
 }
+
+// A landing page whose script never shipped is a page with no hero and no theme
+// picker, and it would still look fine in a diff.
+const landing = readFileSync(join(DIST, 'index.html'), 'utf8');
+if (!/<script[^>]+type="module"/.test(landing)) problems.push('dist/index.html: no module script');
+if (!/LIMITATIONS-BODY-START/.test(landing)) problems.push('dist/index.html: the limitations block did not ship');
 
 if (problems.length > 0) {
   process.stderr.write(`\nU-DIST failed — ${problems.length} problem(s):\n\n`);

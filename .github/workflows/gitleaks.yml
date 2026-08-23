@@ -1,0 +1,40 @@
+name: gitleaks
+
+# Secret scanning over FULL HISTORY, which is the point.
+#
+# GitHub's own secret scanning covers known provider patterns on pushed commits,
+# and on a private repository it needs Advanced Security. This runs regardless,
+# and `fetch-depth: 0` is what makes it a history scan rather than a diff scan —
+# the check that has to be green before this repository's visibility is flipped
+# from private to public.
+#
+# One action, no package dependency. `package.json` still reads one runtime
+# dependency and four dev dependencies, and that line is checkable evidence.
+#
+# gitleaks-action is free for personal accounts and public repositories; this
+# repository is owned by a personal account, so no GITLEAKS_LICENSE is needed.
+# If it is ever transferred to an organisation, that changes.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: gitleaks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the past is the thing being scanned
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

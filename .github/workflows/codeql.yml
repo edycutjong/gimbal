@@ -1,0 +1,56 @@
+name: codeql
+
+# Static analysis of the shipped TypeScript.
+#
+# `build-mode: none` is correct here and is not a shortcut: CodeQL's
+# javascript-typescript extractor reads source directly, and this repository has
+# no compile step it needs — `npm run build` is `tsc --noEmit` followed by a Vite
+# bundle, and analysing the bundle would analyse the bundler's output rather than
+# the code under review.
+#
+# This file is inert until code scanning is enabled on the repository. That is a
+# setting, not a file; `.github/SECURITY.md` records how to switch it on.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Monday 07:11 UTC. A weekly run catches a newly published query against
+    # code that has not changed, which is the case a push trigger cannot cover.
+    - cron: '11 7 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-and-quality
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'

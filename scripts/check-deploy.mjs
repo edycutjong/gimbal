@@ -117,11 +117,23 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
     if (platformUrl) {
       problems.push(`U-DOC: ${name} names ${platformUrl[0]} — the canonical URL is ${CANONICAL_URL}`);
     }
+    // The allowlist is NOT "URLs we like". It is the exact set of UPSTREAM
+    // ATTRIBUTION addresses `NOTICE.md` is obliged to carry, plus the one
+    // specification `RELEASING.md` cites. Attribution is the one thing a
+    // no-third-party-origins project must still name in prose: `font-src 'self'`
+    // stops the browser fetching from an upstream, and says nothing about
+    // crediting it.
+    //
+    // EVERY VENDORED ARTIFACT NEEDS ITS ENTRY HERE. Inter's was missed when the
+    // font was vendored on 2026-08-23, which turned `check:deploy` red on a
+    // correct `NOTICE.md` — the check accusing the attribution file of being
+    // wrong when the omission was the check's own.
     for (const url of text.match(/https?:\/\/[^\s'"`)\]]+/g) ?? []) {
       const allowed =
         url.startsWith(CANONICAL_URL) ||
         url.includes('github.com/google-ai-edge/mediapipe') ||
         url.includes('storage.googleapis.com/mediapipe-models') ||
+        url.includes('github.com/rsms/inter') ||
         url.includes('conventionalcommits.org');
       if (!allowed) problems.push(`U-DOC: ${name} states a URL that is not canonical: ${url}`);
     }

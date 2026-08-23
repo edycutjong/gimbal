@@ -1,3 +1,4 @@
+import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/themes.css';
 import './styles/screen.css';
@@ -6,6 +7,7 @@ import './styles/print.css';
 import type { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { createLandmarkerWithFallback } from './capture/landmarker.ts';
 import { cardFromDraft, emptyDraft, prescribedSeconds, bandCentreHz, type CardDraft, type ProtocolCard } from './protocol/card.ts';
+import { exampleDraft, EXAMPLE_DRAFT_BANNER } from './protocol/exampleParameters.ts';
 import type { StopRuleOutcome } from './protocol/stopRule.ts';
 import { BlockRunner, type BlockResult } from './session/blockRunner.ts';
 import { LiveRegions } from './ui/live.ts';
@@ -77,9 +79,28 @@ const audio = new AudioEngine();
 let theme: ThemeName | null = loadTheme();
 if (theme) applyTheme(theme);
 
+/**
+ * `/app?demo` — the labelled example prescription.
+ *
+ * The eight fields are empty by default and that emptiness IS the safety
+ * property: Gimbal has no path to originate a prescription. But a judge with no
+ * clinician's handout in front of them cannot get past screen one, so `?demo`
+ * fills the fields from the numbers README.md publishes for evaluation.
+ *
+ * It is an honest disclosure, not a hidden developer mode, and it is labelled to
+ * the same standard as the example ledger: a persistent banner above the form,
+ * an `EXAMPLE` chip on the fieldset, `EXAMPLE` as the `source` string on every
+ * one of the eight criteria — which is what prints in the report's "Why?"
+ * disclosure and therefore travels onto paper with the artifact.
+ *
+ * The clinician-attestation checkbox is NOT pre-ticked. Filling in a number for
+ * someone is a convenience; ticking their attestation for them would be a lie.
+ */
+const usingExampleParameters = new URLSearchParams(globalThis.location?.search ?? '').has('demo');
+
 const state: SessionState = {
   card: null,
-  draft: emptyDraft(),
+  draft: usingExampleParameters ? exampleDraft() : emptyDraft(),
   setup: defaultSetupState(),
   blockIndex: 0,
   blocks: [],
@@ -100,6 +121,19 @@ let ledgerReturn: Screen = 'report';
 /** A visible reason on the ledger when a requested load did not happen. */
 let ledgerNotice: string | null = null;
 
+/**
+ * The FIRST render is not a screen change, so it does not move focus.
+ *
+ * It used to. The heading is `tabindex="-1"` and `show()` focused it
+ * unconditionally, so the very first paint of the app put a 3 px focus ring
+ * around the `<h1>` before the reader had touched anything — which reads as a
+ * rendering fault, not as an affordance. Focus already starts on the document,
+ * the skip link is still the first tab stop, and every SUBSEQUENT screen change
+ * still moves focus to the new heading, which is the behaviour that actually
+ * matters to a screen-reader user.
+ */
+let hasRendered = false;
+
 function show(screen: Screen): void {
   currentScreen = screen;
   for (const [name, host] of Object.entries(hosts)) host.hidden = name !== screen;
@@ -107,8 +141,11 @@ function show(screen: Screen): void {
   // screen name, and resets scroll. The app NEVER auto-advances: every
   // transition is a deliberate button press, because auto-advance in front of a
   // cognitively fatigued user is a decision made without them.
-  const heading = hosts[screen].querySelector<HTMLElement>('#screen-title');
-  heading?.focus();
+  if (hasRendered) {
+    const heading = hosts[screen].querySelector<HTMLElement>('#screen-title');
+    heading?.focus();
+  }
+  hasRendered = true;
   globalThis.scrollTo?.(0, 0);
 }
 
@@ -120,6 +157,7 @@ function showPrescribe(): void {
     draft: state.draft,
     theme,
     announce,
+    exampleBanner: usingExampleParameters ? EXAMPLE_DRAFT_BANNER : null,
     onContinue: (draft) => {
       state.draft = draft;
       state.card = cardFromDraft(draft);

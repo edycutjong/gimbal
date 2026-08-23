@@ -6,7 +6,19 @@
 
 *No LLM. No server. No account. No upload path. On purpose.*
 
-**[https://gimbal.edycu.dev](https://gimbal.edycu.dev)**
+<img src="docs/assets/readme-hero-animated.svg"
+     alt="Gimbal — the amber arc stalls short of the green band; the marker commits slate and the dose numeral holds."
+     width="100%">
+
+**[https://gimbal.edycu.dev](https://gimbal.edycu.dev)** · [Demo walkthrough](DEMO.md) · [Methods](METHODS.md) · [Limitations](LIMITATIONS.md)
+
+*This repository is **private until submission**. The hosted application at the
+address above is public now.*
+
+*There are no badges on this page, deliberately. Its central claim is that
+nothing here reaches a third-party origin, and opening with four images fetched
+from a badge CDN would argue against everything below it. The numbers are
+greppable instead — start with `package.json`.*
 
 </div>
 
@@ -36,11 +48,11 @@ not decide the therapy. It measures whether the therapy was delivered.
 
 | Stage | What happens |
 |---|---|
-| **Prescription in** | The patient types their clinician's parameters into a protocol card. Eight required numeric fields, **no defaults, no presets, no sample card on screen.** Gimbal has no path to originate a prescription. |
+| **Prescription in** | The patient types their clinician's parameters into a protocol card. Eight required numeric fields, **no defaults and no presets on the entry path.** Gimbal has no path to originate a prescription: the one route that arrives pre-filled, `/app?demo`, is labelled as an example on screen and on the printed report, and still cannot tick the clinician gate. |
 | **Measure** | `FaceLandmarker` at ~30 Hz → yaw in degrees on the camera's own frame clock → central-difference angular velocity → cycle segmentation → bias-corrected peak \|ω\| per cycle |
 | **Coach, eyes-free** | A Web Audio click train sets tempo; one oscillator's pitch bends continuously as peak velocity leaves the prescribed band |
 | **Verify gaze without measuring gaze** | A Landolt C re-randomises every 2.5–5.0 s; the patient answers its gap orientation with an arrow key, during motion |
-| **Refuse** | Cycles outside the band, off cadence, or below the tracking-confidence floor are **credited zero** and painted as a gap with a named reason |
+| **Refuse** | Five named refusals — `too-slow`, `too-fast`, `off-cadence`, `low-confidence`, `face-lost` — each **credited zero** and painted as a gap with the reason in words. `npm run bench` drives all five plus `ok` end-to-end |
 | **Gate** | A 0–10 symptom rating at every block boundary runs a pure stop-rule function against the session's own baseline |
 | **Report out** | One printable page: delivered vs prescribed per block, refusal histogram, gaze tally, symptom entries, a "Why?" citation on every criterion |
 
@@ -50,6 +62,16 @@ stopwatch.
 ## Try it in about a minute
 
 Open **[gimbal.edycu.dev](https://gimbal.edycu.dev)** — nothing to install.
+
+`/` explains the instrument. **`/app`** is the instrument, and
+**`/app?demo`** is `/app` with the eight numbers below already typed in, so a
+reader with no clinician's handout in front of them can still reach the
+measurement. That route labels itself: a persistent banner above the form, an
+`EXAMPLE` chip on every one of the eight values, and `EXAMPLE …` as the source
+string that prints in the report's "Why?" disclosure. **It does not tick the
+clinician-attestation checkbox for you** — filling in a number is a convenience,
+ticking someone's attestation on their behalf is not. `/app` on its own is still
+completely empty, and an e2e assertion holds it there.
 
 Or run it locally:
 
@@ -72,10 +94,14 @@ seconds.** That is the whole product in one gesture.
 ### The eight numbers, for evaluation only
 
 These are **numbers a clinician would have written**, supplied here so you have
-something to type. They are **not a recommendation, not a default, and they do
-not exist anywhere in the application** — the app ships zero defaults and zero
-presets, which is what makes "Gimbal cannot originate a prescription" a
-structural property rather than a claim.
+something to type. They are **not a recommendation and not a default.** They
+reach the application through exactly one route — `/app?demo` — which announces
+itself as an example everywhere it appears and cannot complete the clinician
+gate. On `/app` the eight fields are empty, and that emptiness is what makes
+"Gimbal cannot originate a prescription" a structural property rather than a
+claim. Check `U-CARD` asserts that this table and
+`src/protocol/exampleParameters.ts` carry the same eight values, so the numbers
+you are told to type and the numbers `?demo` fills in cannot disagree.
 
 | Field | Value |
 |---|---|
@@ -98,17 +124,96 @@ capability executes for real on the default path, or it does not execute at all.
 ## Verify the engineering
 
 ```bash
-npm test            # unit tests against analytic ground truth + the mechanical source checks
+npm ci
+npm test            # 88 tests against analytic ground truth + 8 mechanical source checks
+npm run bench       # all six gate outcomes end-to-end, then the frame-budget timings
 npm run check:build # builds the production bundle, then greps it
 ```
 
-`npm test` runs **76** automated tests plus seven mechanical source checks. It is
-**fully offline** and reads only files committed in this repo — no network, no
-build artifact, no file outside the clone. A check that passes vacuously on a
-clean clone is worse than no check, so any that would have are in
-`check:build`/`check:deploy` instead.
+`npm test` runs **88** automated tests plus eight mechanical source checks. Four
+more checks — `U-DIST`, `U-CFG`, `U-DOC`, `U-DEP` — read a build artifact or a
+deployed URL and therefore live in `check:build` and `check:deploy` instead, for
+**twelve** in total. The split is a rule rather than a convenience: a check that
+passes vacuously on a clean clone is worse than no check, because it is a green
+tick standing in for evidence.
 
-Highlights of what those tests actually claim:
+### Which commands run with the network unplugged
+
+A project whose headline number is *zero requests* should not be vague about the
+one place its own tooling reaches out. It is one place, and here it is.
+
+| Command | Air-gapped? | Why |
+|---|---|---|
+| `npm test` | **yes, always** | Every file it reads is committed in this repo. That partition rule is stated at the top of `scripts/checks.mjs` and is why four checks live elsewhere. |
+| `npm run bench` | **yes, always** | Reads one committed card JSON, imports `src/`, writes to stdout. No `fetch`, no fixture, no camera. |
+| `npm run check:build` | **yes, always** | Builds locally, then greps the output. |
+| `npm run verify` | **after the first run on a machine** | The R11 gate runs its assertions in Chromium. If no Chromium build is present it downloads one — the **only** network request anywhere in this suite, once per machine — and what it fetches is a *test harness*, never anything the application runs on. Every later run makes no request, and the script prints which of the two cases it took. |
+| `npx playwright test` | **after the first run on a machine** | Same browser, same reason. |
+
+That boundary is stated in the header of `scripts/verify.mjs` rather than left
+for someone to discover on a plane. A browser is a test harness, not application
+code — but it is still a network request in a repository whose headline number is
+zero, so it is named rather than left technically-true-by-omission.
+
+### The benchmark drives all six gate outcomes — no camera, no fixture
+
+The gate has six outcomes: `ok`, and the five refusals `too-slow`, `too-fast`,
+`off-cadence`, `low-confidence`, `face-lost`. The benchmark drives **each one
+end-to-end** from an analytic yaw signal, through the *shipped* modules imported
+from `src/` — `VelocityStream` → `frameQuality` → `CycleSegmenter` →
+`scoreCycle` — and asserts every result **before it prints a single timing**.
+
+| Outcome | Drive | Analytic peak \|ω\| | Cycles | Credited | Delivered dose |
+|---|---|---|---|---|---|
+| `ok` | ±20° at 2.0 Hz | 251.3 °/s, inside `[150, 350]` | 119 of 120 | **119** | 59.506 s |
+| `too-slow` | ±8° at 2.0 Hz | 100.5 °/s, below the floor | 119 of 120 | **0** | **0.000 s** |
+| `too-fast` | ±30° at 2.0 Hz | 377.0 °/s, above the ceiling | 119 of 120 | **0** | **0.000 s** |
+| `off-cadence` | ±30° at 1.2 Hz | 226.2 °/s, *inside* the window | 71 of 72 | **0** | **0.000 s** |
+| `low-confidence` | ±20° at 2.0 Hz, degraded fit | 251.3 °/s, inside the window | 119 of 120 | **0** | **0.000 s** |
+| `face-lost` | ±20° at 2.0 Hz, no face | 251.3 °/s, inside the window | 119 of 120 | **0** | **0.000 s** |
+
+Four things that table is doing:
+
+- **The refusals are not one failure repeated.** `too-slow` is the wrong speed.
+  `too-fast` is the *opposite* wrong speed, because faster is not better and the
+  card has a ceiling for that reason. `off-cadence` is the *right* speed at the
+  wrong tempo — it is last in the reason precedence, so reaching it proves every
+  check above it passed. `low-confidence` is a perfectly creditable sweep the
+  instrument declines to vouch for.
+- **`low-confidence` is the one that carries the argument.** It is the answer to
+  the largest technical risk in the project — head-pose fidelity at 2 Hz on a
+  commodity webcam — and the answer is that the instrument *refuses to emit
+  rather than smoothing*. `too-slow` on its own reads as a bug. `too-slow` and
+  `low-confidence` together read as a policy.
+- **Every refusal delivers exactly `0.000 s`,** asserted with `===`. Not
+  approximately zero. One `refuse()` helper, one code path, five ways in.
+- **The sub-therapeutic sweeps are detected and then refused, not lost.**
+  100.5 °/s clears the 22.5 °/s hysteresis deadband, so the same 119 cycles are
+  segmented at ±8° as at ±20°. That distinction is the difference between a
+  policy and a dropout, and it is what a skeptical reader should check first.
+
+The drive constants are derived from the shipped ones rather than restated —
+`INSTRUMENT_LIMITS.qFloor` is one of the two `PROVISIONAL_FROM_SPIKE` values, so
+a hard-coded `0.55` would silently stop testing anything the day it is
+calibrated. The outcome list itself is imported from `src/dsp/types.ts`, and a
+seventh outcome added to the gate without a drive for it fails the benchmark.
+The `face-lost` drive feeds `facePresent: false` alongside a continuing yaw
+series: that exercises the *gate's* handling of an absent face, and the file says
+so, because an unstated approximation in a benchmark is how a benchmark starts
+lying.
+
+Only then does it report p50/p95/p99 against the 33.33 ms frame budget — the
+per-frame path costs **single-digit microseconds at p95, under 0.02 % of the
+budget.** The counts are byte-deterministic across machines and the timings are
+not, so `DEMO.md` publishes the timings as observed *ranges* with the machine
+named, and rests the claim on the four orders of magnitude of headroom rather
+than on a spot value nobody else can reproduce.
+
+**That benchmark is a compute-cost measurement.** It is not an accuracy figure
+and it is emphatically not the bench validation described under *Status* below,
+which has not been recorded.
+
+Highlights of what the unit suite actually claims:
 
 - The hand-written 256-point Hann FFT recovers `sin(2π·2·t)` at 30 fps into the
   bin containing 2.0 Hz, with a bin width of exactly `30/256` = **0.1172 Hz**,
@@ -122,11 +227,68 @@ Highlights of what those tests actually claim:
   edges, and has deterministic reason precedence. **A test greps the module and
   fails if any numeral other than `0` and `1000` appears in it** — which is how
   "every clinical threshold comes from the card" is checked rather than
-  believed.
+  believed. That unit test proves the gate *branches*; the benchmark above
+  proves the *pipeline can produce* each of those six cycles from a signal,
+  which is the stronger and more useful claim.
 - `evaluateStopRule` partitions the whole 0–10 × 0–10 integer grid with no gap
   and no overlap, and the only constant in the function is zero.
 - Int16 quantisation at scale 50 round-trips within **0.01 °/s**, half an LSB,
   and a velocity beyond ±655.34 °/s is **refused, never clipped**.
+
+## The harness around it
+
+Every gate below runs on every push and every pull request, and again before
+anything deploys. **None of it costs a dependency** — that is the constraint the
+harness was built under, because "1 runtime, 4 dev, `npm audit` 0
+vulnerabilities" is evidence a reviewer verifies in five seconds and boilerplate
+is not worth trading it for.
+
+| Layer | What runs | Where |
+|---|---|---|
+| Types | `tsc --noEmit` over `src/` and `tests/` on every build — `strict`, plus `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` and `noUncheckedIndexedAccess` | `npm run build`, `tsconfig.json` |
+| Unit | 88 tests against analytic ground truth | `npm test` → `vitest` |
+| Mechanical checks | 12 greps, each closing one documented failure pattern: `U-FLAG` `U-DEV` `U-CARD` `U-LIMITS` `U-SRC` `U-OUTLINE` `U-COUNT` `greppable` in `npm test`; `U-DIST` `U-CFG` `U-DOC` `U-DEP` in the builder commands | `scripts/checks.mjs`, `check-dist.mjs`, `check-deploy.mjs` |
+| Behavioural | the six-outcome gate partition, then p50/p95/p99 against the frame budget | `npm run bench` |
+| End-to-end | the accessibility, origin, print, measurement and disclosure suites in Chromium | `npx playwright test` |
+| R11 gate | model-bundle SHA-256, then the measurement and disclosure assertions on recorded pixels | `npm run verify` |
+| CI | `check.yml` on every push and PR; `preview.yml` deploys a per-PR URL and verifies **its headers**, so a weakened CSP is caught on the pull request rather than after it reaches production | `.github/workflows/` |
+| Release | version, tag, changelog and deploy, in that order, only after the gates pass — then the **deployed** headers are re-verified | `release.yml`, `RELEASING.md` |
+| SAST | CodeQL, `security-and-quality` query pack, weekly as well as per-push | `codeql.yml` |
+| Secrets | gitleaks over **full history** (`fetch-depth: 0`) — the mechanical form of "scan the past before going public" | `gitleaks.yml` |
+| Supply chain | Dependabot, grouped, monthly, majors ignored; `npm audit` at 0 vulnerabilities | `dependabot.yml` |
+
+**Semantic versioning is automatic and hand-written.** `scripts/version.mjs`
+reads the git tags and the Conventional Commits since the last one and decides
+the bump, using Node builtins and `git` and **zero dependencies**.
+`semantic-release` and its plugin set would have added a dozen. `RELEASING.md`
+has the table.
+
+**There is no linter, and that is a decision rather than an omission.** The two
+things a linter would be installed for are both already covered:
+
+- **The generic rules.** `tsconfig.json` turns on `strict`, `noUnusedLocals`,
+  `noUnusedParameters`, `noFallthroughCasesInSwitch` and
+  `noUncheckedIndexedAccess`, and `tsc` runs on every build. Unused bindings,
+  fall-through switches and unchecked index access are the ESLint rules people
+  actually cite; the compiler is already failing the build on them.
+- **The rules a generic rule set could not know about.** Twelve mechanical
+  checks: that no `mock`/`fake`/`simulate`/`stub` survives in `src/`, that no
+  focus ring is removed, that the limitations text is byte-identical in five
+  places, that every card field carries a source string, that the reproduce
+  path takes no flags, that no README image is fetched from another origin, and
+  that the test count printed here is the count the suite reports.
+
+**The honest gap, since this section is an argument and arguments should state
+their weak point:** `tsconfig.json` covers `src/` and `tests/`. The `e2e/` specs
+are TypeScript that Playwright executes but nothing typechecks, because they
+import Node builtins and typechecking them would need `@types/node` — a fifth
+dev dependency. The trade was made in favour of the greppable count, and it is
+recorded here rather than left for a reader to notice.
+
+`.github/CONTRIBUTING.md` states the rules a change has to clear;
+`.github/SECURITY.md` states the threat model, which is unusual here because
+there is no server to attack — and states which repository settings a maintainer
+must switch on, since a workflow file is inert until they are.
 
 ## Architecture, in one paragraph
 
@@ -149,9 +311,23 @@ src/
 ├─ session/   blockRunner.ts · dose.ts
 ├─ store/     local · session · ledger · deviceSignature · exampleLedger · export
 ├─ report/    report.ts · limitations.ts
-├─ styles/    tokens · themes · screen · print
+├─ styles/    tokens · themes · fonts · screen · landing · print
+├─ landing/   main.ts · replay.ts · trace.ts · figures.ts   (the page at /)
 └─ ui/        screens/* · dial · strip · sparkline · live · copy · dom
 ```
+
+Two HTML entry points and no router in either: `index.html` is the landing page,
+`app/index.html` is the six-screen instrument. They share every stylesheet, and
+the landing page's hero replay imports the real `Dial`, the real `scoreCycle`
+and the real refusal copy rather than redrawing them — so the picture on `/`
+cannot drift away from the product on `/app`.
+
+One typeface is vendored: a Latin subset of **Inter 4.1** (SIL OFL 1.1,
+73.9 kB, both variable axes intact), served same-origin from `/fonts/` with its
+licence beside it. `font-src 'self'` means a font CDN would be blocked by the
+browser rather than merely disallowed by policy, so a vendored copy is the only
+kind of web font this project can have. Attribution and the exact subset are in
+`NOTICE.md`.
 
 **Dependencies: 1 runtime (`@mediapipe/tasks-vision`), 4 dev (`vite`,
 `typescript`, `vitest`, `@playwright/test`).** Greppable in `package.json`,
@@ -165,6 +341,70 @@ cross-origin isolation is required and the app runs from a plain static host.
 
 `METHODS.md` has the full derivations: the bias correction, the sampling floor,
 the tracking-quality score, and where each stops being trustworthy.
+
+## Grounded — and a boundary list longer than the grounding
+
+`METHODS.md` §11 is a reference list, not a gesture at one. **Every entry carries
+a DOI or PMID and was opened before it was written**, and every entry says what
+the source supports *and what it does not*. Five things it establishes, in the
+literature's own words:
+
+- **The problem is real and the treatment is indicated.** The Amsterdam
+  consensus statement — *"If dizziness, neck pain and/or headaches persist for
+  more than 10 days, cervicovestibular rehabilitation is recommended"*
+  (doi:10.1136/bjsports-2023-106898) — and the Living Concussion Guidelines,
+  Recommendation 10.5, evidence level A. Schneider et al.'s RCT
+  (doi:10.1136/bjsports-2013-093267) cleared 73 % of its treatment arm within
+  eight weeks against 7 % of controls, n = 31.
+- **This therapy is prescribed as a quantity.** The APTA vestibular CPG
+  (doi:10.1097/NPT.0000000000000382) states a home-programme dose in sessions per
+  day, minutes per day and weeks — *3–5×/day, at least 20 min/day, for 4–6 weeks*
+  for chronic unilateral hypofunction. **On the guideline's own grading that dose
+  is weak evidence** — *"based on moderate to weak evidence, clinicians **may**
+  prescribe"* — and it is scoped to peripheral vestibular hypofunction, not
+  concussion. Both qualifiers travel with it everywhere it appears, here
+  included. What it establishes is not that *this* dose is right: it is that a
+  dose is **prescribed at all**. A quantity that is prescribed is a quantity that
+  can be under-delivered.
+- **Not measuring eye movement is the guideline's position, not a shortcut.**
+  The strongest objection to Gimbal is that a *gaze*-stabilization tool ought to
+  measure gaze. The ANPT's own clinical algorithm answers it at **Level I,
+  strong** — and unlike the dose, this one holds up when you check it against the
+  parent guideline, where it is **Action Statement 4, evidence quality I,
+  recommendation strength strong**: voluntary saccadic or smooth-pursuit eye
+  exercises *"should **NOT** be offered in isolation as gaze stabilization
+  exercises."* Eye movement without
+  head movement is not the exercise; head movement against a held visual target
+  is — and that is exactly and only what Gimbal measures. The same algorithm
+  names **Dynamic Visual Acuity** and the **Gaze Stabilization Test** as the
+  recommended measures on the visual-blurring-with-head-movement branch, which is
+  the lane the Landolt C task borrows its shape from.
+- **Self-report over-counts what was delivered.** Nicolson et al. concealed an
+  accelerometer inside the ankle weight and found *"exercise adherence was
+  significantly overestimated in diaries"* — diary median 220 exercises against
+  176 measured, P < .001 (doi:10.2519/jospt.2018.8275). **And the finding is not
+  a tidy inflation factor** — the same paper reports "large between-participant
+  variability in agreement" and concludes that self-report has "questionable
+  validity". The bias varies from person to person, which is exactly why it
+  cannot be corrected for on paper and has to be measured on the person in front
+  of you.
+- **The kinematics are the therapy's active parameters.** VOR adaptation is
+  *specific to the parameters it was trained at* — frequency-selective in humans
+  (doi:10.1152/jn.00162.2019), velocity-selective in mouse
+  (doi:10.1007/s00221-014-3988-8). That is why this instrument measures °/s and
+  Hz instead of minutes.
+
+**And then §11.6, which is the part worth reading.** It is a table of eleven
+claims Gimbal could plausibly have made and does not — including that the CPG's
+dose transfers to concussion (it is scoped to peripheral hypofunction), that
+faster head movement is better (nothing supports it; the card has a **ceiling**
+for exactly that reason), and that any number on the protocol card comes from a
+guideline. **None does.** No published parameter could be pinned for any of the
+eight fields, every one is clinician-entry only with a mandatory source string,
+and check `U-SRC` fails the build if one is empty.
+
+The literature says why the measurement is worth making. It never says what
+number to enforce, and Gimbal never pretends otherwise.
 
 ## Accessibility is the design constraint, not a checklist bolted to it
 
@@ -206,6 +446,12 @@ accessibility score; the exercise demanded it.
   assertive `role="alert"` reserved for exactly two events.
 - **No `outline: none` exists in `src/styles/`**, and a check in `npm test`
   fails the build if one appears.
+- **The landing page at `/` is held to the same bar as the instrument** — the
+  same three palettes, the same 15 px floor, the same 44 px targets, the same
+  focus ring, no horizontal scroll at 360 px, and one hero animation that is
+  paused by default under `prefers-reduced-motion`, seeded at the refusal it
+  depicts, and pausable by everyone else. There is no scroll-triggered motion
+  anywhere on it. Ten e2e assertions cover exactly these properties.
 
 **The honest boundary:** every screen is fully keyboard-operable, and on the
 block screen the keyboard is the only input. Screen-reader operation covers every
@@ -229,9 +475,13 @@ There is no age gate and no age-specific claim.
 
 Single device, single camera, one stated lighting condition. Sessions recorded on a different camera, browser or resolution are stored but never plotted on the same trend line.
 
+Verified in desktop Chromium only — the end-to-end suite declares one browser project. The layout is responsive down to 360 px, but phone, tablet and other browsers are untested, and no support for them is claimed.
+
 Data lives in one browser profile. There is no cross-device history, no clinician-side view, and no upload path of any kind. Clear it with one button.
 
 Every parameter on this page was typed in by the patient from their clinician. Gimbal did not originate any of them.
+
+No concussion patient has used this, and no clinician has reviewed it. It has been run by the person who built it, on one machine, and by nobody else. Nothing here has been validated against an independent sensor or against any clinical outcome.
 
 This is not a diagnosis and not a clearance. It supplements your clinician; it does not replace them.
 <!-- LIMITATIONS-BODY-END -->
@@ -270,6 +520,16 @@ Each absence is load-bearing.
 | **Calibration wizard / camera intrinsics / PnP** | Angular velocity is a *difference* of rotations, so constant bias differentiates away to first order. |
 | **Signed exports, blockchain receipts** | Ceremony that proves nothing. The real anti-gaming property is structural: **the only way to fake the dose is to perform the therapy.** |
 
-## Licence
+## Licence and contributing
 
-MIT — see `LICENSE`. Third-party attribution is in `NOTICE.md`.
+MIT — see `LICENSE`, which is the unmodified MIT text and nothing else so that a
+licence scanner can identify it. Third-party attribution is in `NOTICE.md`:
+one runtime dependency, two vendored artifacts from it, and one vendored
+typeface, each with its licence and the exact modification stated.
+
+**Gimbal is not a medical device.** The regulatory statement, and every other
+boundary this project draws, is in `LIMITATIONS.md`.
+
+Before opening a pull request, read `.github/CONTRIBUTING.md` — it lists the five
+rules that will fail your build and the design constraints that are not
+negotiable. Security issues go to `.github/SECURITY.md`, never to a public issue.

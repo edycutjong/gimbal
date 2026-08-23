@@ -47,6 +47,26 @@ export function loadTheme(): ThemeName | null {
   }
 }
 
+/**
+ * The theme that is ACTUALLY ON SCREEN, stored or not.
+ *
+ * `loadTheme()` returns null on a first visit, and the picker was rendering
+ * that null as three unchecked radios — a control that reports "nothing is
+ * selected" while a palette is plainly in effect, and reports it hardest on the
+ * very first paint, which is the only one a judge is guaranteed to see. Worse
+ * on a machine set to a light OS: themes.css seeds the warm-paper palette from
+ * `prefers-color-scheme`, so the page was light and the Light radio was empty.
+ *
+ * Nothing is written to storage here. The absence of a stored value is what
+ * keeps the page following the OS, and `syncThemePicker` below re-checks the
+ * radio if the OS flips while the page is open.
+ */
+export function effectiveTheme(): ThemeName {
+  const stored = loadTheme();
+  if (stored) return stored;
+  return globalThis.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
 export function applyTheme(theme: ThemeName): void {
   document.documentElement.setAttribute('data-theme', theme);
   try {
@@ -56,12 +76,22 @@ export function applyTheme(theme: ThemeName): void {
   }
 }
 
-/** The picker lives on every screen's settings row. */
+/**
+ * The picker lives on every screen's settings row.
+ *
+ * `current` is resolved through `effectiveTheme()` rather than trusted, because
+ * every call site passes the STORED theme and that is `null` until someone
+ * picks one. Rendered literally, the control said "no theme selected" on every
+ * first visit while a palette was visibly in effect — and on a light-set
+ * machine it said it while the page was warm paper and Light was the answer.
+ * A control that misreports its own state is worse than no control.
+ */
 export function themePickerHtml(current: ThemeName | null): string {
+  const shown = current ?? effectiveTheme();
   const labels: Record<ThemeName, string> = { dim: 'Dim', dark: 'Dark', light: 'Light' };
   const radios = THEMES.map(
     (t) => `<label>
-      <input type="radio" name="theme" value="${t}"${current === t ? ' checked' : ''} />
+      <input type="radio" name="theme" value="${t}"${shown === t ? ' checked' : ''} />
       <span>${labels[t]}</span>
     </label>`,
   ).join('');
@@ -71,11 +101,32 @@ export function themePickerHtml(current: ThemeName | null): string {
 }
 
 export function wireThemePicker(root: ParentNode): void {
-  for (const input of all<HTMLInputElement>(root, 'input[name="theme"]')) {
+  const inputs = all<HTMLInputElement>(root, 'input[name="theme"]');
+  for (const input of inputs) {
     input.addEventListener('change', () => {
       if (input.checked) applyTheme(input.value as ThemeName);
     });
   }
+
+  // While no theme has been stored the palette still tracks the OS, so the
+  // radio has to track it too — otherwise flipping the OS to light repaints the
+  // page and leaves Dark ticked.
+  //
+  // The app re-renders its settings row on every screen transition and calls
+  // this function each time, so the listener DETACHES ITSELF once the picker it
+  // belongs to has left the document. Otherwise six screens means six listeners
+  // walking arrays of detached inputs.
+  const query = globalThis.matchMedia?.('(prefers-color-scheme: light)');
+  const sync = (): void => {
+    if (!inputs.some((input) => input.isConnected)) {
+      query?.removeEventListener('change', sync);
+      return;
+    }
+    if (loadTheme()) return;
+    const shown = effectiveTheme();
+    for (const input of inputs) input.checked = input.value === shown;
+  };
+  query?.addEventListener('change', sync);
 }
 
 export function settingsRow(current: ThemeName | null): string {

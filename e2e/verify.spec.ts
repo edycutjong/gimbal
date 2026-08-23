@@ -105,7 +105,7 @@ test.describe('A1–A5 — the measurement against an independent sensor', () =>
     const reference = scoreGyroCsv(readFileSync(gyroCsv, 'utf8'), card);
 
     await injectRecordedCamera(page, benchVideo);
-    await page.goto('/');
+    await page.goto('/app');
     await completePrescribe(page);
     await startBlock(page);
     await page.waitForSelector('#screen-gate:not([hidden])', { timeout: 150_000 });
@@ -137,7 +137,7 @@ test.describe('A1–A5 — the measurement against an independent sensor', () =>
     test.skip(!clip.present, clip.reason);
 
     await injectRecordedCamera(page, clip.path);
-    await page.goto('/');
+    await page.goto('/app');
     await completePrescribe(page, { blockSeconds: '25', blockCount: '1' });
     await startBlock(page);
     await page.waitForSelector('#screen-gate:not([hidden])', { timeout: 120_000 });
@@ -190,7 +190,7 @@ test.describe('V1–V4 — the example-ledger disclosure', () => {
     // V4 asserts the DISCLOSURE, not the data — which is why it is in the gate
     // at all. The label silently disappearing after a refactor is the single
     // most likely way this project would accidentally mislabel example history.
-    await page.goto('/');
+    await page.goto('/app');
     await page.waitForSelector('#gate-ack');
     await page.click('#example-report');
     await page.waitForSelector('.report', { timeout: 30_000 });

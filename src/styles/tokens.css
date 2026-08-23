@@ -19,7 +19,13 @@
   --t-readout-sm: 1.25rem;
   --t-label: 0.9375rem; /* 15 px — the absolute floor */
 
-  --font-stack: 'Inter var', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* `InterVariable` is vendored same-origin in src/styles/fonts.css. The rest of
+     the stack is the fallback while the 74 kB subset swaps in, and the whole
+     stack after that if a host ever fails to serve it. */
+  --font-stack: 'InterVariable', 'Inter var', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* The measured values — velocities, counts, hashes — set in the platform's own
+     monospace. Nothing extra is downloaded for it. */
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;

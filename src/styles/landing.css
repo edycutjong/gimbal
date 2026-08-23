@@ -1,0 +1,2649 @@
+/*
+ * The landing page — `/`. Loaded only by src/landing/main.ts.
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ * DESIGN POSITION, stated once so it can be argued with.
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * `/` HAS ITS OWN VISUAL LANGUAGE. `/app` does not change.
+ *
+ * The application's palette exists for a photophobic concussion patient doing
+ * 2 Hz head oscillations in a dark room: muted hues, three themes, AAA contrast,
+ * no motion, nothing that costs a fixation. Those constraints are correct there
+ * and a category error here, because nobody reading the landing page is
+ * mid-exercise. Inheriting them wholesale produced a page that was accessible,
+ * honest, and grey — a wireframe of itself.
+ *
+ * So this file no longer "adds layout and overrides almost nothing". It declares
+ * a landing-scoped design system on top of the shared tokens:
+ *
+ *   1. A REAL TYPE SCALE. Six steps — 15 px labels, body, 22 px, ~45 px headings,
+ *      ~68 px display, ~112 px numerals — with genuine jumps between them. The
+ *      old page was an h1 followed by four hundred lines of 17 px.
+ *
+ *   2. COLOUR AS STRUCTURE, and only two hues, because there are only two
+ *      semantics. `--zone-in` means inside the prescribed band; `--zone-out`
+ *      means outside it; `--refused` slate means the instrument declined. Every
+ *      saturated pixel on this page is one of those three statements. No third
+ *      brand hue was invented, no call to action was painted in a state colour,
+ *      and the tinted panels (`--lp-wash-in`, `--lp-wash-out`) are those same two
+ *      hues at 6–10 % over the surface — which is how a page gets colour without
+ *      a palette that lies.
+ *
+ *   3. DEPTH INSTEAD OF HAIRLINES. Layered surfaces (`--lp-bg` → `--lp-panel` →
+ *      `--lp-well`), considered elevation, 10–32 px radii. The previous page drew
+ *      every object as a 1 px box, including the buttons.
+ *
+ *   4. THE DIAL IS THE LOGO, SO IT IS ENORMOUS. It is the one shape nobody else
+ *      in this event has, and it renders at up to 420 px with the delivered-dose
+ *      numeral inside the ring, which is where a gauge keeps its readout. It used
+ *      to be a 180 px thumbnail beside a grey `0.0`.
+ *
+ * DARK BY DEFAULT ON `/`, rather than following the OS — see src/landing/main.ts
+ * for the reasoning and the one line that does it. All three palettes still work
+ * here; the theme picker still carries a photophobic reader's choice into the
+ * app; `dim` additionally suppresses the one light source on the page.
+ *
+ * NO SCROLL-TRIGGERED MOTION EXISTS ON THIS PAGE, and that has not changed. No
+ * parallax, no fade-up on intersection, no sticky element that moves under the
+ * cursor, no count-up. In a population where visually-induced dizziness is a
+ * presenting symptom, tying movement to the scroll wheel is the single most
+ * provocative pattern a page can have, and `prefers-reduced-motion` does not save
+ * a reader who has not set it. The only animation on the page is the replay, and
+ * it has an off switch. Everything that would have been a scroll reveal is
+ * instead a compositional or typographic decision, which is the harder and
+ * better answer anyway.
+ *
+ * WCAG AA (4.5:1) IS A FLOOR HERE, NOT A TARGET. Every text/background pair below
+ * was computed, not eyeballed; the worst pair on the page is 4.78:1 and almost
+ * everything is above 6:1. The 15 px floor and the 44 px target are unchanged
+ * from the application.
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Landing-scoped tokens
+   ══════════════════════════════════════════════════════════════════════════
+
+   These live here rather than in themes.css because themes.css is the
+   application's contract and this is one page's design language. Nothing in
+   `/app` can see any of them.
+
+   The three palettes are declared as three blocks rather than as one block of
+   `color-mix()`, because a computed surface is a surface whose contrast nobody
+   ever checks. Every hex below appears in the ratio table in the header comment
+   of each block. */
+
+.landing {
+  /* ── Type scale ─────────────────────────────────────────────────────── */
+  --lp-t-mega: clamp(3.75rem, 8vw, 7rem);
+  --lp-t-display: clamp(2.5rem, 4.6vw, 4.25rem);
+  --lp-t-h2: clamp(1.9rem, 3vw, 2.85rem);
+  --lp-t-h3: clamp(1.2rem, 1.5vw, 1.4rem);
+  --lp-t-lede: clamp(1.15rem, 1.35vw, 1.4rem);
+  --lp-t-micro: 0.9375rem; /* 15 px — the absolute floor, no exceptions */
+
+  /* ── Spacing rhythm ─────────────────────────────────────────────────── */
+  --lp-s1: 0.5rem;
+  --lp-s2: 0.75rem;
+  --lp-s3: 1rem;
+  --lp-s4: 1.5rem;
+  --lp-s5: 2rem;
+  --lp-s6: 3rem;
+  --lp-s7: 4.5rem;
+  --lp-s8: clamp(3.5rem, 6vw, 6rem);
+
+  /* ── Geometry ───────────────────────────────────────────────────────── */
+  --lp-r1: 10px;
+  --lp-r2: 16px;
+  --lp-r3: 24px;
+  --lp-r4: 32px;
+  --lp-shell: 74rem;
+  --lp-wide: 96rem;
+  --lp-rail: 9rem;
+  --lp-pad: clamp(1.25rem, 3.4vw, 3rem);
+
+  background: var(--lp-bg);
+  color: var(--lp-ink-1);
+}
+
+/* ── Dark (the default on `/`) ─────────────────────────────────────────────
+ *
+ * Computed WCAG ratios, text on surface:
+ *              bg #080b10   bg-2 #0c1017   panel #121822   well #1a2230
+ *   ink-1      16.68        16.13          15.07           13.51
+ *   ink-2       9.34         9.03           8.44            7.57
+ *   ink-3       6.79         6.57           6.14            5.50
+ *   zone-in    10.96        10.59           9.90            8.88
+ *   zone-out    8.89         8.59           8.03            7.20
+ *   refused     7.63         7.38           6.89            6.18
+ *
+ * `--lp-ink-3` is NOT the app's `--ink-3` (#7c8895, 4.42:1 on the well and
+ * annotated "not used on s2"). It is lifted to #8d99a6 so that the label tier
+ * clears AA on every landing surface including the tinted washes — which is what
+ * released this page from the app's `--ink-3` prohibition without lowering a
+ * ratio anywhere. */
+.landing,
+:root[data-theme='dark'] .landing {
+  --lp-bg: #080b10;
+  --lp-bg-2: #0c1017;
+  --lp-panel: #121822;
+  --lp-well: #1a2230;
+  --lp-ink-1: #e6edf3;
+  --lp-ink-2: #a8b4c0;
+  --lp-ink-3: #8d99a6;
+  --lp-line: rgb(230 237 243 / 0.09);
+  --lp-line-2: rgb(230 237 243 / 0.18);
+  --lp-track: rgb(230 237 243 / 0.13);
+  /* THE RING TRACK IS NOT A HAIRLINE, and giving it the hairline token was the
+     concrete reason a 400 px gauge rendered as an empty circle. `--lp-track` at
+     13 % measures 1.42:1 on the panel; a scale a reader is asked to read a
+     marker against is a meaningful graphic and owes 3:1. These three values are
+     3.55 / 3.03 / 3.47 on their own panels, and the track is drawn THINNER than
+     the band so that raising its contrast does not let it compete with the one
+     arc that carries the prescription. */
+  --lp-dial-track: #5a6675;
+  --lp-wash-in: rgb(91 214 174 / 0.07);
+  --lp-wash-out: rgb(217 166 60 / 0.07);
+  --lp-wash-refused: rgb(152 162 176 / 0.07);
+  /* The one light source on the page: a soft fall of light behind the
+     instrument, at 5 %. Not a gradient mesh and not decoration — it is what
+     makes the dial read as an object sitting on a surface rather than as a
+     drawing printed on one. `dim` turns it off entirely. */
+  --lp-glow: rgb(91 214 174 / 0.05);
+  --lp-glow-2: rgb(217 166 60 / 0.045);
+  --lp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.45), 0 8px 20px -10px rgb(0 0 0 / 0.6);
+  --lp-shadow-2: 0 2px 6px rgb(0 0 0 / 0.5), 0 26px 60px -26px rgb(0 0 0 / 0.8);
+  --lp-shadow-3: 0 4px 12px rgb(0 0 0 / 0.55), 0 46px 100px -34px rgb(0 0 0 / 0.9);
+  --lp-cta-ink: #060a0f;
+}
+
+/* ── Dim (deep photophobia) ───────────────────────────────────────────────
+ *
+ *              bg #030508   bg-2 #070a0e   panel #0c111a   well #121924
+ *   ink-1      12.43        12.08          11.51           10.74
+ *   ink-2       6.78         6.59           6.29            5.87
+ *   ink-3       6.78         6.59           6.29            5.87
+ *   zone-in     8.30         8.07           7.69            7.17
+ *   zone-out    7.89         7.67           7.31            6.82
+ *   refused     5.97         5.80           5.53            5.16
+ *
+ * `--lp-ink-3` is pinned to the palette's `--ink-2` value: Dim exists to put
+ * LESS light on the screen, so its label tier borrows a token that already
+ * exists rather than adding a fourth grey. And the glow is `transparent` —
+ * a soft wash of light is exactly the thing this palette is for not having. */
+:root[data-theme='dim'] .landing {
+  --lp-bg: #030508;
+  --lp-bg-2: #070a0e;
+  --lp-panel: #0c111a;
+  --lp-well: #121924;
+  --lp-ink-1: #c2cbd4;
+  --lp-ink-2: #8b96a2;
+  --lp-ink-3: #8b96a2;
+  --lp-line: rgb(194 203 212 / 0.08);
+  --lp-line-2: rgb(194 203 212 / 0.16);
+  --lp-track: rgb(194 203 212 / 0.11);
+  --lp-dial-track: #556779;
+  --lp-wash-in: rgb(71 184 146 / 0.06);
+  --lp-wash-out: rgb(199 154 62 / 0.06);
+  --lp-wash-refused: rgb(129 140 153 / 0.06);
+  --lp-glow: transparent;
+  --lp-glow-2: transparent;
+  --lp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.6), 0 8px 20px -10px rgb(0 0 0 / 0.7);
+  --lp-shadow-2: 0 2px 6px rgb(0 0 0 / 0.65), 0 26px 60px -26px rgb(0 0 0 / 0.85);
+  --lp-shadow-3: 0 4px 12px rgb(0 0 0 / 0.7), 0 46px 100px -34px rgb(0 0 0 / 0.9);
+  --lp-cta-ink: #04060a;
+}
+
+/* ── Light (warm paper) ───────────────────────────────────────────────────
+ *
+ *              bg #e9e3d8   bg-2 #f1ece3   panel #faf7f1   well #f1ece3
+ *   ink-1      13.96        15.15          16.67           15.15
+ *   ink-2       7.40         8.03           8.84            8.03
+ *   ink-3       5.77         6.28           6.89            6.28
+ *   zone-in     5.09         5.53           6.08            5.53
+ *   zone-out    5.58         6.06           6.67            6.06
+ *   refused     5.75         6.24           6.87            6.24
+ *
+ * Shadows here are warm and shallow: a black drop shadow on warm paper reads as
+ * dirt rather than as elevation. */
+:root[data-theme='light'] .landing {
+  --lp-bg: #e9e3d8;
+  --lp-bg-2: #f1ece3;
+  --lp-panel: #faf7f1;
+  --lp-well: #f1ece3;
+  --lp-ink-1: #14181d;
+  --lp-ink-2: #3e4750;
+  --lp-ink-3: #4d5761;
+  --lp-line: rgb(20 24 29 / 0.13);
+  --lp-line-2: rgb(20 24 29 / 0.26);
+  --lp-track: rgb(20 24 29 / 0.16);
+  --lp-dial-track: #8a8479;
+  --lp-wash-in: rgb(10 107 79 / 0.08);
+  --lp-wash-out: rgb(122 79 0 / 0.08);
+  --lp-wash-refused: rgb(78 87 97 / 0.08);
+  --lp-glow: rgb(10 107 79 / 0.05);
+  --lp-glow-2: rgb(122 79 0 / 0.05);
+  --lp-shadow-1: 0 1px 2px rgb(74 60 38 / 0.1), 0 6px 16px -8px rgb(74 60 38 / 0.18);
+  --lp-shadow-2: 0 2px 6px rgb(74 60 38 / 0.12), 0 20px 44px -20px rgb(74 60 38 / 0.28);
+  --lp-shadow-3: 0 4px 12px rgb(74 60 38 / 0.14), 0 36px 80px -28px rgb(74 60 38 / 0.34);
+  --lp-cta-ink: #faf7f1;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Base
+   ══════════════════════════════════════════════════════════════════════════
+
+   EVERY BASE RULE BELOW IS WRAPPED IN `:where()`, ON PURPOSE.
+
+   `.landing p` scores (0,1,1) and quietly beats every single-class rule in this
+   file, which is how a primary call to action ends up with `--ink-1` text on an
+   `--ink-1` background and still looks fine in a diff. `:where()` contributes
+   zero specificity, so these are defaults that any component rule overrides by
+   simply existing — which is the relationship they were always meant to have. */
+
+.landing :where(main) {
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* `main` is `tabindex="-1"` so the skip link can land on it. A 3 px ring around
+   the entire page would be absurd, so the ring is drawn INSIDE the edge — still
+   3 px, still `--focus`, still impossible to miss. No focus ring is removed
+   anywhere on this page; check U-OUTLINE would fail the build if one were. */
+.landing main:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+/* Every in-page anchor target gets breathing room above it, or a jump lands its
+   target flush against the top edge with its focus ring clipped — which reads as
+   an overshoot rather than an arrival. */
+.landing :where([id]) {
+  scroll-margin-top: var(--lp-s6);
+}
+
+.landing :where(h1, h2, h3) {
+  text-wrap: balance;
+  color: var(--lp-ink-1);
+}
+
+.landing :where(p, li, dt, dd, figcaption, summary) {
+  color: var(--lp-ink-2);
+}
+
+.landing :where(p) {
+  max-width: var(--measure);
+}
+
+.landing :where(strong) {
+  color: var(--lp-ink-1);
+  font-weight: 600;
+}
+
+.landing :where(em) {
+  font-style: italic;
+}
+
+.landing :where(code) {
+  /* 1em, never smaller: the 15 px floor has no exceptions, and a shrunken inline
+     code span is the classic way a page acquires 13 px text without noticing. */
+  font-family: var(--font-mono);
+  font-size: 1em;
+  letter-spacing: -0.01em;
+  color: var(--lp-ink-1);
+}
+
+.landing :where(kbd) {
+  font-family: var(--font-mono);
+  font-size: 1em;
+  border: 1px solid var(--lp-line-2);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 0.1em 0.4em;
+  background: var(--lp-well);
+  color: var(--lp-ink-1);
+}
+
+.landing :where(a) {
+  color: var(--lp-ink-1);
+  text-decoration-color: var(--lp-line-2);
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 140ms ease, color 140ms ease;
+}
+
+.landing :where(a:hover) {
+  text-decoration-color: currentcolor;
+}
+
+.landing .tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The two hues, as reusable emphasis. Used only where the word means what the
+   hue means; never as decoration. */
+.landing .lp-in {
+  color: var(--zone-in);
+}
+
+.landing .lp-out {
+  color: var(--zone-out);
+}
+
+/* ── The eyebrow / label tier ───────────────────────────────────────────── */
+
+/*
+ * THE ENGRAVED-LABEL TIER IS MONOSPACE, and it is the cheapest single change
+ * that moves this page from "product site" to "instrument". Wide tracking,
+ * uppercase, at the 15 px floor and never below it — which is what makes 15 px
+ * mono read as a panel label rather than as small text.
+ *
+ * Only LABELS take it. Display numerals stay in the vendored Inter, because
+ * `--font-mono` resolves to whatever monospace the machine has and a 112 px
+ * numeral is the last place this page can afford to look different on every
+ * laptop.
+ */
+.landing :where(.lp-eyebrow, .lp-rail-label, .lp-readout-label, .lp-meta-label,
+  .lp-chapter-eyebrow, .lp-foot-h, .lp-plot-ylabel, .lp-spec-k, .lp-num) {
+  font-family: var(--font-mono);
+}
+
+.landing .lp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lp-s2);
+  font-size: var(--lp-t-micro);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--lp-ink-3);
+  margin: 0;
+  max-width: none;
+}
+
+/* A hairline, not a green dot. `--zone-in` means "inside the prescribed band";
+   spending it on an eyebrow bullet is the first step towards it also meaning
+   "decorative", after which the ring's colour stops carrying information. */
+.lp-eyebrow::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 24px;
+  height: 1px;
+  background: var(--lp-ink-3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Header
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-head {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lp-s3);
+  flex-wrap: wrap;
+  max-width: var(--lp-wide);
+  margin: 0 auto;
+  padding: var(--lp-s4) var(--lp-pad);
+}
+
+.landing .lp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lp-s2);
+  min-height: var(--target);
+  padding: 0 var(--lp-s2) 0 0;
+  border-radius: var(--lp-r1);
+  text-decoration: none;
+  transition: opacity 140ms ease;
+}
+
+.landing .lp-brand:hover {
+  opacity: 0.78;
+}
+
+.lp-mark {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  /* The mark's own track override. `--lp-track` is tuned for a 400 px gauge
+     where the unfilled sweep should recede; at 38 px it vanishes entirely and
+     the mark stops being a ring. */
+  --lp-track: var(--lp-line-2);
+}
+
+.lp-head .wordmark {
+  font-size: 1.4rem;
+  font-weight: 640;
+  letter-spacing: -0.028em;
+  color: var(--lp-ink-1);
+}
+
+.lp-head-right {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-s3);
+  flex-wrap: wrap;
+}
+
+/*
+ * The theme picker is three native radios, and a native radio paints itself in
+ * the UA accent — a blue that is not in any of the three palettes and that
+ * collides with `--focus`, the one hue reserved for focus and nothing else. So
+ * the DOT IS HIDDEN and the label carries the whole state as a filled segment:
+ * a segmented control, which is what three mutually exclusive options are.
+ *
+ * The input keeps its box and its focus ring; only `appearance` goes, and
+ * `U-OUTLINE` would fail the build if an outline went with it.
+ */
+.landing .theme-picker {
+  display: flex;
+  gap: 3px;
+  border: 1px solid var(--lp-line);
+  background: var(--lp-panel);
+  border-radius: 999px;
+  padding: 3px;
+  margin: 0;
+  box-shadow: var(--lp-shadow-1);
+}
+
+.landing .theme-picker label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  /* The whole segment is the target, not a 12 px dot inside it. */
+  min-height: var(--target);
+  min-width: var(--target);
+  padding: 0 var(--lp-s3);
+  margin: 0;
+  border: none;
+  border-radius: 999px;
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-2);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+/*
+ * The radio FILLS its label rather than shrinking to nothing, which is what
+ * keeps the shared `:focus-visible` ring drawn around the segment a keyboard
+ * user is actually on. A zero-sized input would have painted a 3 px dot in the
+ * corner instead — technically a visible ring, practically none.
+ */
+.landing .theme-picker input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+}
+
+.landing .theme-picker label > span {
+  position: relative;
+  pointer-events: none;
+}
+
+.landing .theme-picker label:hover {
+  background: var(--lp-well);
+  color: var(--lp-ink-1);
+}
+
+.landing .theme-picker label:has(input:checked) {
+  background: var(--lp-well);
+  color: var(--lp-ink-1);
+  box-shadow: inset 0 0 0 1px var(--lp-line-2);
+  font-weight: 560;
+}
+
+.landing .lp-headlink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0 var(--lp-s4);
+  border: 1px solid var(--lp-line-2);
+  border-radius: 999px;
+  background: var(--lp-panel);
+  text-decoration: none;
+  font-size: var(--lp-t-micro);
+  font-weight: 560;
+  letter-spacing: 0.01em;
+  box-shadow: var(--lp-shadow-1);
+  transition: background-color 140ms ease, border-color 140ms ease, transform 120ms ease;
+}
+
+.landing .lp-headlink:hover {
+  background: var(--lp-well);
+  border-color: var(--lp-ink-3);
+  transform: translateY(-1px);
+}
+
+.landing .lp-headlink:active {
+  transform: translateY(0);
+}
+
+/* On a phone this button is pure duplication of the hero's own primary call,
+   one scroll away — and keeping it forces the theme picker onto a third header
+   row before any content has appeared. */
+@media (max-width: 47.99rem) {
+  .landing .lp-headlink {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Hero
+   ══════════════════════════════════════════════════════════════════════════
+ *
+ * TWO COLUMNS, AND THAT IS THE WHOLE ARGUMENT OF THE PAGE. The sentence and the
+ * picture have to be true at the same time: a judge who reads "watch the counter
+ * refuse you by name" and has to scroll to find the counter has already spent
+ * the ten seconds this page gets.
+ *
+ * The children are FLAT rather than wrapped in a text column, so the source
+ * order is the phone order — claim, then proof, then the rest — while the
+ * desktop grid puts the claim left and the instrument right.
+ */
+
+.lp-hero {
+  position: relative;
+  isolation: isolate;
+  max-width: var(--lp-wide);
+  margin: 0 auto;
+  padding: var(--lp-s3) var(--lp-pad) var(--lp-s7);
+  display: grid;
+  gap: var(--lp-s4);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+/*
+ * The light source. Two very soft falls — one in each state hue, on the side of
+ * the composition that argument belongs to. 5 % and 4.5 %; `dim` sets both to
+ * `transparent` and this element renders nothing at all.
+ *
+ * `inset` is ZERO ON BOTH HORIZONTAL EDGES. At `-6%` the pseudo-element widened
+ * the document by 86 px at 1440 and the page scrolled sideways — an invisible
+ * 5 %-opacity gradient producing a horizontal scrollbar is the funniest possible
+ * way to fail the overflow check, and it failed it at four widths out of five.
+ */
+.lp-hero::before {
+  content: '';
+  position: absolute;
+  inset: -10% 0 26%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 52% at 76% 30%, var(--lp-glow), transparent 70%),
+    radial-gradient(46% 46% at 6% 6%, var(--lp-glow-2), transparent 70%);
+}
+
+/*
+ * ABOVE 76 REM THE CLAIM SITS LEFT AND THE INSTRUMENT SITS RIGHT, both above the
+ * fold at 1440 x 900.
+ *
+ * `align-content: start`, NOT `center`. The panel is far taller than the claim,
+ * and centring the claim against it parked 400 px of empty page above the
+ * headline — dead space at the exact place a reader looks first, which is the
+ * bug this comment exists to stop coming back.
+ *
+ * The last row is `1fr` so ALL the slack from the taller right-hand panel lands
+ * in ONE place, below the narration card. Leave every row `auto` and the browser
+ * shares the surplus out evenly instead, opening a ragged 60 px gap between each
+ * of the claim, the lede and the buttons.
+ */
+@media (min-width: 76rem) {
+  .lp-hero {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto 1fr;
+    grid-template-areas:
+      'eyebrow replay'
+      'claim   replay'
+      'lede    replay'
+      'cta     replay'
+      'note    replay'
+      'chapter replay';
+    column-gap: clamp(2rem, 4vw, 4.5rem);
+    row-gap: var(--lp-s4);
+    align-items: start;
+    align-content: start;
+    padding-top: var(--lp-s4);
+  }
+
+  .lp-hero > .lp-eyebrow {
+    grid-area: eyebrow;
+  }
+
+  .lp-hero > .lp-h1 {
+    grid-area: claim;
+  }
+
+  .lp-hero > .lp-replay-slot {
+    grid-area: replay;
+  }
+
+  .lp-hero > .lp-lede {
+    grid-area: lede;
+  }
+
+  /* ONE COLUMN AS WIDE AS THE WIDER BUTTON. In a 542 px prose column the two
+     calls wrap onto separate lines, and left-aligned at their own natural
+     widths they read as two unrelated objects that happen to be stacked. */
+  .lp-hero > .lp-cta-row {
+    grid-area: cta;
+    display: grid;
+    grid-template-columns: minmax(0, max-content);
+  }
+
+  .lp-hero > .lp-hero-note {
+    grid-area: note;
+  }
+
+  .lp-hero > .lp-chapter {
+    grid-area: chapter;
+    align-self: start;
+    margin-top: var(--lp-s2);
+  }
+}
+
+/*
+ * THE HEADLINE.
+ *
+ * Display weight at ~68 px on a wide screen, tight tracking, 1.02 leading. The
+ * previous page's `h1` topped out at 56 px and then dropped straight to 17 px
+ * for everything else; this one is the top of a six-step scale that the rest of
+ * the page actually uses.
+ */
+.lp-h1 {
+  font-size: var(--lp-t-display);
+  font-weight: 620;
+  /* 1.12, not 1.02. The emphasised clause carries a hatched underline that has
+     to live inside its own line box; at 1.02 the hatch under one line landed on
+     the ascenders of the next, and the last fragment landed on the lede. */
+  line-height: 1.12;
+  letter-spacing: -0.038em;
+  margin: 0;
+  max-width: 15ch;
+  color: var(--lp-ink-1);
+}
+
+/*
+ * The emphasised clause carries the product's own refusal mark: the 45° hatch
+ * from `#refused-hatch` in src/ui/strip.ts, in `--refused`, as an underline. The
+ * one piece of ornament on this page is a quotation of the instrument.
+ *
+ * THE COLLISION, AND WHY IT IS A LEADING PROBLEM RATHER THAN A PADDING ONE.
+ *
+ * The clause wraps, so `box-decoration-break: clone` paints one hatch per
+ * fragment. Padding the em downwards pushes each hatch OUT of its line box and
+ * on top of whatever is beneath it — the next line of the headline, and then the
+ * lede. The fix is room inside the line box (`line-height: 1.12` above) and a
+ * hatch that sits just under the baseline rather than 0.34em below it.
+ */
+.lp-h1 em {
+  font-style: normal;
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--refused) 0 2px,
+    transparent 2px 6px
+  );
+  background-size: 100% 0.16em;
+  background-position: 0 calc(100% - 0.04em);
+  background-repeat: no-repeat;
+  padding-bottom: 0.12em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.landing .lp-lede {
+  font-size: var(--lp-t-lede);
+  line-height: 1.5;
+  color: var(--lp-ink-2);
+  max-width: 46ch;
+  margin: 0;
+}
+
+.landing .lp-hero-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lp-s1) var(--lp-s4);
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.lp-hero-note span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lp-s1);
+}
+
+.lp-hero-note span::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lp-ink-3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Calls to action
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lp-s2);
+  margin: 0;
+}
+
+.landing .lp-cta {
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  min-height: 68px;
+  padding: var(--lp-s2) clamp(1.25rem, 2vw, 1.75rem);
+  border-radius: var(--lp-r2);
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-size: var(--t-body);
+  font-weight: 580;
+  letter-spacing: -0.005em;
+  transition: transform 140ms cubic-bezier(0.2, 0, 0.1, 1), background-color 160ms ease,
+    border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.lp-cta-sub {
+  font-size: var(--lp-t-micro);
+  font-weight: 400;
+  opacity: 0.72;
+}
+
+/*
+ * Inverted ink, not a brand colour. There are exactly two state hues in this
+ * project and neither of them means "click here" — painting a call to action in
+ * `--zone-in` would be the first crack in a semantic the whole instrument
+ * depends on, and it is the reason this page can use green structurally at all.
+ */
+.landing .lp-cta-primary {
+  background: var(--lp-ink-1);
+  color: var(--lp-cta-ink);
+  border-color: var(--lp-ink-1);
+  box-shadow: var(--lp-shadow-2);
+}
+
+.landing .lp-cta-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--lp-shadow-3);
+}
+
+.landing .lp-cta-primary:active {
+  transform: translateY(0) scale(0.994);
+}
+
+.landing .lp-cta-secondary {
+  background: var(--lp-panel);
+  color: var(--lp-ink-1);
+  border-color: var(--lp-line-2);
+  box-shadow: var(--lp-shadow-1);
+}
+
+.landing .lp-cta-secondary:hover {
+  background: var(--lp-well);
+  border-color: var(--lp-ink-3);
+  transform: translateY(-2px);
+  box-shadow: var(--lp-shadow-2);
+}
+
+.landing .lp-cta-secondary:active {
+  transform: translateY(0) scale(0.994);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The instrument — the hero replay
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * THE ENCLOSURE.
+ *
+ * One bordered panel divided into bays by a 1 px gutter that is the PARENT'S
+ * BACKGROUND rather than a border on each child: `gap: 1px` over a `--lp-line-2`
+ * ground, with every bay painted `--lp-panel`. One declaration draws every
+ * hairline in the panel and they cannot misalign, double up at a corner, or
+ * disagree about which side owns the rule.
+ */
+.lp-replay {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r4);
+  background: var(--lp-line);
+  box-shadow: var(--lp-shadow-3);
+  overflow: hidden;
+  display: grid;
+  gap: 1px;
+}
+
+.lp-replay > * {
+  background: var(--lp-panel);
+}
+
+/*
+ * ABOVE 62 REM THE PANEL IS TWO BAYS — gauge on the left, the run of
+ * repetitions on the right — with the status bar SPANNING BOTH beneath them.
+ *
+ * Two things come out of that. The panel loses about 190 px of height, which is
+ * what puts the strip and the refusal sentence above the fold at 1440 x 900
+ * instead of below it. And the sentence, spanning, reads as a verdict on
+ * everything above it rather than as a caption on the dial alone.
+ */
+@media (min-width: 62rem) {
+  .lp-replay {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-areas:
+      'head   head'
+      'stage  meta'
+      'status status'
+      'ctl    ctl'
+      'cap    cap'
+      'text   text';
+  }
+
+  .lp-replay > .lp-replay-head { grid-area: head; }
+  .lp-replay > .lp-replay-stage { grid-area: stage; }
+  .lp-replay > .lp-replay-meta { grid-area: meta; }
+  .lp-replay > .lp-replay-status { grid-area: status; }
+  .lp-replay > .lp-replay-controls { grid-area: ctl; }
+  .lp-replay > .lp-replay-cap { grid-area: cap; }
+  .lp-replay > .lp-replay-text { grid-area: text; }
+}
+
+/* A one-pixel highlight along the top edge. It is what separates a raised
+   surface from a rectangle of a different colour. */
+.lp-replay::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--lp-line-2) 22%, var(--lp-line-2) 78%, transparent);
+  pointer-events: none;
+}
+
+.lp-replay-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lp-s2);
+  padding: var(--lp-s2) var(--lp-s3) var(--lp-s2) var(--lp-s4);
+}
+
+.landing .lp-replay-head-text {
+  flex: 1 1 16rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lp-s1) var(--lp-s2);
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  line-height: 1.45;
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.landing .lp-replay-head .chip {
+  border-color: var(--lp-ink-3);
+  color: var(--lp-ink-2);
+  border-radius: 999px;
+  padding: 2px var(--lp-s2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: var(--lp-t-micro);
+}
+
+.lp-ctl-play {
+  flex: 0 0 auto;
+  min-width: 11.5rem;
+  text-align: center;
+}
+
+/* ── The stage ──────────────────────────────────────────────────────────── */
+
+.lp-replay-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding: var(--lp-s4) var(--lp-s4) var(--lp-s3);
+}
+
+/* The prescribed band, named right above the arc that draws it. */
+.landing .lp-band-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lp-s1);
+  margin: 0 0 var(--lp-s2);
+  padding: 3px var(--lp-s2) 3px var(--lp-s1);
+  border-radius: 999px;
+  border: 1px solid var(--lp-line-2);
+  background: var(--lp-wash-in);
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-2);
+  max-width: none;
+}
+
+.lp-band-tag::before {
+  content: '';
+  width: 22px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--zone-in);
+}
+
+/*
+ * THE DIAL, AT SIZE.
+ *
+ * `.ring-stage` in screen.css is `min(88vmin, 100%)`, which inside a hero panel
+ * resolved to about 180 px — the product's signature shape rendering as a
+ * thumbnail next to a grey numeral. It is the one shape nobody else in this
+ * event has, so here it is the largest object on the page.
+ */
+.lp-dial {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(290px, 84vw);
+  aspect-ratio: 1;
+}
+
+@media (min-width: 46rem) {
+  .lp-dial {
+    width: min(360px, 54%);
+  }
+}
+
+/* PERCENT, NOT VIEWPORT UNITS, once the panel is two bays. A `vw` clamp knows
+   nothing about the width of the bay it sits in, and at 1440 it drew a 324 px
+   dial into a 304 px bay — the scale-end labels ended up under the divider. */
+@media (min-width: 62rem) {
+  .lp-dial {
+    width: min(420px, 100%);
+  }
+}
+
+.lp-dial .ring-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The plate — landing-owned, drawn outside the instrument's own SVG. */
+.lp-dial-plate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/*
+ * THE TRACK IS RESTYLED, THE DATA ARCS ARE NOT.
+ *
+ * `--edge` was picked in dial.ts so the unfilled sweep survives the warm-paper
+ * palette at 60 cm. On a dark landing page at 400 px it disappears, and a gauge
+ * whose scale is invisible is a gauge with no scale. Only the TRACK is
+ * repainted: `.ring-band`, `.ring-live` and `.ring-marker` carry verdicts and
+ * are left entirely to `Dial.setLive` / `Dial.setCommitted`, which is why there
+ * is no `stroke` declaration for any of them anywhere in this file.
+ */
+/*
+ * WEIGHT HIERARCHY: band heaviest, marker a distinct SHAPE, track lightest —
+ * AND THE TRACK'S WEIGHT IS WHAT STOPS THE GAUGE READING AS A PROGRESS RING.
+ *
+ * `dial.ts` gives all three arcs `stroke-width: 6`, which is right at 180 px on
+ * the block screen and wrong at 360 px here. Worse: the track has to clear 3:1
+ * as a meaningful graphic, and at 3:1 it is close enough in colour to
+ * `--edge-strong` — which is what the instrument paints the band with while the
+ * last cycle was refused — that a 12 px track around the whole 270° read as a
+ * ring that was already full. A full ring is the progress metaphor this product
+ * exists to refuse, and it was on the hero.
+ *
+ * So the separation is carried by WIDTH, where there is room for a 3.5x ratio,
+ * rather than by contrast, where there is not. These are presentation overrides
+ * only: not one `stroke` COLOUR is declared for `.ring-band`, `.ring-live` or
+ * `.ring-marker` anywhere in this file, because those three carry the verdict
+ * and belong entirely to `Dial.setLive` / `Dial.setCommitted`.
+ */
+.lp-dial .ring-track {
+  stroke: var(--lp-dial-track);
+  stroke-width: 2;
+}
+
+.lp-dial .ring-band {
+  stroke-width: 7;
+}
+
+.lp-dial .ring-live {
+  stroke-width: 7;
+}
+
+.lp-dial .ring-marker {
+  stroke-width: 3.4;
+}
+
+/* The readout lives INSIDE the ring, which is where a gauge keeps its number. */
+.lp-dial-core {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+  /* 56 %, not 62 %: the dashed gap arc runs at r = 35 in the dial's viewBox and
+     a wider readout box collided with it on the left-hand sweep. */
+  width: 56%;
+}
+
+.landing .lp-readout-label {
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.landing .lp-readout-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.15em;
+  margin: 0;
+  font-size: clamp(2.75rem, 6.6vw, 4.25rem);
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-1);
+  max-width: none;
+}
+
+/* A BARE `s`, with "in zone" moved to the line below.
+   `0.0 s in zone` is 179 px at 1440 inside a 181 px readout box: it fitted on
+   the widths it was designed at and wrapped mid-unit on the one in between. */
+.lp-readout-unit {
+  font-size: clamp(1.125rem, 1.6vw, 1.5rem);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--lp-ink-2);
+}
+
+.landing .lp-readout-sub {
+  margin: var(--lp-s1) 0 0;
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+/* The scale ends, at the two places the sweep actually terminates: 7:30 and
+   4:30. Absolute, because they belong to the ring's geometry rather than to a
+   row of text underneath it. */
+.landing .lp-dial-end {
+  position: absolute;
+  bottom: 6%;
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.lp-dial-end-min {
+  left: 0;
+}
+
+.lp-dial-end-max {
+  right: 0;
+}
+
+/*
+ * The shortfall, in words, under the arc that draws it. It reserves its line
+ * whether or not it has text, so an in-band cycle — which has no shortfall and
+ * prints nothing — does not shorten the panel and move the page under a reader.
+ */
+.landing .lp-deficit {
+  margin: var(--lp-s3) 0 0;
+  min-height: 1.5em;
+  font-size: var(--lp-t-micro);
+  font-variant-numeric: tabular-nums;
+  font-weight: 560;
+  color: var(--zone-out);
+  text-align: center;
+  max-width: none;
+}
+
+.landing .lp-dial-note {
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+  text-align: center;
+  max-width: none;
+}
+
+/* ── The status line ────────────────────────────────────────────────────── */
+
+/*
+ * THE SENTENCE IS THE PRODUCT, so it is set at heading size rather than as a
+ * caption. Monospace, in a well, with a left rule that goes `--refused` slate
+ * exactly when the sentence is a refusal. It reserves its own height so the
+ * panel does not reflow every cycle — a layout that jumps under a dizzy reader
+ * is its own accessibility failure.
+ *
+ * The in-band state stays NEUTRAL rather than going green. In-zone is the
+ * resting state; painting it would be a celebration, and a reward loop that
+ * encourages more of a symptom-limited therapy is clinically wrong. The quiet is
+ * the thesis.
+ */
+.landing .lp-replay-status {
+  min-height: 4.2em;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: var(--lp-s3) var(--lp-s4);
+  font-family: var(--font-mono);
+  /* One line at 1440, two below it. At `--t-body` the sentence broke after
+     "measured 91" and left "°/s)." alone on the second line of the panel's most
+     important string. */
+  font-size: clamp(1rem, 1.15vw, 1.0625rem);
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+  color: var(--lp-ink-2);
+  background: var(--lp-well);
+  border-left: 5px solid var(--lp-line-2);
+  max-width: none;
+  transition: border-color 200ms ease, color 200ms ease;
+}
+
+.landing .lp-replay-status[data-refused='true'] {
+  color: var(--lp-ink-1);
+  border-left-color: var(--refused);
+}
+
+/* ── The strip and the quality meter ────────────────────────────────────── */
+
+/*
+ * The bay is a grid row and stretches to the height of the gauge beside it, so
+ * ALL FOUR of its children were stretching too — which opened 90 px of nothing
+ * between the word "Repetitions" and the strip it labels. Row three takes the
+ * surplus instead, so the label sits on its strip, the legend sits under it, and
+ * the confidence meter is pinned to the foot of the bay where a meter belongs.
+ */
+.lp-replay-meta {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  align-items: start;
+  gap: var(--lp-s3);
+  padding: var(--lp-s3) var(--lp-s4);
+}
+
+.lp-meta-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--lp-s1) var(--lp-s3);
+}
+
+.landing .lp-meta-label {
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.landing .lp-meta-count {
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-2);
+  max-width: none;
+}
+
+/*
+ * The cycle strip: ten cells, all ten present from the start so the reader can
+ * see how much trace is left and the layout never shifts. A credited cycle is a
+ * SOLID BLOCK; a refused one is an outlined, hatched HOLE at 45 % height. Same
+ * rule as `src/ui/strip.ts`, drawn in HTML because ten SVG cells stretched
+ * across a hero panel would shear the 45° hatch flat.
+ */
+.lp-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 5px;
+  align-items: center;
+  height: 52px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* In the two-bay panel the strip is the history bay, not a footnote under the
+   gauge, and 52 px made it read as a dotted rule. At 76 px a credited cycle is a
+   block you can see from across a room, which is what the strip is for. */
+@media (min-width: 62rem) {
+  .lp-replay-meta .lp-strip {
+    height: 76px;
+  }
+}
+
+.lp-strip li {
+  height: 100%;
+  border-radius: 5px;
+  transition: background-color 180ms linear, height 180ms ease, border-color 180ms linear;
+}
+
+.lp-strip li[data-state='pending'] {
+  height: 30%;
+  border: 1px solid var(--lp-line);
+  background: var(--lp-well);
+}
+
+.lp-strip li[data-state='credited'] {
+  background: var(--zone-in);
+  box-shadow: 0 2px 10px -4px var(--zone-in);
+}
+
+.lp-strip li[data-state='refused'] {
+  height: 45%;
+  border: 2px solid var(--refused);
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--refused) 0 2px,
+    transparent 2px 6px
+  );
+}
+
+/*
+ * THE FRONT-PANEL LEGEND. Every state named in text, beside a swatch that
+ * repeats the strip cell's own geometry — solid block, hatched outlined hole,
+ * faint stub. Screenshot the panel in greyscale and all three still resolve,
+ * which is the operational test for "never encode meaning in hue alone".
+ */
+.lp-legend-states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lp-s1) var(--lp-s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+}
+
+.lp-legend-states li {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-s1);
+}
+
+.lp-swatch {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.lp-swatch-in {
+  background: var(--zone-in);
+}
+
+.lp-swatch-refused {
+  height: 9px;
+  border: 2px solid var(--refused);
+  background-image: repeating-linear-gradient(45deg, var(--refused) 0 2px, transparent 2px 6px);
+}
+
+.lp-swatch-pending {
+  height: 5px;
+  border: 1px solid var(--lp-line-2);
+  background: var(--lp-well);
+}
+
+/* One row, not four: label, value and bar share a baseline so the confidence
+   floor costs the panel 24 px instead of 90. Its note sits under the row. */
+.lp-quality-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(4rem, 1fr);
+  align-items: center;
+  gap: var(--lp-s1) var(--lp-s3);
+  margin-top: var(--lp-s1);
+  padding-top: var(--lp-s3);
+  border-top: 1px solid var(--lp-line);
+}
+
+.landing .lp-quality-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lp-s2);
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.lp-quality-label .tnum {
+  color: var(--lp-ink-1);
+  font-weight: 560;
+}
+
+/*
+ * `overflow: visible`, deliberately.
+ *
+ * The confidence floor is drawn as a tick that PROTRUDES above and below the
+ * bar, because inside the bar it sits on the fill and fails the 3:1 that WCAG
+ * 1.4.11 asks of a meaningful non-text indicator. The protruding part is what
+ * makes the tick readable at all, and `overflow: hidden` was clipping exactly
+ * that part away.
+ */
+.lp-quality {
+  position: relative;
+  height: 8px;
+  background: var(--lp-well);
+  border-radius: 999px;
+  overflow: visible;
+}
+
+.lp-quality-fill {
+  height: 100%;
+  width: 90%;
+  border-radius: 999px;
+  background: var(--lp-ink-2);
+  transition: width 220ms linear, background-color 220ms linear;
+}
+
+/* Slate, like every other refusal in this product. Not red — the tracking floor
+   is the instrument's problem, not the patient's. */
+.lp-quality-fill[data-below='true'] {
+  background: var(--refused);
+}
+
+.lp-quality-floor {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--lp-ink-3);
+}
+
+.landing .lp-quality-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+/* ── Chapter, controls, caption ─────────────────────────────────────────── */
+
+/*
+ * THE NARRATION CARD.
+ *
+ * It names what is on the dial right now, which is the difference between an
+ * animation a judge watches and one a judge understands — and it lives in the
+ * prose column rather than in the panel, so the sentence describing the picture
+ * sits beside the sentence making the claim.
+ *
+ * `:empty` hides it: with scripting off there is no replay to narrate, and an
+ * empty bordered box under the buttons would read as a broken component. It also
+ * reserves its own height, because a card that grows and shrinks as the chapter
+ * changes would move the fold under a reader who is already dizzy.
+ */
+.landing .lp-chapter {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: var(--lp-s3) var(--lp-s4);
+  border: 1px solid var(--lp-line);
+  border-left: 3px solid var(--lp-line-2);
+  border-radius: var(--lp-r2);
+  background: var(--lp-panel);
+  max-width: 46ch;
+  min-height: 9.4em;
+  box-shadow: var(--lp-shadow-1);
+}
+
+.landing .lp-chapter:empty {
+  display: none;
+}
+
+.lp-chapter-eyebrow {
+  font-size: var(--lp-t-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lp-ink-3);
+}
+
+.lp-chapter-title {
+  font-size: var(--lp-t-h3);
+  font-weight: 620;
+  letter-spacing: -0.018em;
+  color: var(--lp-ink-1);
+}
+
+.lp-chapter-detail {
+  color: var(--lp-ink-2);
+  max-width: var(--measure);
+  font-size: var(--lp-t-micro);
+  line-height: 1.5;
+}
+
+.lp-replay-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lp-s1) var(--lp-s2);
+  padding: var(--lp-s2) var(--lp-s4);
+}
+
+.landing .lp-replay-speed {
+  margin: 0 0 0 auto;
+  font-size: var(--lp-t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-2);
+  max-width: none;
+}
+
+.lp-ctl {
+  font: inherit;
+  font-size: var(--lp-t-micro);
+  font-weight: 540;
+  min-height: var(--target);
+  padding: 0 var(--lp-s3);
+  background: var(--lp-panel);
+  color: var(--lp-ink-1);
+  border: 1px solid var(--lp-line-2);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 100ms ease;
+}
+
+/* `.landing` prefix, not because it needs the scope, but because screen.css's
+   `button:hover:not(:disabled)` scores (0,2,1) and silently won — repainting the
+   control back to its own resting colour, so the replay's own controls were the
+   only buttons on the page with no hover state at all. */
+.landing .lp-ctl:hover {
+  background: var(--lp-bg);
+  border-color: var(--lp-ink-3);
+}
+
+.landing .lp-ctl:active {
+  transform: scale(0.98);
+}
+
+.lp-ctl-wide {
+  min-width: 12.5rem;
+  text-align: left;
+  border-color: var(--lp-ink-3);
+}
+
+.landing .lp-replay-cap {
+  padding: var(--lp-s3) var(--lp-s4);
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  line-height: 1.5;
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.lp-replay-text {
+  margin: 0;
+  padding: 0 var(--lp-s4) var(--lp-s4);
+}
+
+.lp-replay-text > summary {
+  font-size: var(--lp-t-micro);
+  min-height: var(--target);
+  display: flex;
+  align-items: center;
+  color: var(--lp-ink-2);
+  transition: color 140ms ease;
+}
+
+.lp-replay-text > summary:hover {
+  color: var(--lp-ink-1);
+}
+
+.lp-transcript {
+  list-style: none;
+  margin: 0 0 var(--lp-s2);
+  padding: 0;
+}
+
+.lp-transcript li {
+  display: grid;
+  grid-template-columns: 5.5rem 5rem minmax(0, 1fr);
+  gap: var(--lp-s2);
+  padding: var(--lp-s1) 0;
+  border-bottom: 1px solid var(--lp-line);
+  font-size: var(--lp-t-micro);
+}
+
+.lp-tr-n {
+  color: var(--lp-ink-3);
+}
+
+.lp-tr-v {
+  text-align: right;
+  color: var(--lp-ink-1);
+}
+
+.lp-tr-t {
+  color: var(--lp-ink-2);
+}
+
+/*
+ * THE NO-SCRIPT PANEL. One column, no ring — there is no ring to draw without
+ * the module that draws it, and an empty 400 px bay where one used to be is a
+ * worse answer than not claiming the space.
+ *
+ * BOTH the template and the children's named placement have to be undone. With
+ * only `grid-template-areas: none`, the children keep `grid-area: stage` /
+ * `status` / `cap` from the 62 rem query, those names resolve to nothing, every
+ * item lands on line 1, and the readout prints on top of the refusal sentence —
+ * which is exactly what the no-script panel did the first time this page grew a
+ * named grid.
+ */
+/* `.lp-replay.lp-replay-static` scores (0,2,0), which is what it takes to beat
+   `.lp-replay > .lp-replay-head` in the two-bay query above. */
+.lp-replay.lp-replay-static {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: none;
+}
+
+.lp-replay.lp-replay-static > * {
+  grid-area: auto;
+}
+
+.lp-replay-static .lp-replay-stage {
+  padding-bottom: var(--lp-s4);
+}
+
+.lp-replay-static .lp-dial-core {
+  width: 100%;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The proof band — three checkable numbers
+   ══════════════════════════════════════════════════════════════════════════
+ *
+ * The only honest form of social proof this project has. There are no users, no
+ * downloads, no clinicians and no testimonials, and inventing one would fail
+ * this event's Safety criterion outright. What exists instead is three numbers a
+ * reader can check in about a minute, and they are set at the size that claim
+ * deserves: `0` network requests is the most surprising thing on this page, so
+ * it is 112 px tall rather than 21 px.
+ */
+
+.lp-proof {
+  border-block: 1px solid var(--lp-line);
+  background: var(--lp-bg-2);
+}
+
+.lp-facts {
+  display: grid;
+  gap: 0;
+  margin: 0 auto;
+  padding: 0 var(--lp-pad);
+  max-width: var(--lp-wide);
+  list-style: none;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 52rem) {
+  .lp-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.lp-facts li {
+  display: grid;
+  align-content: start;
+  gap: var(--lp-s1);
+  padding: var(--lp-s6) 0 var(--lp-s6);
+  border-top: 1px solid var(--lp-line);
+}
+
+.lp-facts li:first-child {
+  border-top: none;
+}
+
+@media (min-width: 52rem) {
+  .lp-facts li {
+    border-top: none;
+    border-left: 1px solid var(--lp-line);
+    padding: var(--lp-s6) var(--lp-s5);
+  }
+
+  .lp-facts li:first-child {
+    border-left: none;
+    padding-left: 0;
+  }
+}
+
+.lp-fact-n {
+  font-size: var(--lp-t-mega);
+  font-weight: 600;
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+  color: var(--lp-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-fact-l {
+  font-size: var(--lp-t-h3);
+  font-weight: 560;
+  letter-spacing: -0.015em;
+  color: var(--lp-ink-1);
+  margin-top: var(--lp-s2);
+}
+
+.lp-fact-s {
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Numbered sections
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-section {
+  padding: var(--lp-s8) 0;
+}
+
+.lp-section-alt {
+  background: var(--lp-bg-2);
+  border-block: 1px solid var(--lp-line);
+}
+
+.lp-section-inner {
+  max-width: var(--lp-shell);
+  margin: 0 auto;
+  padding: 0 var(--lp-pad);
+  display: grid;
+  /* minmax(0, 1fr), not 1fr: an `auto` grid track is sized by its widest
+     indivisible child, so one long line in a <pre> pushed the whole page 289 px
+     wide at 390 px. The overflow then belongs to the <pre>, which scrolls. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lp-s4);
+}
+
+/* Phone: the rail is a one-line eyebrow above the section. */
+.lp-rail {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lp-s2);
+}
+
+/* Desktop: it becomes a true margin rail — a large ghost numeral over a label,
+   sticky beside the section it names. Declared AFTER the base rule, because two
+   rules of equal specificity are resolved by source order and this one lost. */
+@media (min-width: 62rem) {
+  .lp-section-inner {
+    grid-template-columns: var(--lp-rail) minmax(0, 1fr);
+    gap: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  .lp-section-inner > .lp-rail {
+    display: block;
+    position: sticky;
+    top: var(--lp-s5);
+    align-self: start;
+    padding-top: 0.35rem;
+  }
+
+  .lp-section-inner > .lp-rail .lp-num {
+    margin-bottom: var(--lp-s1);
+  }
+}
+
+.lp-num {
+  display: block;
+  font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-3);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.lp-rail-label {
+  display: block;
+  font-size: var(--lp-t-micro);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--lp-ink-3);
+}
+
+@media (min-width: 62rem) {
+  .lp-rail-label {
+    border-top: 1px solid var(--lp-line-2);
+    padding-top: var(--lp-s2);
+  }
+}
+
+.lp-body > h2 {
+  font-size: var(--lp-t-h2);
+  font-weight: 620;
+  line-height: 1.04;
+  letter-spacing: -0.032em;
+  margin: 0 0 var(--lp-s4);
+  max-width: 20ch;
+}
+
+.lp-body > h3 {
+  font-size: var(--lp-t-h3);
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  margin: var(--lp-s6) 0 var(--lp-s2);
+}
+
+.landing .lp-body p {
+  margin: 0 0 var(--lp-s4);
+  line-height: 1.62;
+}
+
+/* Each section opens at a size the body copy does not use. Below the fold the
+   old page was an h2 followed by four hundred lines of 17 px; this is the step
+   that gives a section an entrance. */
+.landing .lp-body > p:first-of-type {
+  font-size: clamp(1.1875rem, 1.65vw, 1.5rem);
+  line-height: 1.45;
+  color: var(--lp-ink-2);
+  max-width: 44ch;
+}
+
+.landing .lp-pull {
+  position: relative;
+  border-left: 3px solid var(--zone-out);
+  padding: var(--lp-s1) 0 var(--lp-s1) var(--lp-s4);
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-weight: 500;
+  line-height: 1.32;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink-1);
+  margin: var(--lp-s6) 0 0;
+  max-width: 30ch;
+}
+
+.lp-list {
+  margin: 0 0 var(--lp-s4);
+  padding: 0;
+  list-style: none;
+  max-width: var(--measure);
+}
+
+/*
+ * NARROW PROSE, WIDE DATA.
+ *
+ * Paragraphs stay at `--measure`, because 68 characters is where a line stops
+ * being readable. Everything that is a figure, a table, a diagram or a code
+ * block takes the whole body column instead — which is both better for the data
+ * and what stops the section from trailing off into 400 px of nothing on the
+ * right at 1440 px.
+ */
+.lp-figure,
+.lp-two,
+.lp-spec,
+.lp-faq,
+.lp-code,
+.lp-split-card {
+  max-width: none;
+}
+
+.lp-list li {
+  position: relative;
+  padding: var(--lp-s3) 0 var(--lp-s3) var(--lp-s5);
+  border-bottom: 1px solid var(--lp-line);
+  color: var(--lp-ink-2);
+  line-height: 1.6;
+}
+
+.lp-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.6em;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--lp-ink-3);
+}
+
+.lp-list strong,
+.lp-list code {
+  color: var(--lp-ink-1);
+}
+
+.lp-code {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.65;
+  background: var(--lp-well);
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r2);
+  padding: var(--lp-s4);
+  margin: 0 0 var(--lp-s5);
+  max-width: var(--measure);
+  overflow-x: auto;
+  color: var(--lp-ink-2);
+  box-shadow: var(--lp-shadow-1);
+}
+
+.lp-code code {
+  font-size: 1em;
+  color: inherit;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   01 — the premise
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-figure {
+  margin: var(--lp-s5) 0;
+  padding: var(--lp-s5);
+  background: var(--lp-panel);
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r3);
+  box-shadow: var(--lp-shadow-2);
+}
+
+.landing .lp-figure figcaption {
+  margin-top: var(--lp-s4);
+  padding-top: var(--lp-s3);
+  border-top: 1px solid var(--lp-line);
+  font-size: var(--lp-t-micro);
+  line-height: 1.55;
+  color: var(--lp-ink-3);
+  max-width: var(--measure);
+}
+
+/* Three rows: the y-axis unit label, then the plot, then the x-axis strip under
+   column two only. With the axis strip inside the plot row, the y-gutter
+   stretched over both and every percentage tick was off by the height of the
+   axis label. */
+.lp-plot {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  column-gap: var(--lp-s1);
+}
+
+.landing .lp-plot-ylabel {
+  grid-row: 1;
+  grid-column: 1 / -1;
+  margin: 0 0 var(--lp-s2);
+  font-size: var(--lp-t-micro);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.lp-plot-yaxis,
+.lp-plot-body {
+  grid-row: 2;
+}
+
+.lp-plot-xaxis {
+  grid-row: 3;
+  grid-column: 2;
+}
+
+/* Each tick carries its own `top:` from `yFor()`, so the gutter is a positioning
+   context and nothing more. See src/landing/figures.ts. */
+.lp-plot-yaxis {
+  position: relative;
+  font-size: var(--lp-t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-3);
+}
+
+.lp-plot-yaxis span {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.lp-plot-edge {
+  color: var(--lp-ink-1);
+  font-weight: 560;
+}
+
+.lp-plot-body {
+  min-width: 0;
+}
+
+.lp-plot-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.landing .lp-plot-xaxis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lp-s2);
+  margin: var(--lp-s1) 0 0;
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+  max-width: none;
+}
+
+.lp-legend {
+  list-style: none;
+  margin: var(--lp-s4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--lp-s2);
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-2);
+}
+
+@media (min-width: 52rem) {
+  .lp-legend {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--lp-s3);
+  }
+}
+
+.lp-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-s2);
+  line-height: 1.4;
+}
+
+.lp-key {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.lp-key-in {
+  background: var(--zone-in);
+}
+
+.lp-key-out {
+  border: 2px solid var(--refused);
+}
+
+.lp-key-q {
+  border: 2px solid var(--refused);
+  background-image: linear-gradient(45deg, transparent 42%, var(--refused) 42% 58%, transparent 58%);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   02 — the two refusal reasons
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-two {
+  display: grid;
+  gap: var(--lp-s3);
+  margin-bottom: var(--lp-s5);
+}
+
+@media (min-width: 46rem) {
+  .lp-two {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.lp-reason {
+  position: relative;
+  background: var(--lp-panel);
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-r3);
+  padding: var(--lp-s4);
+  box-shadow: var(--lp-shadow-1);
+  overflow: hidden;
+}
+
+/* A 4 px bar in the hue of the thing the card is about: amber for a movement
+   that fell outside the band, slate for the instrument declining to answer. */
+.lp-reason::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--lp-accent, var(--lp-line-2));
+}
+
+.lp-reason-movement {
+  --lp-accent: var(--zone-out);
+}
+
+.lp-reason-instrument {
+  --lp-accent: var(--refused);
+}
+
+.lp-reason p:last-child {
+  margin-bottom: 0;
+}
+
+.landing .lp-reason-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lp-s1);
+  font-size: var(--lp-t-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lp-ink-3);
+  margin: 0 0 var(--lp-s2);
+}
+
+.lp-reason-kind::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lp-accent, var(--lp-line-2));
+}
+
+.landing .lp-quote {
+  font-family: var(--font-mono);
+  font-size: var(--lp-t-h3);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink-1);
+  background: var(--lp-well);
+  border-radius: var(--lp-r1);
+  padding: var(--lp-s3);
+  margin: 0 0 var(--lp-s3);
+  max-width: none;
+}
+
+.landing .lp-reason > p:not(.lp-reason-kind):not(.lp-quote) {
+  font-size: var(--t-body);
+  color: var(--lp-ink-2);
+  margin-bottom: 0;
+}
+
+/* Section 02's closing argument, washed in the hue it is about. Slate, because
+   the subject is a refusal and a refusal is slate everywhere in this product. */
+.lp-split-card {
+  border: 1px solid var(--lp-line);
+  border-left: 4px solid var(--refused);
+  border-radius: var(--lp-r3);
+  padding: var(--lp-s4) var(--lp-s5);
+  margin-top: var(--lp-s5);
+  background: var(--lp-wash-refused);
+}
+
+.landing .lp-split-card h3 {
+  margin: 0 0 var(--lp-s2);
+  font-size: var(--lp-t-h3);
+  font-weight: 620;
+  letter-spacing: -0.015em;
+}
+
+.landing .lp-split-card p {
+  margin: 0;
+  font-size: var(--t-body);
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The anti-climax
+   ══════════════════════════════════════════════════════════════════════════
+ *
+ * The one section on the page that demonstrates instead of arguing. It is
+ * mostly empty, deliberately: the product's selling point is the ABSENCE of a
+ * reward, and space is the only honest way to draw an absence. It is also the
+ * page's one wash of `--zone-in` at section scale, because "inside the band" is
+ * exactly what it is about.
+ */
+
+.lp-quiet {
+  border-block: 1px solid var(--lp-line);
+  background:
+    linear-gradient(var(--lp-wash-in), var(--lp-wash-in)),
+    var(--lp-bg);
+  padding: clamp(6rem, 14vw, 11rem) 0;
+}
+
+.lp-quiet-inner {
+  max-width: var(--lp-shell);
+  margin: 0 auto;
+  padding: 0 var(--lp-pad);
+  display: grid;
+  gap: var(--lp-s4);
+  justify-items: start;
+}
+
+.lp-quiet h2 {
+  font-size: var(--lp-t-h2);
+  font-weight: 620;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  margin: 0;
+  max-width: 20ch;
+}
+
+.landing .lp-quiet-note {
+  font-size: var(--t-body);
+  line-height: 1.62;
+  color: var(--lp-ink-2);
+  margin: 0;
+  max-width: 54ch;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   03 — the privacy proof
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* One enormous numeral carrying the section's whole claim, with the sentence
+   set beside it rather than under it. */
+.lp-zero {
+  display: grid;
+  gap: var(--lp-s3);
+  align-items: center;
+  margin: 0 0 var(--lp-s5);
+  padding: var(--lp-s4) 0;
+  border-block: 1px solid var(--lp-line);
+}
+
+@media (min-width: 40rem) {
+  .lp-zero {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--lp-s5);
+  }
+}
+
+.lp-zero-n {
+  font-size: var(--lp-t-mega);
+  font-weight: 600;
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  color: var(--lp-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.landing .lp-zero-t {
+  margin: 0;
+  font-size: var(--lp-t-h3);
+  line-height: 1.4;
+  color: var(--lp-ink-2);
+}
+
+.landing .lp-zero-t strong {
+  display: block;
+  font-size: var(--lp-t-h3);
+  color: var(--lp-ink-1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   04 — the printed artifact
+   ══════════════════════════════════════════════════════════════════════════
+ *
+ * THE ONE PIECE OF PAPER ON A DARK PAGE, and it is paper on purpose: this figure
+ * depicts a sheet coming out of a printer, so it is drawn in the print palette
+ * in every theme rather than repainted dark and then captioned "this is white".
+ * Its ink pairs are computed against the paper, not against the page.
+ *
+ *   #14181d on #f4efe4 → 15.5   #4a5058 on #f4efe4 → 7.4
+ *   #0a6b4f on #f4efe4 → 5.7 (the delivered bar, a non-text indicator needing 3)
+ */
+.lp-rp-page {
+  --paper: #f4efe4;
+  --paper-ink: #14181d;
+  --paper-ink-2: #4a5058;
+  --paper-line: #cbc3b4;
+  --paper-line-2: #8e8776;
+  --paper-in: #0a6b4f;
+  background: var(--paper);
+  color: var(--paper-ink);
+  border-radius: 3px;
+  padding: var(--lp-s4);
+  display: grid;
+  gap: var(--lp-s1);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.3), 0 30px 60px -24px rgb(0 0 0 / 0.55);
+}
+
+.lp-rp-head,
+.lp-rp-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lp-s1) var(--lp-s2);
+  align-items: baseline;
+  padding-bottom: var(--lp-s2);
+  border-bottom: 2px solid var(--paper-line-2);
+}
+
+.lp-rp-head .wordmark {
+  color: var(--paper-ink);
+  font-size: 1.1rem;
+}
+
+.lp-rp-foot {
+  border-bottom: none;
+  border-top: 1px solid var(--paper-line);
+  padding: var(--lp-s2) 0 0;
+}
+
+.lp-rp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lp-s1) var(--lp-s2);
+  align-items: baseline;
+  padding: var(--lp-s2) 0 var(--lp-s3);
+  border-bottom: 1px solid var(--paper-line);
+  min-height: 44px;
+}
+
+.landing .lp-rp-label {
+  font-size: var(--lp-t-micro);
+  color: var(--paper-ink);
+  font-weight: 560;
+}
+
+.landing .lp-rp-note {
+  font-size: var(--lp-t-micro);
+  color: var(--paper-ink-2);
+}
+
+/* Each row carries a hint of the shape that actually sits there. */
+.lp-rp-row[data-kind='bar']::after,
+.lp-rp-row[data-kind='table']::after,
+.lp-rp-row[data-kind='body']::after {
+  content: '';
+  flex: 1 0 100%;
+  height: 12px;
+}
+
+.lp-rp-row[data-kind='bar']::after {
+  border: 1px solid var(--paper-line-2);
+  background: linear-gradient(to right, var(--paper-in) 0 62%, transparent 62%);
+}
+
+.lp-rp-row[data-kind='table']::after {
+  height: 18px;
+  background: repeating-linear-gradient(to bottom, var(--paper-line) 0 1px, transparent 1px 6px);
+}
+
+.lp-rp-row[data-kind='body']::after {
+  height: 22px;
+  background: repeating-linear-gradient(to bottom, var(--paper-ink-2) 0 2px, transparent 2px 8px);
+  opacity: 0.5;
+}
+
+/* The paper sits on a darker plate, so the sheet reads as a sheet. */
+.lp-report-figure {
+  padding: clamp(1rem, 3vw, 2.25rem);
+  border-radius: var(--lp-r2);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   05 — the boundary
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-limits {
+  list-style: none;
+  margin: 0 0 var(--lp-s5);
+  padding: 0;
+  max-width: var(--measure);
+  /* BODY SIZE. Not small print, not muted into invisibility. The whole reason
+     this block exists is that burying a limitation is the opposite of what a
+     safety criterion rewards. */
+  font-size: var(--t-body);
+  color: var(--lp-ink-1);
+  counter-reset: limit;
+  border-top: 2px solid var(--lp-line-2);
+}
+
+.lp-limits li {
+  position: relative;
+  counter-increment: limit;
+  padding: var(--lp-s3) 0 var(--lp-s3) var(--lp-s6);
+  border-bottom: 1px solid var(--lp-line);
+  line-height: 1.6;
+}
+
+.lp-limits li::before {
+  content: counter(limit, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: calc(var(--lp-s3) + 0.15em);
+  font-size: var(--lp-t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-3);
+}
+
+/* SLATE, NOT AMBER. `--zone-out` means "outside the prescribed band"; a block
+   about a figure that has never been recorded is the instrument declining to
+   publish a number it cannot stand behind, which is precisely `--refused`. */
+.honesty-box {
+  border: 1px solid var(--lp-line);
+  border-left: 4px solid var(--refused);
+  border-radius: var(--lp-r3);
+  background: var(--lp-wash-refused);
+  padding: var(--lp-s5);
+  margin: var(--lp-s5) 0 0;
+  max-width: var(--measure);
+  font-size: var(--t-body); /* body size. NEVER small print. */
+}
+
+.lp-honesty-h {
+  font-size: var(--lp-t-h3);
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--lp-s3);
+  color: var(--lp-ink-1);
+}
+
+.landing .honesty-box p {
+  margin: 0 0 var(--lp-s3);
+  line-height: 1.6;
+}
+
+.honesty-box .lp-honesty-close {
+  margin-bottom: 0;
+  color: var(--lp-ink-1);
+  font-weight: 560;
+  font-size: var(--lp-t-h3);
+  line-height: 1.4;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   06 — the numbers
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-spec {
+  margin: 0 0 var(--lp-s5);
+  border-top: 2px solid var(--lp-line-2);
+}
+
+.lp-spec-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--lp-s2) var(--lp-s4);
+  padding: var(--lp-s3) 0;
+  border-bottom: 1px solid var(--lp-line);
+}
+
+.lp-spec-k {
+  font-size: var(--lp-t-micro);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--lp-ink-1);
+}
+
+.lp-spec-n {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-stack);
+  font-size: var(--lp-t-micro);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--lp-ink-3);
+}
+
+.landing .lp-spec-v {
+  margin: 0;
+  text-align: right;
+  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-1);
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   07 — the questions
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-faq {
+  max-width: var(--measure);
+  border-top: 1px solid var(--lp-line);
+}
+
+.lp-faq details {
+  margin: 0;
+  border-bottom: 1px solid var(--lp-line);
+}
+
+.lp-faq summary {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-s3);
+  min-height: 60px;
+  font-size: var(--lp-t-h3);
+  font-weight: 560;
+  letter-spacing: -0.012em;
+  color: var(--lp-ink-1);
+  padding: var(--lp-s2) var(--lp-s3);
+  margin: 0 calc(var(--lp-s3) * -1);
+  border-radius: var(--lp-r1);
+  transition: color 140ms ease, background-color 140ms ease;
+}
+
+/* The whole row lights, not just the words. A question that only changes ink
+   colour on hover reads as text that happens to be clickable. */
+.lp-faq summary:hover {
+  color: var(--lp-ink-1);
+  background: var(--lp-line);
+}
+
+.lp-faq summary::marker,
+.lp-faq summary::-webkit-details-marker {
+  color: var(--lp-ink-3);
+}
+
+.landing .lp-faq .disclosure-body {
+  /* screen.css sets disclosures to label size for the app's dense screens. Here
+     the answer is body copy and is sized as body copy. */
+  font-size: var(--t-body);
+  line-height: 1.62;
+  color: var(--lp-ink-2);
+  padding: 0 0 var(--lp-s4) var(--lp-s4);
+  border-left: 2px solid var(--lp-line-2);
+  max-width: var(--measure);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Final call
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-final {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-top: 1px solid var(--lp-line);
+  background: var(--lp-bg-2);
+  padding: var(--lp-s8) 0;
+}
+
+/* The mark, enormous and nearly silent, behind the last thing anyone reads. Not
+   an ornament borrowed from a template — it is the product's own geometry, the
+   same 270° sweep with the band at twelve o'clock, at 1.5 % of the page's ink. */
+.lp-final::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  right: -12%;
+  top: 50%;
+  translate: 0 -50%;
+  width: min(720px, 70vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: clamp(28px, 5vw, 56px) solid var(--lp-line);
+  /* The 90° gap at six o'clock, cut as a wedge from the centre to the two
+     bottom corners — the same sweep as /icon.svg and the same one the dial
+     draws. */
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 50%, 0 100%);
+  pointer-events: none;
+}
+
+.lp-final-inner {
+  position: relative;
+  max-width: var(--lp-shell);
+  margin: 0 auto;
+  padding: 0 var(--lp-pad);
+  display: grid;
+  gap: var(--lp-s4);
+  justify-items: start;
+}
+
+.lp-final h2 {
+  font-size: var(--lp-t-h2);
+  font-weight: 620;
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+  margin: 0;
+  max-width: 16ch;
+}
+
+.landing .lp-final-lede {
+  font-size: var(--lp-t-lede);
+  line-height: 1.5;
+  color: var(--lp-ink-2);
+  margin: 0;
+  max-width: 46ch;
+}
+
+.landing .lp-final-note {
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-3);
+  margin: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Footer
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lp-foot {
+  border-top: 1px solid var(--lp-line);
+  background: var(--lp-bg);
+}
+
+.lp-foot-grid {
+  max-width: var(--lp-shell);
+  margin: 0 auto;
+  padding: var(--lp-s6) var(--lp-pad) var(--lp-s5);
+  display: grid;
+  gap: var(--lp-s5);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.landing .lp-foot p {
+  color: var(--lp-ink-3);
+  margin: 0 0 var(--lp-s2);
+  font-size: var(--lp-t-micro);
+  line-height: 1.55;
+}
+
+.lp-foot-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--lp-s2);
+  margin-bottom: var(--lp-s2);
+}
+
+.lp-foot-brand .wordmark {
+  font-size: 1.25rem;
+  font-weight: 640;
+  letter-spacing: -0.028em;
+  color: var(--lp-ink-1);
+}
+
+.lp-foot-brand .lp-mark {
+  width: 28px;
+  height: 28px;
+}
+
+.landing .lp-foot-h {
+  color: var(--lp-ink-1);
+  font-size: var(--lp-t-micro);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin-bottom: var(--lp-s2);
+}
+
+/* One line of status per link group, so a 404 behind a private repository reads
+   as a stated condition rather than as a broken page. */
+.landing .lp-foot-note {
+  color: var(--lp-ink-3);
+  margin-bottom: var(--lp-s2);
+  max-width: 22rem;
+}
+
+.lp-foot ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lp-foot li {
+  padding: 0;
+}
+
+.landing .lp-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  font-size: var(--lp-t-micro);
+  color: var(--lp-ink-2);
+  text-decoration-color: transparent;
+}
+
+.landing .lp-foot a:hover {
+  color: var(--lp-ink-1);
+  text-decoration-color: currentcolor;
+}
+
+.landing .lp-foot-legal {
+  max-width: var(--lp-shell);
+  margin: 0 auto;
+  padding: var(--lp-s4) var(--lp-pad) var(--lp-s6);
+  border-top: 1px solid var(--lp-line);
+  font-size: var(--lp-t-micro);
+  line-height: 1.6;
+  color: var(--lp-ink-3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Print
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  .lp-replay-controls,
+  .lp-head-right,
+  .lp-final::before,
+  .lp-hero::before {
+    display: none;
+  }
+}

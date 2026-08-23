@@ -68,6 +68,12 @@ jobs:
       - name: Build and grep the shipped bundle
         run: npm run check:build
 
+      # All six credit/refusal outcomes, driven end-to-end. The COUNTS are
+      # asserted and are byte-deterministic; the timings are printed, never
+      # asserted, because a timing assertion on a shared runner is a flaky one.
+      - name: DSP correctness gate and frame budget
+        run: npm run bench
+
       - name: R11 gate
         run: npm run verify
 

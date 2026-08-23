@@ -1,11 +1,19 @@
+# There is no .env in this project and there never will be — no key, no account,
+# no service. These two lines are here so that adding one is a deliberate act
+# rather than an accident, not because one is expected.
 .env
 .env.*
+
 node_modules/
-__pycache__/
-.next/
 dist/
 coverage/
 .DS_Store
+
+# Playwright working directories. `docs/assets/` is NOT ignored: the README's
+# hero lives there and is part of the repository.
 test-results/
 playwright-report/
+blob-report/
+playwright/.cache/
+
 .vercel

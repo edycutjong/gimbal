@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"
+     role="img" aria-label="Gimbal — a committed marker stopped short of the prescribed velocity band">
+  <!--
+    NOTE ON NAMING IN THESE COMMENTS. XML forbids a double hyphen inside a comment, so
+    every custom property named in the prose below appears WITHOUT its leading dashes:
+    `zone-in` here means the token spelled with two dashes in the markup. The attribute
+    values themselves are unaffected. This is not pedantry — a double hyphen in a
+    comment makes the whole file fail XML parsing, which is exactly how an SVG that
+    renders fine in a browser breaks in every strict consumer.
+
+    THE MARK IS THE INSTRUMENT, ONE MOMENT AFTER IT REFUSED.
+
+    Same geometry as build/src/ui/dial.ts: a 270 degree velocity sweep, the
+    prescribed band centred on twelve o'clock, and the peak-hold marker sitting
+    wherever the rep actually landed. This is a drawing of the product, not a
+    logo invented beside it.
+
+    Ring convention: 0 degrees is twelve o'clock, negative counter-clockwise
+    (below band), positive clockwise (above band). Screen position is
+    x = cx + r*sin(t), y = cy - r*cos(t), with cx 256 and cy 268. The centre is
+    12 px below the plate's centre because the sweep has a 90 degree gap at the
+    bottom, so the mark's optical mass sits high and needs pushing back down.
+
+    THE SUBJECT IS THE GAP. The marker sits at -67.5 degrees and the band's
+    lower edge at -20 degrees, so 47.5 degrees of bare track separate them —
+    124 px of arc, the largest single feature here. Nothing may ever be drawn
+    in it. -67.5 is not an arbitrary angle: the ring scale is linear in
+    velocity, so ring angle = -135 + 135 * (w / w_centre), and at exactly HALF
+    the prescribed band centre that evaluates to -67.5. The marker is at half
+    speed, which is the first sentence of the PRD, drawn.
+
+    NO AMBER HERE, DELIBERATELY. The live arc is the event; this is the
+    residue. A rep's arc tracks instantaneous velocity and falls back to zero
+    the moment the head slows, so a held state has no arc in it — only the
+    marker that outlived it. The accent fires in icon-animated.svg, on the
+    hero, and on the OG card, which is what "fires exactly on the signature
+    event" is supposed to mean.
+
+    HARD-CODED HEXES ALONGSIDE THE CUSTOM PROPERTIES, not instead of them. A
+    favicon is rendered by browser chrome outside any document, where :root
+    tokens do not exist; the var(token, #hex) pattern means the fallback
+    applies when this file is rasterized standalone and the token wins when it
+    is inlined into a page that loads _tokens.css. The four hexes are the
+    Dark-palette values of surface-0, edge, zone-in and refused.
+
+    THREE SHAPES, so the silhouette survives 16 px. At that size the band
+    renders 1.6 px, the marker 1.0 x 3.4 px, and the track all but drops out at
+    3.4% relative luminance — leaving a short green cap at the top, a small
+    slate bar at about ten o'clock, and dark space between them.
+  -->
+
+  <!-- 1. The plate. Load-bearing rather than decorative: the state hues measure
+       1.80:1 and 2.22:1 against GitHub's light page and fail the 3:1 floor
+       outright, so the mark must carry its own ground. Against GitHub's dark
+       page this plate is 1.02:1 and disappears, which is intended. The 96 px
+       radius is the product's own favicon proportion, 0.1875 of the side. -->
+  <rect width="512" height="512" rx="96" fill="var(--surface-0, #0b0e12)" />
+
+  <!-- 2. The track: 270 degrees, 90 degree gap at the bottom where the dose
+       readout sits on the real screen. This is the scale, and it is drawn in
+       the decorative-rule token so the empty travel costs the luminance
+       budget nothing. Butt caps, like the product's. -->
+  <path d="M 149.934 374.066 A 150 150 0 1 1 362.066 374.066"
+        fill="none" stroke="var(--edge, #2a3542)" stroke-width="38" stroke-linecap="butt" />
+
+  <!-- 3. The prescribed band, centred on twelve o'clock — where peripheral
+       vision localises best, which is the product's own reason for putting it
+       there. Its +/-20 degree width is a drawing choice and encodes NO numeric
+       band: the band values come from the clinician's card, typed by the
+       patient, and are not Gimbal's to assert. No rim numbers, ever. -->
+  <path d="M 204.697 127.046 A 150 150 0 0 1 307.303 127.046"
+        fill="none" stroke="var(--zone-in, #5bd6ae)" stroke-width="52" stroke-linecap="butt" />
+
+  <!-- 4. The committed marker: the cycle's bias-corrected peak, snapped and
+       held. It runs from r 84 to r 194 so it pierces the track rather than
+       floating beside it — a pointer on a scale, not a dash. Slate, not red:
+       red would say the patient did something wrong, and half of all refusals
+       are the instrument's fault rather than theirs. -->
+  <path d="M 178.394 235.855 L 76.767 193.759"
+        stroke="var(--refused, #98a2b0)" stroke-width="32" stroke-linecap="butt" />
+</svg>

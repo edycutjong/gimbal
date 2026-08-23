@@ -28,6 +28,14 @@ import { GATE_COPY, GATE_CHECKBOX_LABEL, EXAMPLE_REPORT_LABEL } from '../copy.ts
  * The `[ See an example session report ]` button exists here so a judge WITH a
  * working camera gets the same one-click route to the artifact as a judge
  * without one. It writes nothing into the eight fields — U-CARD's second limb.
+ *
+ * `exampleBanner` is how `/app?demo` announces itself. THE SCREEN STILL HAS NO
+ * CARD DATA OF ITS OWN: it renders whatever draft it is handed and whatever
+ * banner it is handed, and it imports neither. That is what keeps U-CARD's first
+ * limb — this module references no card path, no JSON, and calls no fetch —
+ * structurally true rather than a promise. Passing a filled draft with no banner
+ * is not reachable from anywhere in the app; `src/main.ts` sets both from the
+ * same flag or neither.
  */
 
 export interface PrescribeProps {
@@ -36,10 +44,13 @@ export interface PrescribeProps {
   onContinue: (draft: CardDraft) => void;
   onExampleReport: () => void;
   announce: (text: string) => void;
+  /** Non-null exactly when the eight fields arrived pre-filled as a labelled example. */
+  exampleBanner?: string | null;
 }
 
 export function renderPrescribe(host: HTMLElement, props: PrescribeProps): void {
   const draft = props.draft;
+  const example = props.exampleBanner ?? null;
 
   const fieldHtml = (id: NumericFieldId): string => {
     const r = FIELD_RANGES[id];
@@ -51,6 +62,7 @@ export function renderPrescribe(host: HTMLElement, props: PrescribeProps): void 
                value="${value === undefined ? '' : esc(value)}"
                aria-describedby="why-${id}" required />
         <span class="field-unit" aria-hidden="true">${esc(r.unit)}</span>
+        ${example ? '<span class="chip">EXAMPLE</span>' : ''}
       </div>
       <p class="field-error" id="err-${id}" hidden></p>
       <details id="why-${id}">
@@ -81,6 +93,13 @@ export function renderPrescribe(host: HTMLElement, props: PrescribeProps): void 
     <button type="button" class="text-button no-print" id="example-report">${esc(EXAMPLE_REPORT_LABEL)}</button>
 
     <h2>Your clinician's parameters <span class="caption">(all eight required)</span></h2>
+    ${
+      example
+        ? `<div class="example-banner" id="example-parameters-banner">
+             <span class="chip">EXAMPLE</span> ${esc(example)}
+           </div>`
+        : ''
+    }
     <form id="prescribe-form" novalidate>
       <div class="field-grid">
         ${NUMERIC_FIELD_IDS.map(fieldHtml).join('')}

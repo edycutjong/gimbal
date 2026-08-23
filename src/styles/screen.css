@@ -7,8 +7,22 @@ main {
   margin: 0 auto;
 }
 
+/*
+ * `!important`, and it is the one place in this stylesheet that earns it.
+ *
+ * This rule scores (0,2,0). `#screen-block` further down scores (1,0,0) and
+ * sets `display: grid; height: 100dvh` — so the block screen kept a full
+ * viewport of layout while carrying the `hidden` attribute, and every OTHER
+ * screen in the app ended with roughly 900 px of empty scroll below it.
+ * Measured on Prescribe at 1440x900: content ended at 1275 px and the document
+ * was 2199 px tall.
+ *
+ * "Hidden means hidden" is not a proposition a per-screen layout rule gets to
+ * argue with, and the alternative — repeating `[hidden]` on every ID rule — is
+ * a rule that silently stops being true the next time someone adds a screen.
+ */
 .screen[hidden] {
-  display: none;
+  display: none !important;
 }
 
 h1 {
@@ -61,12 +75,18 @@ p {
   outline-offset: 2px;
 }
 
+/* The skip link is the FIRST target a keyboard user hits, so it clears the same
+   44 px minimum as everything else. Its padding alone put it at 42.3 px. */
 .skip-link {
   position: absolute;
   left: var(--space-4);
-  top: -3rem;
+  top: -4rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
   background: var(--surface-2);
   color: var(--ink-1);
+  border: 1.5px solid var(--edge-strong);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius);
   z-index: 20;
@@ -148,6 +168,17 @@ textarea {
   font-size: var(--t-body);
 }
 
+/* A native radio or checkbox paints itself in the UA accent — a saturated blue
+   that belongs to no palette here and that collides with `--focus`, the one hue
+   reserved for focus rings and nothing else. `--ink-2` is neutral in all three
+   themes and keeps the control inside the design system. The clinician gate
+   keeps `--zone-in` (below) because ticking it is the affirmative act the whole
+   product is gated on. */
+input[type='radio'],
+input[type='checkbox'] {
+  accent-color: var(--ink-2);
+}
+
 input[type='number'],
 input[type='text'],
 select {
@@ -192,6 +223,17 @@ details {
   margin-top: var(--space-1);
 }
 
+/*
+ * `display: flex` is what lets a summary centre its text against the 44 px
+ * target — and it is also what SILENTLY DELETES the UA disclosure triangle,
+ * because `::marker` only exists on a `list-item` box. The result was a control
+ * whose entire affordance was a cursor change: on the landing page's FAQ, six
+ * bold questions with no answers under them and nothing at all to say they
+ * open. So the triangle is drawn back, explicitly, as part of the control.
+ *
+ * `list-style: none` is stated as well, for the engines that keep the marker on
+ * a flex summary; without it those get two triangles.
+ */
 summary {
   font-size: var(--t-label);
   color: var(--ink-3);
@@ -199,6 +241,38 @@ summary {
   min-height: var(--target);
   display: flex;
   align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  transition: color 120ms ease;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A solid caret in the current ink, so it inherits every palette and the hover
+   and focus states for free. `flex: 0 0 auto` keeps it off the text's baseline
+   arithmetic. */
+summary::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentcolor;
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+  transform: rotate(0deg);
+  transition: transform 140ms ease;
+}
+
+details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+/* A `summary` is a control. It had a pointer cursor and no other feedback, which
+   on a screen with eight of them reads as text that happens to be clickable. */
+summary:hover {
+  color: var(--ink-1);
 }
 
 details > .disclosure-body {

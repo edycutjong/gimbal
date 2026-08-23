@@ -32,18 +32,26 @@ page rather than guessing.
   hex digits of the SHA-256 above so a swapped bundle cannot be cached over
   silently; the bytes are unmodified.
 
-## Typeface
+## Typeface — Inter
 
-The interface requests *Inter* by name and then falls back to the reader's own
-system UI font stack. **No font file is vendored, bundled, or fetched** — there
-is no `@font-face` rule in `src/styles/`, and no third-party font origin, which
-is consistent with the zero-network-requests claim. On a machine without Inter
-installed, the page renders in `system-ui` and nothing about the measurement
-changes.
-
-If a subset Inter `woff2` is vendored later, its licence is the SIL Open Font
-License 1.1 and this section is to be updated with the exact file and its hash
-at that time — not before.
+- **File as vendored:** `public/fonts/InterVariable.woff2`
+- **Upstream:** Inter 4.1, https://github.com/rsms/inter
+- **Licence:** SIL Open Font License 1.1. The full licence text ships beside the
+  font at `public/fonts/Inter-OFL.txt` and is served at `/fonts/Inter-OFL.txt`,
+  linked from the landing page footer.
+- **Modification:** SUBSET, not otherwise altered. Reduced to Latin-1, the
+  punctuation this interface prints (`° · — – → × ≥ ≈ ✓ “ ”`) and the Greek this
+  project's own derivations print (`π ω μ Δ`), which is 73.9 kB rather than
+  352 kB. Both variable axes survive the subset — `wght` 100–900 and `opsz`
+  14–32 — and no outline is redrawn. Every non-ASCII character rendered by
+  either page is covered; none falls back.
+- **Why vendored at all:** `--font-stack` has always named Inter first, and until
+  it was vendored every machine fell through to `system-ui`, so the numerals — the
+  product's actual output — took whatever shape the operating system felt like.
+  `font-src 'self'` in the CSP means a Google Fonts URL would be *blocked by the
+  browser*, so a self-hosted copy is the only kind of web font this project can
+  have. It is served same-origin and counts toward the zero-third-party-origins
+  claim exactly like the model bundle does.
 
 ## Development dependencies
 

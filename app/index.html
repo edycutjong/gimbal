@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gimbal — gaze stabilization dose meter</title>
+    <meta
+      name="description"
+      content="A webcam dose meter that proves you actually did your prescribed vestibular rehab at therapeutic velocity. Everything runs on your device."
+    />
+    <!--
+      The CSP is also set as a response header in production (vercel.json). This
+      meta copy is what protects the dev server and any static host that does not
+      apply headers. `connect-src 'self'` is what turns "no data leaves the
+      device" from a promise into a browser-enforced invariant.
+      `'wasm-unsafe-eval'` is the ONLY relaxation, required by MediaPipe's WASM
+      instantiation, and it is documented in METHODS.md as such rather than
+      quietly widened to 'unsafe-eval'.
+
+      IT IS BYTE-IDENTICAL to the copy on the landing page at `/`. Two pages with
+      two different policies is how a same-origin claim quietly stops being true
+      on one of them, so check `greppable` in scripts/checks.mjs asserts both.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'"
+    />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- The measurement screens are not a shareable surface; the landing page is. -->
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <a class="skip-link" href="#screen-title">Skip to the main content</a>
+
+    <main>
+      <section id="screen-prescribe" class="screen" aria-labelledby="screen-title"></section>
+      <section id="screen-setup" class="screen" hidden></section>
+      <section id="screen-block" class="screen" hidden></section>
+      <section id="screen-gate" class="screen" hidden></section>
+      <section id="screen-report" class="screen" hidden></section>
+      <section id="screen-ledger" class="screen" hidden></section>
+    </main>
+
+    <!--
+      TWO live regions, and no more.
+      Polite: zone state, refusals (coalesced), screen changes, setup verdicts.
+      Assertive: EXACTLY two events — the end-session stop-rule outcome, and
+      sustained tracking loss.
+    -->
+    <div id="live-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div id="live-alert" class="visually-hidden" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+    <!-- One <video>, shared by the setup framing preview and the block presence tile. -->
+    <video id="camera" playsinline muted hidden></video>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

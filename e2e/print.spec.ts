@@ -18,7 +18,7 @@ test.describe('the printed one-pager', () => {
 
   test('is one letter page with citations expanded and no colour dependency', async ({ page }) => {
     await injectRecordedCamera(page, clip.path, true);
-    await page.goto('/');
+    await page.goto('/app');
     await completePrescribe(page, { blockSeconds: '20', blockCount: '1' });
     await startBlock(page);
     await page.waitForSelector('#screen-gate:not([hidden])', { timeout: 120_000 });
