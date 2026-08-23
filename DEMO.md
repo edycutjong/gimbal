@@ -96,19 +96,33 @@ npm run bench
 Needs **Node 22.7 or newer** — pinned in `package.json`'s `engines`, because the
 benchmark imports the shipped TypeScript directly rather than a compiled copy.
 
-That drives the **shipped** DSP modules — imported from `src/`, not
-re-implemented — with an analytic yaw signal at 2.0 Hz for 60 seconds at two
-amplitudes, and asserts the product's central claim before it prints a single
-timing:
+It makes **no network request**, needs no fixture and no camera, and drives the
+**shipped** DSP modules — imported from `src/`, not re-implemented — with six
+analytic yaw drives of 60 seconds each. **It reaches all six outcomes of the
+credit/refusal gate**, and asserts every one before it prints a single timing:
 
-| Drive | Analytic peak \|ω\| | Cycles segmented | Credited | Delivered dose |
-|---|---|---|---|---|
-| ±20° — therapeutic | 251.3 °/s, inside `[150, 350]` | 119 | **119** | 59.506 s |
-| ±8° — the lazy rep | 100.5 °/s, below the 150 °/s floor | 119 | **0**, all `too-slow` | **0.000 s** |
+| Outcome | Drive | Analytic peak \|ω\| | Cycles segmented | Credited | Delivered dose |
+|---|---|---|---|---|---|
+| `ok` | ±20° at 2.0 Hz | 251.3 °/s, inside `[150, 350]` | 119 of 120 | **119** | 59.506 s |
+| `too-slow` | ±8° at 2.0 Hz | 100.5 °/s, below the 150 °/s floor | 119 of 120 | **0** | **0.000 s** |
+| `too-fast` | ±30° at 2.0 Hz | 377.0 °/s, above the 350 °/s ceiling | 119 of 120 | **0** | **0.000 s** |
+| `off-cadence` | ±30° at 1.2 Hz | 226.2 °/s, *inside* the window | 71 of 72 | **0** | **0.000 s** |
+| `low-confidence` | ±20° at 2.0 Hz, degraded fit | 251.3 °/s, inside the window | 119 of 120 | **0** | **0.000 s** |
+| `face-lost` | ±20° at 2.0 Hz, no face | 251.3 °/s, inside the window | 119 of 120 | **0** | **0.000 s** |
 
-Same tempo. Same 119 cycles detected — the smaller sweep still clears the
-22.5 °/s hysteresis deadband, so they are *refused*, not *lost*. And the dose is
-**exactly** zero, not approximately zero.
+Read the first two rows together: **same tempo, same 119 cycles detected.** The
+smaller sweep still clears the 22.5 °/s hysteresis deadband, so those reps are
+*refused*, not *lost* — the difference between a policy and a dropout. And the
+dose is **exactly** zero, not approximately zero, on every refusal row.
+
+Read the whole table and you get the thing a two-row table could not show: the
+refusals are five different judgements, not one failure repeated. `too-fast` is
+the *opposite* error to `too-slow`, because faster is not better.
+`off-cadence` is the right velocity at the wrong tempo, and it sits last in the
+reason precedence, so reaching it proves everything above it passed.
+`low-confidence` is a perfectly creditable sweep that the instrument declines to
+vouch for — which is the same policy this page describes two sections above, now
+visible without a webcam.
 
 The frequency estimate lands at **f̂ = 2.0094 Hz** against a 2.0000 Hz drive,
 with the bin width of `30/256` = **0.1172 Hz** printed beside it.
@@ -143,10 +157,20 @@ it does not exist, and no number above may be quoted as though it were.
 What makes the timings mean anything is that the correctness gate runs *first*
 and the script exits non-zero if any assertion fails. A pipeline that returned
 early would post a beautiful p95; it would not segment 119 cycles, credit
-exactly the therapeutic ones, and land f̂ inside one bin. Counts are
-byte-deterministic across machines (LCG seed `20260823`, stated in the file);
-timings are machine-dependent, as any honest benchmark's are.
-Add `-- --json` to emit the whole record, machine included.
+exactly the therapeutic ones, land f̂ inside one bin, and place each of six
+drives in its own outcome. Counts are byte-deterministic across machines (LCG
+seed `20260823`, stated in the file); timings are machine-dependent, as any
+honest benchmark's are. Add `-- --json` to emit the whole record — every drive,
+its outcome, the assertion count, and the machine.
+
+**Which commands are air-gapped, since this page keeps saying "zero requests".**
+`npm test`, `npm run bench` and `npm run check:build` make no network request at
+all, on a clean clone, offline. `npm run verify` — the R11 gate — runs its
+assertions in Chromium, and if the machine has no Chromium build it downloads
+one: the only network request in this repository's proof suite, once per machine,
+fetching a *test harness* rather than anything the application runs on. Every
+run after that makes none, and the script prints which case it took. The
+boundary is written at the top of `scripts/verify.mjs`.
 
 ## The artifact
 

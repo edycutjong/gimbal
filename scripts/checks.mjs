@@ -55,6 +55,28 @@ const isComment = (line) => {
 
 const docFiles = ['README.md', 'DEMO.md', 'METHODS.md', 'LIMITATIONS.md', 'NOTICE.md', 'RELEASING.md'];
 
+/**
+ * The governance documents. They are judge-facing surfaces on a public
+ * repository, and a document nobody checks is a document that drifts — these
+ * were added long after the checks were written.
+ *
+ * SCOPE, precisely: they are swept for a `*.vercel.app` address and checked for
+ * existence. They are NOT held to the docs' one-canonical-URL allowlist,
+ * because attribution is the one thing a no-third-party-origins project must
+ * still name in prose — `CODE_OF_CONDUCT.md` is obliged to credit the
+ * Contributor Covenant, and `CONTRIBUTING.md` cites the Conventional Commits
+ * specification the release script parses. Neither is a resource the page
+ * fetches; both are text a reader may follow.
+ */
+const communityFiles = [
+  '.github/CODE_OF_CONDUCT.md',
+  '.github/CONTRIBUTING.md',
+  '.github/SECURITY.md',
+  '.github/PULL_REQUEST_TEMPLATE.md',
+  '.github/ISSUE_TEMPLATE/bug_report.md',
+  '.github/ISSUE_TEMPLATE/feature_request.md',
+];
+
 /** Two entry points and no more: `/` explains the instrument, `/app` is it. */
 const HTML_PAGES = ['index.html', 'app/index.html'];
 
@@ -294,7 +316,7 @@ check('U-COUNT', 'the test count printed in README is the count the suite report
 });
 
 // ── The claims that must stay greppable ──────────────────────────────────
-check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact', () => {
+check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact, licence and community files readable', () => {
   const problems = [];
   for (const file of srcFiles) {
     const text = read(rel(file));
@@ -312,7 +334,7 @@ check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact',
   // product's address: it changes if the project is renamed, it is not the
   // domain a judge is given, and a second live URL is exactly how two documents
   // start disagreeing. The custom domain is the only address this repo names.
-  const surfaces = [...docFiles, ...HTML_PAGES, 'vercel.json', ...srcFiles.map(rel)];
+  const surfaces = [...docFiles, ...communityFiles, ...HTML_PAGES, 'vercel.json', ...srcFiles.map(rel)];
   for (const name of surfaces) {
     if (!existsSync(join(ROOT, name))) continue;
     if (/[\w-]*\.vercel\.app/.test(read(name))) {
@@ -372,6 +394,44 @@ check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact',
       problems.push(`index.html: references ${url}, which is not a canonical address`);
     }
   }
+
+  // Every image in the README is an ASSET IN THIS REPO, for the same reason the
+  // og:image is: a remote hero is a third-party origin on the very surface that
+  // opens the argument for having none. The path is resolved as well as
+  // origin-checked, because a relative path that does not exist is a broken
+  // image on the first screen a reader ever sees — and the reader who notices
+  // is the one reading closely.
+  // Fenced code is stripped first, the same discipline `U-DOC` uses, so that an
+  // <img> quoted inside a documentation example is not read as a shipped image.
+  const readmeDoc = read('README.md').replace(/```[\s\S]*?```/g, '');
+  const readmeImages = [...readmeDoc.matchAll(/<img[^>]*\ssrc="([^"]+)"/g)].map((m) => m[1]);
+  if (readmeImages.length === 0) problems.push('README.md: no image at all — the hero is missing');
+  for (const src of readmeImages) {
+    if (/^(https?:)?\/\//.test(src)) {
+      problems.push(`README.md: image ${src} is fetched from another origin`);
+    } else if (!existsSync(join(ROOT, src))) {
+      problems.push(`README.md: image ${src} does not resolve to a file in this repo`);
+    }
+  }
+
+  // The eight rows GitHub scores at /community. Each is a file at a path GitHub
+  // actually reads, so the "100 % community profile" claim is checked here
+  // rather than asserted in a summary somewhere. LICENSE and README.md are the
+  // other two rows; the repository description is a setting, not a file, and
+  // `.github/SECURITY.md` says how it is set.
+  for (const required of [...communityFiles, '.github/ISSUE_TEMPLATE/config.yml', 'LICENSE', 'README.md']) {
+    if (!existsSync(join(ROOT, required))) problems.push(`${required} is missing`);
+  }
+  // LICENSE must be the unmodified MIT text. Anything appended to it — a
+  // regulatory note, a disclaimer — drops the file below GitHub's licence-match
+  // threshold and the repository starts reporting NOASSERTION instead of MIT.
+  // That is exactly what happened here, and the note now lives in LIMITATIONS.md.
+  const licence = read('LICENSE');
+  if (!/^MIT License\n/.test(licence)) problems.push('LICENSE: does not open with the MIT header');
+  if (!licence.trimEnd().endsWith('SOFTWARE.')) {
+    problems.push('LICENSE: text follows the MIT body — a licence scanner will report NOASSERTION');
+  }
+
   return problems;
 });
 

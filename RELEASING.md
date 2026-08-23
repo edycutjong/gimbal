@@ -31,14 +31,17 @@ median frame interval over a cycle`.
 
 1. `npm test` — 88 unit tests plus the eight mechanical greps.
 2. `npm run check:build` — the production bundle, then `U-DIST` over it.
-3. `npm run verify` — the R11 gate, including the model-bundle hash.
-4. `scripts/version.mjs` reads the tags and the commits since the last one, and
+3. `npm run bench` — all six credit/refusal outcomes driven end-to-end. The
+   counts are asserted and byte-deterministic; the timings are printed and never
+   asserted, because a timing assertion on a shared runner is a flaky assertion.
+4. `npm run verify` — the R11 gate, including the model-bundle hash.
+5. `scripts/version.mjs` reads the tags and the commits since the last one, and
    decides the bump.
-5. If there is one: `package.json` and `CHANGELOG.md` are written, committed as
+6. If there is one: `package.json` and `CHANGELOG.md` are written, committed as
    `chore(release): vX.Y.Z`, tagged, pushed, and a GitHub release is published.
-6. **Every** push deploys to Vercel production, bump or not — a docs-only commit
+7. **Every** push deploys to Vercel production, bump or not — a docs-only commit
    still belongs on the canonical URL.
-7. The deployed headers are re-verified with `npm run check:deploy`.
+8. The deployed headers are re-verified with `npm run check:deploy`.
 
 The release commit is skipped by the workflow's own `if:` guard, so pushing it
 back to `main` does not loop.
