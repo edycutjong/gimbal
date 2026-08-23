@@ -2,6 +2,13 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.1.1 — 2026-08-24
+
+### Fixes
+
+- **security:** resolve all six CodeQL alerts — parse URLs, do not substring them
+- **deploy:** drop cleanUrls, which 404'd every HTML route in production
+
 ## 1.1.0 — 2026-08-24
 
 ### Features
