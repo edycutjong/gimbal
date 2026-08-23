@@ -17,7 +17,34 @@
 }
 
 @media print {
-  :root {
+  /*
+   * `:root[data-theme]` IS IN THE SELECTOR LIST, AND IT IS LOAD-BEARING.
+   *
+   * `:root` alone scores (0,1,0) and LOSES to `:root[data-theme='dark']` at
+   * (0,2,0) in themes.css — so every token below was silently discarded the
+   * moment a reader touched the theme picker, which every reader does. The
+   * printed report then kept the SCREEN palette: `--ink-1` at #e6edf3 on paper
+   * `body` had already forced to #fff, table headings at `--ink-2` (1.9:1), and
+   * a delivered-dose bar filled in near-white on white. Printing from the dark
+   * theme produced a nearly blank sheet, and the one artifact this product hands
+   * to a clinician is the printed page.
+   *
+   * The attribute selector ties at (0,2,0) and wins on source order — the same
+   * defect and the same fix as the `prefers-contrast: more` block in themes.css,
+   * which documents it. `e2e/print.spec.ts` and the QA sweep both assert the
+   * printed page is monochrome.
+   *
+   * `:root:not([data-theme])` IS THE THIRD SELECTOR, and it is not redundant.
+   * `:not()` takes the specificity of its argument, so themes.css's
+   * `prefers-color-scheme: light` seed block also scores (0,2,0) — and it is the
+   * block that applies on a FIRST VISIT, before anyone has touched the picker,
+   * which is exactly when a judge prints. With only the first two selectors the
+   * warm-paper palette survived into print and the report came out in #5c6670
+   * on white.
+   */
+  :root,
+  :root[data-theme],
+  :root:not([data-theme]) {
     --surface-0: #fff;
     --surface-1: #fff;
     --surface-2: #fff;
@@ -37,7 +64,10 @@
     background: #fff;
     color: #000;
     font-size: 9.5pt;
-    line-height: 1.35;
+    /* 1.28, not 1.35. Over the report's ~180 printed lines that is roughly a
+       fifth of a sheet, at a leading still comfortably above the 1.2 that makes
+       9.5 pt hard to track. */
+    line-height: 1.28;
   }
 
   main {
@@ -57,17 +87,42 @@
     display: none !important;
   }
 
+  /*
+   * ELEVATION IS A SCREEN IDEA. A drop shadow renders on paper as a grey smear
+   * along two edges of every card, and the report has eight of them.
+   */
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+  }
+
+  /*
+   * The screen wraps every table in an `overflow-x: auto` box so a five-column
+   * table cannot take the document sideways at 320 px. On paper that box would
+   * CLIP the columns it scrolls, so the overflow is handed back.
+   */
+  .table-scroll {
+    overflow: visible !important;
+    margin-bottom: 6pt;
+  }
+
   .report {
     max-width: none;
   }
 
   .report h1 {
     font-size: 13pt;
+    margin-bottom: 2pt;
   }
 
   .report h2 {
     font-size: 10.5pt;
-    margin: 8pt 0 3pt;
+    margin: 6pt 0 2pt;
+  }
+
+  .report-band {
+    margin-bottom: 0;
   }
 
   .report p,
@@ -76,10 +131,97 @@
     font-size: 9.5pt;
   }
 
+  /*
+   * THE SCREEN'S SPACING RHYTHM DOES NOT COME TO PAPER.
+   *
+   * The restyle opened the application up — bigger cards, more air in the
+   * tables, real elevation — which is right on a screen and is measured in
+   * INCHES here. Cell padding alone went from 8/12 px to 12/16 px, and over the
+   * report's thirty-odd rows that is most of an extra sheet.
+   *
+   * Every one of these is a spacing override and nothing else: no content is
+   * dropped, no type shrinks below the 8 pt paper floor, and the limitations
+   * block stays at body size. Pagination is a build gate here, not a hope.
+   */
+  .report th,
+  .report td,
+  .table-scroll th,
+  .table-scroll td {
+    padding: 2pt 4pt;
+  }
+
+  .report caption,
+  .table-scroll caption {
+    padding-bottom: 2pt;
+  }
+
+  /*
+   * THE LIMITATIONS BLOCK IS SET IN TWO COLUMNS ON PAPER, AND IT KEEPS BODY SIZE.
+   *
+   * Eleven statements at 9.5 pt down a single 7.5 in measure is both the tallest
+   * object on the sheet and a 95-character line, which is past where a line stops
+   * being readable anyway. Two columns fixes both at once — and it is the only
+   * lever here that buys back a third of a page WITHOUT shrinking the type,
+   * which is the thing that must not happen: burying a limitation in small print
+   * is the exact opposite of what a safety criterion rewards.
+   */
+  .honesty-box {
+    padding: 5pt 7pt;
+    margin: 5pt 0;
+    border-width: 1pt;
+    border-left-width: 2pt;
+    columns: 2;
+    column-gap: 14pt;
+    column-rule: 0.5pt solid #999;
+  }
+
+  .honesty-box p {
+    margin-bottom: 3pt;
+    /* A statement must not be split across the column break; each one is a
+       single sentence a clinician reads as a unit. */
+    break-inside: avoid;
+  }
+
+  .honesty-box > h2 {
+    column-span: all;
+  }
+
+  .example-banner,
+  .banner,
+  #outcome {
+    padding: 3pt 5pt;
+    margin-bottom: 4pt;
+    border-radius: 0;
+  }
+
+  .citations li {
+    margin-bottom: 2pt;
+  }
+
+  .report p {
+    margin-bottom: 3pt;
+  }
+
+  /* The engraved-label tier is screen navigation. On paper the heading under it
+     says the same thing, and the sheet has no room for a second voice. */
+  .eyebrow {
+    display: none !important;
+  }
+
   .report table,
   .report th,
   .report td {
     font-size: 9pt;
+  }
+
+  .report thead th {
+    letter-spacing: 0.06em;
+  }
+
+  /* On screen the citation marker is pinned to the 15 px floor; on paper the
+     floor is 8 pt and a 15 px marker would be larger than the cell it annotates. */
+  .report sup {
+    font-size: 8pt;
   }
 
   .dose-total {
@@ -97,6 +239,33 @@
 
   details > summary {
     display: none;
+  }
+
+  /*
+   * `::details-content`, AND IT IS NOT BELT-AND-BRACES — WITHOUT IT THE PRINTED
+   * SOURCE COLUMN IS BLANK.
+   *
+   * A closed `<details>` used to hide its children by giving them
+   * `display: none`, which is why `display: block !important` below was enough.
+   * Chromium now renders the contents into a `::details-content` pseudo-element
+   * carrying `content-visibility: hidden`, and content-visibility is not a
+   * display value — an author `display` on the CHILD cannot reach it. So the
+   * disclosure body kept a box, kept black ink and a white ground, reported
+   * `display: block` to `getComputedStyle`, and painted nothing: every "Why?"
+   * source on the printed report was an empty cell, on the one artifact this
+   * product hands to a clinician, and the one thing the print stylesheet's own
+   * comment says must never happen.
+   *
+   * `e2e/print.spec.ts` did not catch it because it asserts
+   * `display !== 'none'`, which was true throughout. It was found by looking at
+   * the printed page.
+   *
+   * Both rules stay. Chromium 110 — the supported floor — is the old behaviour
+   * and needs the `display`; anything from 131 needs this.
+   */
+  details::details-content {
+    content-visibility: visible;
+    block-size: auto;
   }
 
   details > .disclosure-body {

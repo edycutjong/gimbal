@@ -145,6 +145,7 @@ export function renderSetup(host: HTMLElement, props: SetupProps): void {
 
   host.innerHTML = `
     ${settingsRow(props.theme)}
+    <p class="eyebrow">Before you start</p>
     <h1 id="screen-title" tabindex="-1">Set up</h1>
     ${permissionPanel(state)}
     ${

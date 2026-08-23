@@ -41,6 +41,7 @@ export function renderLedger(host: HTMLElement, props: LedgerProps): void {
 
   host.innerHTML = `
     ${settingsRow(props.theme)}
+    <p class="eyebrow">This device only</p>
     <h1 id="screen-title" tabindex="-1">Session history</h1>
 
     ${
@@ -71,7 +72,7 @@ export function renderLedger(host: HTMLElement, props: LedgerProps): void {
       <p class="caption">${esc(sparklineLegend(plotted))}</p>
       <p class="muted">${esc(trend.text)}</p>
 
-      <table>
+      <div class="table-scroll"><table>
         <caption>${plotted.length} session${plotted.length === 1 ? '' : 's'} on this device signature —
           ${esc(describeSignature(props.device))}.
           ${
@@ -99,7 +100,7 @@ export function renderLedger(host: HTMLElement, props: LedgerProps): void {
             )
             .join('')}
         </tbody>
-      </table>
+      </table></div>
 
       <p class="caption">${props.sessions.length} of ${SESSION_CAP} sessions stored on this device.
          The oldest is removed when the cap is reached.</p>

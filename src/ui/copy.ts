@@ -81,6 +81,19 @@ export const EXAMPLE_LOADER_LABEL =
 
 export const EXAMPLE_REPORT_LABEL = 'See an example session report';
 
+/**
+ * The route out of the pre-filled card and into the empty one.
+ *
+ * `/app` arrives pre-filled with the labelled example, so the eight EMPTY fields
+ * — which are the origination path the product actually ships and the reason
+ * claim C1 holds — must be one visible click away, not one guessed query string
+ * away. The link lives beside the example banner, at body size, with a 44 px
+ * target, and it is the only place in the application that names a route.
+ */
+export const BLANK_CARD_HREF = '/app?blank';
+
+export const BLANK_CARD_LABEL = 'Start with a blank card instead';
+
 export const AUDIO_OFF_REPORT_LINE =
   'coached without audio — zone feedback was visual only, which is degraded because reading the ring costs a glance away from the target.';
 

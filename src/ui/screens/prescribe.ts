@@ -10,7 +10,13 @@ import {
   type StageLabel,
 } from '../../protocol/card.ts';
 import { esc, el, all, settingsRow, wireThemePicker, type ThemeName } from '../dom.ts';
-import { GATE_COPY, GATE_CHECKBOX_LABEL, EXAMPLE_REPORT_LABEL } from '../copy.ts';
+import {
+  GATE_COPY,
+  GATE_CHECKBOX_LABEL,
+  EXAMPLE_REPORT_LABEL,
+  BLANK_CARD_HREF,
+  BLANK_CARD_LABEL,
+} from '../copy.ts';
 
 /**
  * Screen 1 — Prescribe. The Safety criterion, rendered.
@@ -81,6 +87,7 @@ export function renderPrescribe(host: HTMLElement, props: PrescribeProps): void 
 
   host.innerHTML = `
     ${settingsRow(props.theme)}
+    <p class="eyebrow">VORx1, yaw · one browser tab</p>
     <h1 id="screen-title" tabindex="-1">Gaze stabilization dose meter</h1>
 
     <div class="gate-card">
@@ -96,7 +103,8 @@ export function renderPrescribe(host: HTMLElement, props: PrescribeProps): void 
     ${
       example
         ? `<div class="example-banner" id="example-parameters-banner">
-             <span class="chip">EXAMPLE</span> ${esc(example)}
+             <p><span class="chip">EXAMPLE</span> ${esc(example)}</p>
+             <a class="banner-link" id="blank-card" href="${BLANK_CARD_HREF}">${esc(BLANK_CARD_LABEL)}</a>
            </div>`
         : ''
     }

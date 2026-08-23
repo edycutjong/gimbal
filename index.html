@@ -158,7 +158,7 @@
                   <p class="lp-readout-sub">in zone, of <span class="tnum">60</span> s prescribed · <span class="tnum">0</span> of <span class="tnum">10</span> reps credited</p>
                 </div>
               </div>
-              <p class="lp-replay-status" data-refused="true">Rep not counted — too slow (below 150 °/s; measured 91 °/s).</p>
+              <p class="lp-replay-status" data-refused="true">Rep not counted — too slow (below 150 °/s; measured 101 °/s).</p>
               <p class="lp-replay-cap">The dose numeral did not move. That is the whole product.</p>
             </figure>
           </noscript>
@@ -187,9 +187,9 @@
             Open it with an example prescription
             <span class="lp-cta-sub">eight fields pre-filled and labelled</span>
           </a>
-          <a class="lp-cta lp-cta-secondary" href="/app">
+          <a class="lp-cta lp-cta-secondary" href="/app?blank">
             Start with a blank card
-            <span class="lp-cta-sub">the real entry path</span>
+            <span class="lp-cta-sub">the eight empty fields the product ships</span>
           </a>
         </div>
 
@@ -295,7 +295,7 @@
             <div class="lp-two">
               <article class="lp-reason lp-reason-movement">
                 <p class="lp-reason-kind">Reason one · about the movement</p>
-                <p class="lp-quote"><code>Rep not counted — too slow (below 150 °/s; measured 91 °/s).</code></p>
+                <p class="lp-quote"><code>Rep not counted — too slow (below 150 °/s; measured 101 °/s).</code></p>
                 <p>
                   Proves the velocity is measured and the band is enforced. Both numbers are
                   shown: the threshold that came off your card, and what was actually
@@ -703,7 +703,7 @@ npm run check:build # builds the bundle, then greps it</code></pre>
               Open it with an example prescription
               <span class="lp-cta-sub">eight fields pre-filled and labelled</span>
             </a>
-            <a class="lp-cta lp-cta-secondary" href="/app">
+            <a class="lp-cta lp-cta-secondary" href="/app?blank">
               Start with a blank card
               <span class="lp-cta-sub">type your clinician's eight numbers</span>
             </a>
@@ -731,24 +731,24 @@ npm run check:build # builds the bundle, then greps it</code></pre>
           <p>A dose meter for prescribed gaze-stabilization exercise. VORx1, yaw axis, one browser tab.</p>
         </div>
         <!--
-          THE REPOSITORY IS PRIVATE UNTIL SUBMISSION, and a link that 404s
-          without saying why reads as a broken project rather than as a closed
-          door. Every link into it is grouped under one heading that states the
-          fact once, and each carries `rel="nofollow"` so a crawler does not
-          record five dead ends either.
+          THE REPOSITORY IS PUBLIC. It was private while the submission was being
+          built, and this block used to say so — because a link that 404s without
+          explaining itself reads as a broken project rather than as a closed
+          door. The door is open, so the note says what is behind it instead, and
+          `rel="nofollow"` is gone with the dead ends it was hiding.
         -->
         <nav aria-label="Project documents">
           <p class="lp-foot-h">Read the build</p>
           <p class="lp-foot-note">
-            The repository is private until the submission deadline
-            (<span class="tnum">4 September 2026</span>); these open then.
+            Public, MIT licensed, and readable now — including the commit history
+            these were written in.
           </p>
           <ul>
-            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal#readme">README — the whole argument</a></li>
-            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal/blob/main/METHODS.md">METHODS — the derivations</a></li>
-            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal/blob/main/LIMITATIONS.md">LIMITATIONS — in full</a></li>
-            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal/blob/main/DEMO.md">DEMO — what to watch for</a></li>
-            <li><a rel="nofollow" href="https://github.com/edycutjong/gimbal">Source on GitHub</a></li>
+            <li><a href="https://github.com/edycutjong/gimbal#readme">README — the whole argument</a></li>
+            <li><a href="https://github.com/edycutjong/gimbal/blob/main/METHODS.md">METHODS — the derivations</a></li>
+            <li><a href="https://github.com/edycutjong/gimbal/blob/main/LIMITATIONS.md">LIMITATIONS — in full</a></li>
+            <li><a href="https://github.com/edycutjong/gimbal/blob/main/DEMO.md">DEMO — what to watch for</a></li>
+            <li><a href="https://github.com/edycutjong/gimbal">Source on GitHub</a></li>
           </ul>
         </nav>
         <nav aria-label="Application">
@@ -756,7 +756,7 @@ npm run check:build # builds the bundle, then greps it</code></pre>
           <p class="lp-foot-note">Live now. No account, no key, no flags.</p>
           <ul>
             <li><a href="/app?demo">With an example prescription</a></li>
-            <li><a href="/app">With a blank card</a></li>
+            <li><a href="/app?blank">With a blank card</a></li>
             <li><a href="/fonts/Inter-OFL.txt">Typeface licence (SIL OFL 1.1)</a></li>
           </ul>
         </nav>

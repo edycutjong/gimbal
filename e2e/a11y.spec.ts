@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { completePrescribe } from './harness.ts';
+import { TRACE, peakLabel } from '../src/landing/trace.ts';
 import { LIMITATIONS_LINES } from '../src/report/limitations.ts';
 
 /**
@@ -271,9 +272,14 @@ test('under prefers-reduced-motion the hero does not autoplay and still tells th
 
   // Seeded at the refusal: the sentence is printed, the dose has not moved.
   const status = await page.textContent('#rp-status');
+  const lazyPeak = TRACE.find((c) => c.reason === 'too-slow')?.peakOmega ?? 0;
   expect(status).toContain('Rep not counted — too slow');
   expect(status).toContain('150 °/s');
-  expect(status).toContain('91 °/s');
+  // The measured value comes from the benchmark's own lazy drive — 2π·2.0·8 —
+  // so it is asserted through `peakLabel`, the one rounding rule the sentence,
+  // the transcript and the strip tooltip all share. Typing "101" here would
+  // reintroduce exactly the hand-written number this trace stopped carrying.
+  expect(status).toContain(`${peakLabel(lazyPeak)} °/s`);
   expect(await page.textContent('#rp-dose')).toBe('0.0');
 
   // And it stays that way. No frame advances on its own.
@@ -287,6 +293,70 @@ test('under prefers-reduced-motion the hero does not autoplay and still tells th
   await page.click('#rp-step');
   expect(await page.$$eval(committed, (n) => n.length)).toBe(2);
   await context.close();
+});
+
+/**
+ * The six-outcome selector.
+ *
+ * The gate has six outcomes and the hero used to show two, so a reader could
+ * come away believing "too slow" was the whole rule. Every button is driven
+ * here, and the two that matter most — the ones that prove the instrument
+ * refuses to EMIT rather than smoothing — are asserted to carry their OWN words
+ * rather than a shared "refused".
+ */
+test('the hero selector reaches all six gate outcomes, each with its own sentence', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForSelector('.lp-replay');
+  await page.click('#rp-play'); // pause; the selector is a stepping control
+  expect(await page.getAttribute('#rp-play', 'aria-pressed')).toBe('false');
+
+  const buttons = await page.$$eval('.lp-outcome-btn', (n) => n.map((b) => b.getAttribute('data-outcome')));
+  expect(buttons.sort()).toEqual(
+    ['face-lost', 'low-confidence', 'off-cadence', 'ok', 'too-fast', 'too-slow'],
+  );
+
+  const seen = new Map<string, string>();
+  for (const outcome of buttons) {
+    await page.click(`.lp-outcome-btn[data-outcome="${outcome}"]`);
+    // The button reports that it is the verdict on the dial, and only it does.
+    expect(await page.getAttribute(`.lp-outcome-btn[data-outcome="${outcome}"]`, 'aria-pressed')).toBe('true');
+    expect(await page.$$eval('.lp-outcome-btn[aria-pressed="true"]', (n) => n.length)).toBe(1);
+    seen.set(outcome as string, ((await page.textContent('#rp-status')) ?? '').trim());
+    // Nothing runs on its own after a jump: this is a stepping control.
+    expect(await page.getAttribute('#rp-play', 'aria-pressed')).toBe('false');
+  }
+
+  expect(seen.get('ok')).toBe('In the band. Nothing to report.');
+  expect(seen.get('too-slow')).toContain('too slow');
+  expect(seen.get('too-fast')).toContain('too fast');
+  expect(seen.get('off-cadence')).toContain('off the pacing tempo');
+  // DISTINCT COPY, not a generic refusal. These two are the answer to the
+  // largest technical risk in the project, and collapsing them would publish
+  // only the half that is easy to demonstrate.
+  expect(seen.get('low-confidence')).toBe('Rep not counted — tracking unreliable. Try more light.');
+  expect(seen.get('face-lost')).toBe('Rep not counted — your face left the frame.');
+  expect(new Set(seen.values()).size).toBe(6);
+
+  // Jumping REPLAYS rather than teleports: the strip carries the whole run up
+  // to the chosen verdict, so the panel never draws a session that never was.
+  await page.click('.lp-outcome-btn[data-outcome="face-lost"]');
+  const committed = await page.$$eval('#rp-strip li:not([data-state="pending"])', (n) => n.length);
+  expect(committed).toBe(9);
+  // And the dose numeral shows what those cycles actually produced.
+  expect(await page.textContent('#rp-dose')).toBe('1.5');
+});
+
+test('the hero selector still clears 44 px and keeps the illustration label on screen', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForSelector('.lp-outcome-btn');
+  const undersized = await page.$$eval('.lp-outcome-btn', (nodes) =>
+    nodes
+      .map((n) => n.getBoundingClientRect())
+      .filter((r) => r.width < 44 || r.height < 44).length,
+  );
+  expect(undersized).toBe(0);
+  // The chip that says this is not a measurement never leaves the panel.
+  expect(await page.textContent('.lp-replay-head .chip')).toContain('Illustration');
 });
 
 test('the hero replay pauses and resumes on demand for everyone', async ({ page }) => {
@@ -331,6 +401,52 @@ test('every interactive target clears 44 x 44 px', async ({ page }) => {
   expect(undersized).toEqual([]);
 });
 
+/**
+ * THE `hidden` ATTRIBUTE MUST ACTUALLY HIDE.
+ *
+ * The user agent's `[hidden] { display: none }` carries no `!important`, so any
+ * author `display` declaration outranks it. That is not a hypothetical: it is
+ * how `.paused-overlay { display: grid }` came to cover the entire block screen
+ * — dial, strip, optotype and dose numeral — with an un-dismissable
+ * "Paused. Press space to continue." from the first paint of every session.
+ *
+ * Nothing else caught it. `textContent` reads straight through an occluding
+ * element and Playwright's visibility check is about an element's own box, not
+ * about what is painted on top of it, so every existing assertion passed. This
+ * test is the general form of that bug, over every class the application
+ * actually toggles `hidden` on.
+ */
+test('every element the app hides with the hidden attribute is really display:none', async ({ page }) => {
+  await page.goto('/app');
+  await page.waitForSelector('#gate-ack');
+  const stillShown = await page.evaluate(() => {
+    // Every class or id the application sets `.hidden` on, or ships with the
+    // attribute in its markup.
+    const probes = [
+      { tag: 'div', className: 'paused-overlay' },
+      { tag: 'section', className: 'screen' },
+      { tag: 'div', id: 'outcome' },
+      { tag: 'p', className: 'field-error' },
+      { tag: 'div', className: 'framing-wrap' },
+      { tag: 'video', className: 'framing' },
+      { tag: 'video', className: 'presence-tile' },
+    ];
+    const out: string[] = [];
+    for (const probe of probes) {
+      const el = document.createElement(probe.tag);
+      if (probe.className) el.className = probe.className;
+      if (probe.id) el.id = probe.id;
+      el.hidden = true;
+      document.body.appendChild(el);
+      const display = getComputedStyle(el).display;
+      if (display !== 'none') out.push(`${probe.className ?? '#' + probe.id} -> display: ${display}`);
+      el.remove();
+    }
+    return out;
+  });
+  expect(stillShown).toEqual([]);
+});
+
 test('the polite live region carries validation in words, and the assertive one stays silent', async ({ page }) => {
   await page.goto('/app');
   await page.waitForSelector('#gate-ack');
@@ -369,27 +485,37 @@ test('all three themes apply, and the optotype is the highest-contrast object in
   }
 });
 
-test('the Prescribe screen ships zero numeric defaults', async ({ page }) => {
-  await page.goto('/app');
+test('the blank route ships zero numeric defaults', async ({ page }) => {
+  // `/app?blank` is the origination path the product ships. The default moved to
+  // the labelled example so that a reader with no handout in front of them can
+  // reach the measurement; the empty card did not go away, and this is it.
+  await page.goto('/app?blank');
   await page.waitForSelector('#gate-ack');
   const values = await page.$$eval('#screen-prescribe input[type="number"]', (nodes) =>
     nodes.map((n) => (n as HTMLInputElement).value),
   );
   expect(values.length).toBe(8);
   expect(values.every((v) => v === '')).toBe(true);
+  expect(await page.$$eval('#screen-prescribe .chip', (n) => n.length)).toBe(0);
+  expect(await page.$('#example-parameters-banner')).toBeNull();
   // And Continue stays disabled until the box is ticked AND all eight validate.
   expect(await page.isDisabled('#continue')).toBe(true);
 });
 
 /**
- * `/app?demo` — the labelled example prescription.
+ * `/app` and `/app?demo` — the labelled example prescription.
  *
  * The disclosure is what is asserted here, not the data. A pre-filled form that
  * stops SAYING it is pre-filled is the single most likely way this project
- * accidentally originates a prescription, so the label is a test, not a habit.
+ * accidentally originates a prescription, so the label is a test, not a habit —
+ * and it matters more, not less, now that pre-filled is what `/app` arrives as.
+ *
+ * Both addresses are driven, because `?demo` is published in README.md and
+ * DEMO.md and must keep behaving exactly as it did.
  */
-test('the demo route pre-fills the eight fields and labels every one of them', async ({ page }) => {
-  await page.goto('/app?demo');
+for (const route of ['/app', '/app?demo']) {
+test(`${route} pre-fills the eight fields and labels every one of them`, async ({ page }) => {
+  await page.goto(route);
   await page.waitForSelector('#gate-ack');
 
   const values = await page.$$eval('#screen-prescribe input[type="number"]', (nodes) =>
@@ -417,16 +543,26 @@ test('the demo route pre-fills the eight fields and labels every one of them', a
   expect(sources.length).toBe(8);
   expect(sources.every((s) => s.startsWith('EXAMPLE'))).toBe(true);
 });
+}
 
-test('the demo route changes nothing about the default entry path', async ({ page }) => {
+test('the pre-filled card offers a visible one-click route to the blank one', async ({ page }) => {
+  // The blank card is the origination path claim C1 rests on. A route nobody can
+  // find is not a route, so the link is asserted to exist, to clear the 44 px
+  // target, to say what it does, and to actually land on eight empty fields.
   await page.goto('/app');
+  const link = page.locator('#blank-card');
+  await expect(link).toBeVisible();
+  expect((await link.textContent())?.toLowerCase()).toContain('blank card');
+  const box = await link.boundingBox();
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+  await link.click();
   await page.waitForSelector('#gate-ack');
+  expect(new URL(page.url()).search).toBe('?blank');
   const values = await page.$$eval('#screen-prescribe input[type="number"]', (nodes) =>
     nodes.map((n) => (n as HTMLInputElement).value),
   );
   expect(values.every((v) => v === '')).toBe(true);
-  expect(await page.$$eval('#screen-prescribe .chip', (n) => n.length)).toBe(0);
-  expect(await page.$('#example-parameters-banner')).toBeNull();
 });
 
 /**

@@ -8,13 +8,56 @@
  * burying a limitation in small type is the opposite of what the Safety
  * criterion rewards, and the limitations and the citations are the same size as
  * the body copy for exactly that reason.
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ * ONE SCALE, TWO SURFACES. `/` AND `/app` ARE THE SAME PRODUCT.
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * `src/styles/landing.css` declared a six-step type scale, a spacing rhythm, a
+ * 10–32 px radius set and a three-step elevation for `/`, and the application
+ * kept a compressed four-step scale, one 6 px radius and no elevation at all —
+ * so side by side they read as two products. The scale below is now the SAME
+ * scale, stated once here where both surfaces can see it, rather than copied.
+ *
+ * WHAT DID NOT MOVE, and why each one is clinical rather than aesthetic:
+ *
+ *   · the 15 px floor (`--t-label`) — unchanged, in every state and viewport;
+ *   · `--target: 44px` — unchanged, including the eleven symptom radios;
+ *   · `--opto-*` — the optotype is the highest-contrast object on the screen by
+ *     design and its geometry is patient-set, so it is not in the visual system
+ *     at all;
+ *   · `--t-readout` and the DESKTOP end of `--t-display` — the block screen's
+ *     measurement numerals. A dose numeral that changed size because the design
+ *     language changed would be a measurement surface moving for a reason that
+ *     is not a measurement, so at every viewport above 900 px `--t-display` is
+ *     the same 4.5 rem it always was. Its narrow-end floor did move, and only
+ *     because the numeral was being CROPPED there; see the note on it below.
+ *
+ * WHAT MOVED: the HEADING tiers. `--t-h1` was 24–32 px and `--t-h2` a flat
+ * 20 px, one step above 17–19 px body — which is why `/app` had no typographic
+ * hierarchy to read. They now take `landing.css`'s `--lp-t-h2` and `--lp-t-h3`
+ * steps verbatim, and `--t-lede` is the landing's `--lp-t-lede`.
  */
 
 :root {
-  --t-display: clamp(2.75rem, 6vw, 4.5rem);
+  /*
+   * The block screen's dose numeral, and the only thing that uses this step.
+   *
+   * The floor was 2.75rem and the string is `12.3 / 60.0 min in zone` — about
+   * 480 px at 44 px, on a 390 px screen whose block grid clips anything wider.
+   * The ceiling and the desktop size are UNCHANGED (8vw passes 72 px at 900 px
+   * wide, so every viewport above that lands on the same 4.5rem it always did);
+   * only the narrow end moves, and it moves so the number is READ rather than
+   * cropped. A measurement surface may get more legible; it may not get quieter.
+   */
+  --t-display: clamp(1.75rem, 8vw, 4.5rem);
   --t-readout: clamp(2rem, 4.5vw, 3.25rem);
-  --t-h1: clamp(1.5rem, 2.4vw, 2rem);
-  --t-h2: 1.25rem;
+  /* = landing.css `--lp-t-h2`. A screen title is the top of the page it opens. */
+  --t-h1: clamp(1.9rem, 3vw, 2.85rem);
+  /* = landing.css `--lp-t-h3`. */
+  --t-h2: clamp(1.2rem, 1.5vw, 1.4rem);
+  /* = landing.css `--lp-t-lede`. The one paragraph that introduces a screen. */
+  --t-lede: clamp(1.15rem, 1.35vw, 1.4rem);
   --t-body: clamp(1.0625rem, 1.1vw, 1.1875rem);
   --t-readout-sm: 1.25rem;
   --t-label: 0.9375rem; /* 15 px — the absolute floor */
@@ -27,6 +70,11 @@
      monospace. Nothing extra is downloaded for it. */
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
+  /*
+   * The spacing rhythm. `--space-2`..`--space-7` ARE landing.css's
+   * `--lp-s1`..`--lp-s6`, value for value; the two steps above them existed only
+   * on `/` and are added here so a screen can breathe at section scale.
+   */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -34,8 +82,23 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
+  --space-8: 4.5rem; /* = --lp-s7 */
 
-  --radius: 6px;
+  /*
+   * GEOMETRY — the same 10 / 16 / 24 / 32 set landing.css uses.
+   *
+   * `--radius` was 6 px on every object in the app: a 6 px box is what a
+   * stylesheet draws when it has not decided anything, and it is most of why the
+   * application read as browser-default beside `/`. It is now the first step of
+   * a real set, and the tiers carry the hierarchy — controls at r1, cards at r2,
+   * the objects that own a whole region at r3.
+   */
+  --r1: 10px; /* = --lp-r1 */
+  --r2: 16px; /* = --lp-r2 */
+  --r3: 24px; /* = --lp-r3 */
+  --r4: 32px; /* = --lp-r4 */
+  --radius: var(--r1);
+
   --measure: 68ch;
 
   /* Optotype outer diameter. Patient-set in setup; NO acuity figure is derived

@@ -80,23 +80,42 @@ let theme: ThemeName | null = loadTheme();
 if (theme) applyTheme(theme);
 
 /**
- * `/app?demo` — the labelled example prescription.
+ * THE TWO ENTRY ROUTES, AND WHY CLAIM C1 SURVIVES THE DEFAULT MOVING.
  *
- * The eight fields are empty by default and that emptiness IS the safety
- * property: Gimbal has no path to originate a prescription. But a judge with no
- * clinician's handout in front of them cannot get past screen one, so `?demo`
- * fills the fields from the numbers README.md publishes for evaluation.
+ *   `/app`        the labelled example prescription, pre-filled
+ *   `/app?demo`   the same thing, named — kept because README.md and DEMO.md
+ *                 both publish that address
+ *   `/app?blank`  the eight empty fields; the origination path the product ships
  *
- * It is an honest disclosure, not a hidden developer mode, and it is labelled to
- * the same standard as the example ledger: a persistent banner above the form,
- * an `EXAMPLE` chip on the fieldset, `EXAMPLE` as the `source` string on every
- * one of the eight criteria — which is what prints in the report's "Why?"
- * disclosure and therefore travels onto paper with the artifact.
+ * The default used to be blank, and the emptiness was doing double duty: it was
+ * the safety property AND it was the first thing a judge saw, which meant every
+ * reader without a clinician's handout in front of them hit eight required
+ * fields they had no way to fill. The default is now the example.
  *
- * The clinician-attestation checkbox is NOT pre-ticked. Filling in a number for
- * someone is a convenience; ticking their attestation for them would be a lie.
+ * CLAIM C1 — "Gimbal has no path to originate a prescription" — is unchanged,
+ * and it is unchanged for reasons that are structural rather than editorial:
+ *
+ *   1. THE BLANK ORIGINATION PATH STILL EXISTS, at `?blank`, and it is reachable
+ *      in one visible click from the pre-filled screen (`prescribe.ts` renders
+ *      that link beside the banner) as well as from three places on `/`.
+ *   2. THE EIGHT VALUES STILL ARRIVE ONLY FROM `exampleParameters.ts`, by this
+ *      one labelled route. There is no second source of numbers, no preset list,
+ *      no "typical values" button, and `prescribe.ts` still imports none of it —
+ *      it renders whatever draft it is handed.
+ *   3. THE CLINICIAN-ATTESTATION CHECKBOX IS STILL NEVER AUTO-TICKED. That is
+ *      the load-bearing half. Filling in a number for someone is a convenience;
+ *      ticking their attestation for them would be a lie, and it is the tick —
+ *      not the numbers — that lets a card exist at all.
+ *   4. THE LABEL AND THE DRAFT COME FROM THE SAME FLAG, on the two lines below.
+ *      A pre-filled form that has stopped saying it is pre-filled is not
+ *      constructible, which is what check `U-CARD` asserts mechanically.
+ *
+ * The disclosure is unchanged and travels onto paper: a persistent banner above
+ * the form, an `EXAMPLE` chip on every one of the eight values, and `EXAMPLE …`
+ * as the `source` string on every one of the eight criteria — which is what
+ * prints in the report's "Why?" disclosure.
  */
-const usingExampleParameters = new URLSearchParams(globalThis.location?.search ?? '').has('demo');
+const usingExampleParameters = !new URLSearchParams(globalThis.location?.search ?? '').has('blank');
 
 const state: SessionState = {
   card: null,

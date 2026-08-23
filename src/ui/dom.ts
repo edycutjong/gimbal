@@ -129,9 +129,32 @@ export function wireThemePicker(root: ParentNode): void {
   query?.addEventListener('change', sync);
 }
 
+/**
+ * The mark: the dial's own 270° sweep, the prescribed band at twelve o'clock,
+ * and one committed marker sitting slate and OFF the band — the refusal, drawn
+ * at 32 px. Byte-identical geometry to `.lp-mark` on the landing page, because
+ * the two surfaces are one product and the header is where a reader decides
+ * whether they believe that.
+ *
+ * Inline rather than an `<img src="/icon.svg">`: the mark is drawn in theme
+ * tokens, and an external SVG cannot see the page's custom properties, so a
+ * referenced copy would be stuck in one palette across three.
+ */
+export const APP_MARK_SVG = `<svg class="app-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+  <circle cx="20" cy="20" r="15" fill="none" stroke="var(--edge-strong)" stroke-width="4"
+          stroke-dasharray="70.686 23.562" transform="rotate(135 20 20)" />
+  <circle cx="20" cy="20" r="15" fill="none" stroke="var(--zone-in)" stroke-width="5.5"
+          stroke-dasharray="0 30.10 10.47 100" transform="rotate(135 20 20)" />
+  <line x1="3.37" y1="13.11" x2="9.84" y2="15.79" stroke="var(--refused)" stroke-width="3" />
+</svg>`;
+
+/**
+ * The application bar. Rendered at the top of every screen except the block
+ * screen, which has no chrome at all by design.
+ */
 export function settingsRow(current: ThemeName | null): string {
   return `<div class="settings-row no-print">
-    <span class="wordmark">Gimbal</span>
+    <span class="app-brand">${APP_MARK_SVG}<span class="wordmark">Gimbal</span></span>
     ${themePickerHtml(current)}
   </div>`;
 }

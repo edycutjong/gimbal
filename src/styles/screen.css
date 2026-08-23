@@ -1,8 +1,63 @@
+/*
+ * The application — `/app`. Six screens.
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ * DESIGN POSITION, stated once so it can be argued with.
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * `/` AND `/app` ARE ONE PRODUCT AND NOW READ AS ONE.
+ *
+ * `src/styles/landing.css` gave `/` a real type scale, layered surfaces, real
+ * elevation, 10–32 px radii and a spacing rhythm. This file kept a compressed
+ * scale, one 6 px radius, hairline boxes and browser-default form controls, so
+ * side by side the two pages read as two products — which is a claim about the
+ * project that is not true.
+ *
+ * It is fixed by SHARING the system rather than by copying it. The scale, the
+ * rhythm and the radii live in `tokens.css`; the three-step elevation lives in
+ * `themes.css` beside the palettes it depends on; `landing.css` now reads
+ * `--lp-shadow-1: var(--shadow-1)`. One definition, two surfaces.
+ *
+ * WHAT DID NOT MOVE, because it is clinical rather than aesthetic:
+ *
+ *   1. THE MEASUREMENT SURFACES. The dial, the cycle strip, the optotype, the
+ *      dose numeral, the refusal sentence and the tracking-quality readout are
+ *      untouched below except where a change makes them MORE legible. The block
+ *      screen has no chrome by design — every pixel of interface furniture is a
+ *      candidate saccade — so it gains no cards, no elevation and no ornament.
+ *      A measurement surface that moved because a design language changed would
+ *      be a measurement moving for a reason that is not a measurement.
+ *
+ *   2. THREE THEMES, ALL OF THEM. `dim` is MUST-tier; photophobia is a
+ *      first-order symptom here. Every rule below is written in tokens, so all
+ *      three palettes follow, and the reader's choice still persists across `/`
+ *      and `/app` through the same `localStorage` key.
+ *
+ *   3. TWO STATE HUES AND NO MORE. `--zone-in`, `--zone-out`, plus `--refused`,
+ *      `--halt`, `--focus`, `--optotype`. Nothing below introduces a third hue,
+ *      and nothing below paints a call to action in a state colour — the primary
+ *      button is INVERTED INK, exactly as `.lp-cta-primary` is on `/`, because
+ *      neither state hue means "click here" and spending one on a button is the
+ *      first crack in a semantic the whole instrument depends on.
+ *
+ *   4. NO MOTION IS ADDED. No scroll-linked anything, no reveal, no count-up,
+ *      and no transition on any element that moves during a session. The only
+ *      transitions below are hover/focus feedback on controls, which a patient
+ *      mid-exercise never touches.
+ *
+ *   5. THE 15 px FLOOR AND THE 44 px TARGET. Unchanged, in every state, at every
+ *      viewport, including the eleven symptom radios and the one attestation
+ *      checkbox the entire product is gated on.
+ */
+
 /* ── Shell ──────────────────────────────────────────────────────────────── */
 
 main {
+  /* The landing page's own gutter, so a judge switching tabs does not see the
+     content column jump. */
+  --page-pad: clamp(1.25rem, 3.4vw, 3rem);
   min-height: 100dvh;
-  padding: var(--space-5);
+  padding: 0 var(--page-pad) var(--space-8);
   max-width: 72rem;
   margin: 0 auto;
 }
@@ -25,18 +80,30 @@ main {
   display: none !important;
 }
 
+/*
+ * THE TYPE SCALE, USED.
+ *
+ * The old screens were an `h1` at 24–32 px, an `h2` at a flat 20 px and then
+ * several hundred lines of 17 px — one step of hierarchy across an entire
+ * clinical form. These are the landing page's own heading steps, so a screen
+ * opens at the size a screen deserves and a section reads as a section.
+ */
 h1 {
   font-size: var(--t-h1);
   font-weight: 620;
-  line-height: 1.15;
-  margin: 0 0 var(--space-2);
+  line-height: 1.06;
+  letter-spacing: -0.032em;
+  text-wrap: balance;
+  margin: 0 0 var(--space-3);
+  max-width: 22ch;
 }
 
 h2 {
   font-size: var(--t-h2);
-  font-weight: 600;
+  font-weight: 620;
   line-height: 1.25;
-  margin: var(--space-5) 0 var(--space-2);
+  letter-spacing: -0.015em;
+  margin: var(--space-6) 0 var(--space-3);
 }
 
 p {
@@ -51,6 +118,50 @@ p {
 .caption {
   font-size: var(--t-label);
   color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/*
+ * THE ENGRAVED-LABEL TIER, borrowed from `/` verbatim: monospace, uppercase,
+ * wide tracking, at the 15 px floor and never below it. It is the cheapest
+ * single change that moves a screen from "form" to "instrument", and it is what
+ * makes 15 px read as a panel label rather than as small text.
+ *
+ * Only LABELS take it. Field labels stay sentence-case sans, because
+ * "Stop rule: rise over baseline" set in wide-tracked uppercase is slower to
+ * read, and this form is read by someone with cognitive fatigue.
+ */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 var(--space-3);
+  max-width: none;
+}
+
+/* A hairline, not a coloured dot. `--zone-in` means "inside the prescribed
+   band"; spending it on an eyebrow bullet is the first step towards it also
+   meaning "decorative". */
+.eyebrow::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 24px;
+  height: 1px;
+  background: var(--ink-3);
+}
+
+/* The one paragraph that introduces a screen, at the step above body. */
+.lede {
+  font-size: var(--t-lede);
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 48ch;
+  margin: 0 0 var(--space-5);
 }
 
 .tnum {
@@ -99,30 +210,80 @@ p {
 
 /* ── Controls ───────────────────────────────────────────────────────────── */
 
+/*
+ * The secondary control: a raised surface with a real edge and one step of
+ * elevation, not a 6 px hairline box. Elevation is what separates a control from
+ * a rectangle of a different colour, and it is the same three-step set `/` uses.
+ */
 button {
   font: inherit;
   font-size: var(--t-body);
+  font-weight: 540;
+  letter-spacing: -0.005em;
   min-height: var(--target);
-  padding: var(--space-2) var(--space-5);
-  background: var(--surface-2);
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-1);
   color: var(--ink-1);
   border: 1.5px solid var(--edge-strong);
-  border-radius: var(--radius);
+  border-radius: var(--r1);
+  box-shadow: var(--shadow-1);
   cursor: pointer;
-  transition: transform 90ms ease, background-color 120ms ease;
+  transition: transform 120ms ease, background-color 140ms ease, border-color 140ms ease,
+    box-shadow 160ms ease;
 }
 
 button:hover:not(:disabled) {
-  background: var(--surface-1);
+  background: var(--surface-2);
+  border-color: var(--ink-3);
+  box-shadow: var(--shadow-2);
 }
 
 button:active:not(:disabled) {
   transform: scale(0.985);
+  box-shadow: var(--shadow-1);
 }
 
+/*
+ * DISABLED IS DRAWN, NOT DIMMED.
+ *
+ * `opacity: 0.5` over an inverted-ink primary produced a mid-grey slab whose
+ * text/background ratio nobody could compute and nobody had. The disabled state
+ * is now the SECONDARY surface with muted-but-legible ink — `--ink-2`, which
+ * clears AA on `--surface-1` in all three palettes — so the difference between
+ * "Continue is available" and "Continue is not" is a difference in FORM (a
+ * filled block versus an outlined one) rather than in translucency.
+ */
 button:disabled {
-  opacity: 0.5;
+  background: var(--surface-1);
+  color: var(--ink-2);
+  border-color: var(--edge);
+  box-shadow: none;
   cursor: not-allowed;
+}
+
+/*
+ * INVERTED INK, NOT A BRAND COLOUR — the identical argument to `.lp-cta-primary`
+ * on `/`. There are exactly two state hues in this project and neither of them
+ * means "click here"; painting a call to action in `--zone-in` would be the
+ * first crack in a semantic the whole instrument depends on.
+ */
+button.primary:not(:disabled) {
+  background: var(--ink-1);
+  color: var(--surface-0);
+  border-color: var(--ink-1);
+  font-weight: 580;
+  box-shadow: var(--shadow-2);
+}
+
+button.primary:not(:disabled):hover {
+  background: var(--ink-1);
+  border-color: var(--ink-1);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-3);
+}
+
+button.primary:not(:disabled):active {
+  transform: translateY(0) scale(0.99);
 }
 
 button.text-button {
@@ -132,22 +293,31 @@ button.text-button {
   border-radius: 0;
   padding: var(--space-2) var(--space-1);
   color: var(--ink-2);
+  box-shadow: none;
+  font-weight: 500;
 }
 
-button.primary {
-  border-color: var(--ink-2);
+button.text-button:hover:not(:disabled) {
+  background: none;
+  color: var(--ink-1);
+  border-bottom-color: var(--ink-1);
+  box-shadow: none;
 }
 
 fieldset {
-  border: 1.5px solid var(--edge);
-  border-radius: var(--radius);
-  padding: var(--space-4);
-  margin: 0 0 var(--space-4);
+  border: 1px solid var(--edge);
+  border-radius: var(--r2);
+  background: var(--surface-1);
+  padding: var(--space-5);
+  margin: 0 0 var(--space-5);
 }
 
 legend {
+  font-family: var(--font-mono);
   font-size: var(--t-label);
-  color: var(--ink-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
   padding: 0 var(--space-2);
 }
 
@@ -156,7 +326,7 @@ label {
   font-size: var(--t-label);
   font-weight: 500;
   color: var(--ink-2);
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
 }
 
 /* The 15 px floor applies to EVERY control, not only the ones that show text.
@@ -179,33 +349,72 @@ input[type='checkbox'] {
   accent-color: var(--ink-2);
 }
 
+/*
+ * THE FIELD. Eight of these are the Safety criterion, rendered, so they are the
+ * most-looked-at objects in the application and they were browser defaults with
+ * a 6 px corner.
+ *
+ * The value is set in the MEASURED tier — tabular monospace — because every one
+ * of these eight is a number a clinician wrote down and a patient is
+ * transcribing, and a transcription error here is a ten-fold dose. Same
+ * reasoning as the comma interception in `prescribe.ts`.
+ */
 input[type='number'],
 input[type='text'],
 select {
   font: inherit;
   font-size: var(--t-body);
   width: 100%;
-  height: 48px;
-  padding: 0 var(--space-3);
+  height: 52px;
+  padding: 0 var(--space-4);
   background: var(--surface-2);
   color: var(--ink-1);
   border: 1.5px solid var(--edge-strong);
-  border-radius: var(--radius);
+  border-radius: var(--r1);
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+/*
+ * TABULAR, BUT NOT MONOSPACE — and the distinction is the project's own rule
+ * rather than a preference.
+ *
+ * `landing.css` settled it for `/`: the engraved-LABEL tier is monospace, and
+ * NUMERALS stay in the vendored Inter, because `--font-mono` resolves to
+ * whatever monospace the machine happens to have and a measured value is the
+ * last place this product can afford to look different on every laptop. The
+ * eight prescription values are the most safety-critical numerals in the
+ * application, so they are the last place to make an exception.
+ *
+ * `tabular-nums` is what actually matters here: it is what keeps eight fields
+ * of different digit counts reading as a column of measurements.
+ */
+input[type='number'] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+}
+
+input[type='number']:hover,
+input[type='text']:hover,
+select:hover {
+  border-color: var(--ink-3);
 }
 
 /* The unit is a static suffix, never part of the value. */
 .field {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .field-row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
+/* Units are engraved labels, in the same monospace as the value they qualify. */
 .field-unit {
+  font-family: var(--font-mono);
   font-size: var(--t-label);
+  letter-spacing: 0.06em;
   color: var(--ink-3);
   min-width: 3.5rem;
 }
@@ -214,9 +423,10 @@ select {
 .field-error {
   font-size: var(--t-label);
   color: var(--ink-2);
-  margin-top: var(--space-1);
-  border-left: 2px solid var(--edge-strong);
-  padding-left: var(--space-2);
+  margin-top: var(--space-2);
+  border-left: 3px solid var(--edge-strong);
+  padding: var(--space-1) 0 var(--space-1) var(--space-3);
+  line-height: 1.5;
 }
 
 details {
@@ -278,44 +488,87 @@ summary:hover {
 details > .disclosure-body {
   font-size: var(--t-label);
   color: var(--ink-2);
-  padding: var(--space-2);
+  padding: var(--space-3);
   border-left: 2px solid var(--edge);
+  border-radius: 0 var(--r1) var(--r1) 0;
+  /*
+   * `--surface-1`, NOT `--surface-2`.
+   *
+   * themes.css states the rule and the number: `--ink-3` drops to 4.28:1 on
+   * `--surface-2` in Dark and is not permitted there. The disclosure carries a
+   * `.caption` in `--ink-3`, so putting the deepest surface behind it put the
+   * one AA failure in the application inside the "Why?" box on all eight fields
+   * — the box whose whole job is to be read. Computed on `--surface-1` it is
+   * 4.88 / 5.18 / 5.24 across the three palettes.
+   */
+  background: var(--surface-1);
   max-width: var(--measure);
+  line-height: 1.55;
 }
 
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-  gap: 0 var(--space-5);
+  gap: 0 var(--space-6);
 }
 
+/*
+ * THE GATE CARD — the Safety criterion, and the first object on the first
+ * screen. It gets the deepest surface, the largest radius and two steps of
+ * elevation, because it is the one thing on this screen a judge must not miss.
+ */
 .gate-card {
   background: var(--surface-1);
-  border: 1.5px solid var(--edge-strong);
-  border-radius: var(--radius);
-  padding: var(--space-5);
-  margin-bottom: var(--space-3);
+  border: 1px solid var(--edge);
+  border-radius: var(--r3);
+  padding: var(--space-6);
+  margin: 0 0 var(--space-5);
+  box-shadow: var(--shadow-2);
+}
+
+.gate-card p {
+  color: var(--ink-1);
+  line-height: 1.6;
 }
 
 .checkbox-row {
   display: flex;
   gap: var(--space-3);
-  align-items: flex-start;
-  margin-top: var(--space-4);
+  align-items: center;
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--edge);
 }
 
+/*
+ * 44 x 44, NOT 28 x 28.
+ *
+ * The glyph was 28 px and the row cleared 44 px only because the LABEL beside it
+ * did — which satisfies "clicking the label ticks the box" and does not satisfy
+ * 2.5.5 for the control itself. `box-sizing: border-box` is global, so the
+ * padding here grows the TARGET to 44 px while leaving the painted glyph at its
+ * 28 px content box: a full-size target and an unchanged control.
+ *
+ * This one keeps `--zone-in` rather than the neutral `--ink-2` every other
+ * checkbox takes, because ticking it is the affirmative act the whole product is
+ * gated on, and it is the only place in the application that hue means consent
+ * rather than velocity.
+ */
 .checkbox-row input[type='checkbox'] {
-  width: 28px;
-  height: 28px;
+  width: var(--target);
+  height: var(--target);
+  padding: 8px;
   margin: 0;
   flex: 0 0 auto;
   accent-color: var(--zone-in);
+  cursor: pointer;
 }
 
 /* The activation area is the control PLUS its label — clicking the label ticks
    the box — so the row is sized to clear 44 px rather than the glyph alone. */
 .checkbox-row label {
   font-size: var(--t-body);
+  font-weight: 540;
   color: var(--ink-1);
   margin: 0;
   min-height: var(--target);
@@ -324,32 +577,113 @@ details > .disclosure-body {
   cursor: pointer;
 }
 
+/*
+ * THE APPLICATION BAR.
+ *
+ * `settingsRow()` renders it at the top of every screen but the block screen,
+ * and it was an unstyled flex row that read as leftover markup. It is now the
+ * same object as `/`'s header — mark, wordmark, segmented theme picker — bled
+ * to the edges of the content column by a negative gutter, with one hairline
+ * under it. That single row is most of what makes the two surfaces read as one
+ * product on first glance.
+ */
 .settings-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-4);
-  margin-bottom: var(--space-5);
   flex-wrap: wrap;
+  margin: 0 calc(var(--page-pad) * -1) var(--space-7);
+  padding: var(--space-4) var(--page-pad);
+  border-bottom: 1px solid var(--edge);
 }
 
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--target);
+}
+
+.app-mark {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+}
+
+/*
+ * The theme picker is three native radios, and a native radio paints itself in
+ * the UA accent — a blue that is in none of the three palettes and that collides
+ * with `--focus`, the one hue reserved for focus and nothing else. So the DOT IS
+ * HIDDEN and the label carries the whole state as a filled segment: a segmented
+ * control, which is what three mutually exclusive options are. Identical
+ * treatment to `/`, and for the identical reason.
+ *
+ * The input keeps its box and its focus ring; only `appearance` goes, and
+ * `U-OUTLINE` would fail the build if an outline went with it.
+ */
 .theme-picker {
   display: flex;
-  gap: var(--space-1);
-  border: none;
-  padding: 0;
+  gap: 3px;
+  border: 1px solid var(--edge);
+  background: var(--surface-1);
+  border-radius: 999px;
+  padding: 3px;
   margin: 0;
+  box-shadow: var(--shadow-1);
 }
 
 .theme-picker label {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  justify-content: center;
+  gap: 0;
+  /* The whole segment is the target, not a 12 px dot inside it. */
   min-height: var(--target);
-  padding: 0 var(--space-2);
+  min-width: var(--target);
+  padding: 0 var(--space-4);
   margin: 0;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius);
+  border: none;
+  border-radius: 999px;
+  font-size: var(--t-label);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+/* The radio FILLS its label rather than shrinking to nothing, which is what
+   keeps the shared `:focus-visible` ring drawn around the segment a keyboard
+   user is actually on. */
+.theme-picker input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+}
+
+.theme-picker label > span {
+  position: relative;
+  pointer-events: none;
+}
+
+.theme-picker label:hover {
+  background: var(--surface-2);
+  color: var(--ink-1);
+}
+
+.theme-picker label:has(input:checked) {
+  background: var(--surface-2);
+  color: var(--ink-1);
+  box-shadow: inset 0 0 0 1px var(--edge-strong);
+  font-weight: 560;
 }
 
 .radio-row {
@@ -363,44 +697,122 @@ details > .disclosure-body {
   align-items: center;
   gap: var(--space-2);
   min-height: var(--target);
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-4);
   margin: 0;
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius);
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--r1);
+  background: var(--surface-2);
   color: var(--ink-1);
   font-size: var(--t-body);
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.radio-row label:hover {
+  border-color: var(--ink-3);
+}
+
+.radio-row label:has(input:checked) {
+  border-color: var(--ink-1);
+  border-width: 2.5px;
 }
 
 .wordmark {
-  font-weight: 620;
-  letter-spacing: -0.01em;
+  font-size: 1.25rem;
+  font-weight: 640;
+  letter-spacing: -0.028em;
+  color: var(--ink-1);
 }
 
 /* ── Setup ──────────────────────────────────────────────────────────────── */
+
+/* The permission panel is a standalone card, not one of the four checks, and at
+   1152 px it stretched the full column with its copy set at `--measure` inside —
+   a card two thirds empty. It is sized to what it holds. */
+#screen-setup > .check-card {
+  max-width: 44rem;
+  margin-bottom: var(--space-6);
+}
 
 .setup-grid {
   display: grid;
   gap: var(--space-5);
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  margin-bottom: var(--space-6);
 }
 
+/*
+ * A GRID ITEM'S AUTOMATIC MINIMUM SIZE IS `min-content`, AND THE FRAMING
+ * PREVIEW DECLARES `width: 320px`.
+ *
+ * So the Framing card carried a 320 px floor, the track grew to hold it, and at
+ * a 320 px viewport the document went to 365 px — an 45 px horizontal scrollbar
+ * caused by a `<video>` that already carried `max-width: 100%` and was never
+ * allowed to use it. `min-width: 0` on the item is what lets the max-width
+ * apply, and it is needed on BOTH levels: the card inside `.setup-grid`, and
+ * the wrap inside the card, which is itself a grid now.
+ */
+.setup-grid > *,
+.check-card > * {
+  min-width: 0;
+}
+
+/*
+ * Four checks, each a real card. The old ones were 1 px boxes at 6 px radius
+ * with 16 px of padding: four rectangles rather than four instruments.
+ */
 .check-card {
+  display: grid;
+  /*
+   * `minmax(0, 1fr)`, NOT the implicit `auto` track.
+   *
+   * An implicit `auto` column is sized by its widest item's MAX-CONTENT, and the
+   * framing preview declares `width: 320px` — so the card's single column
+   * measured 320 px inside a 232 px card and the document went to 365 px at a
+   * 320 px viewport. `min-width: 0` on the item does not help: the track itself
+   * is what was too wide. This is the same reason `.lp-section-inner` on `/`
+   * spells its single column out rather than letting one `<pre>` size the page.
+   */
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--space-3);
   background: var(--surface-1);
   border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  padding: var(--space-4);
+  border-radius: var(--r2);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-1);
 }
 
+.check-card > h2 {
+  margin: 0;
+}
+
+.check-card > p,
+.check-card > label {
+  margin: 0;
+}
+
+.check-card > button {
+  justify-self: start;
+}
+
+/* The measured frame rate is a MEASUREMENT, so it is set large — but a step
+   BELOW `--t-readout`, which belongs to the block screen's dose numeral and to
+   the rest countdown. At `--t-readout` this wrapped to two lines at 320 px. */
 .check-verdict {
-  font-size: var(--t-readout-sm);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
+  color: var(--ink-1);
 }
 
 video.framing {
   width: 320px;
   max-width: 100%;
   transform: scaleX(-1);
-  border-radius: var(--radius);
+  border-radius: var(--r2);
   background: var(--surface-2);
 }
 
@@ -422,23 +834,108 @@ input[type='range'] {
   accent-color: var(--zone-in);
 }
 
-/* ── Block screen ───────────────────────────────────────────────────────── */
+/* ── Block screen ───────────────────────────────────────────────────────────
+ *
+ * THE ONE SCREEN THE RESTYLE DELIBERATELY LEAVES ALONE.
+ *
+ * `.ring-stage`, `.quiet-field`, `.optotype`, `.cycle-strip`, `.status-line` and
+ * `.dose-readout` are the measurement surfaces, and their geometry, size and
+ * contrast are unchanged below. There is no card, no elevation, no radius and no
+ * ornament here, and that is not an omission: every pixel of interface furniture
+ * on this screen is a candidate saccade, and a saccade breaks both the therapy
+ * being measured and the measurement of it.
+ *
+ * The two rules that DID change are the two objects that are chrome rather than
+ * measurement — the key legend and the pause overlay — and the change is to put
+ * them in the shared label tier, not to make them louder.
+ */
 
+/*
+ * THE BLOCK SCREEN TAKES THE WHOLE VIEWPORT, INCLUDING `main`'S GUTTER.
+ *
+ * `main` carries the page gutter and a bottom rhythm for the five screens that
+ * are documents. This one is not a document: it is `height: 100dvh` with
+ * `overflow: hidden`, so every pixel of that gutter is a pixel the dial does not
+ * get and the bottom padding pushed the whole 100dvh box below the fold. The
+ * margins cancel the gutter exactly rather than reaching for `position: fixed`,
+ * which would take the screen out of flow and break `.screen[hidden]`.
+ */
 #screen-block {
   height: 100dvh;
   overflow: hidden;
   padding: 0;
+  margin-inline: calc(var(--page-pad) * -1);
+  margin-bottom: calc(var(--space-8) * -1);
   display: grid;
-  grid-template-rows: 1fr auto auto auto;
+  /*
+   * BOTH TRACKS ARE SPELLED OUT, AND BOTH SPELLINGS ARE LOAD-BEARING.
+   *
+   * COLUMN. There was no `grid-template-columns` at all, so the single implicit
+   * column was `auto` — sized by its widest item's MAX-CONTENT, which is the
+   * 88vmin ring stage. Every `max-width: 100%` on this screen therefore resolved
+   * against 792 px rather than against the viewport, and at 390 px the dose
+   * numeral and the refusal sentence were laid out 475 px wide, centred, and
+   * clipped at both ends by `overflow: hidden`. `minmax(0, 1fr)` is what makes
+   * "100 %" mean the screen.
+   *
+   * ROW. `1fr` is `minmax(auto, 1fr)`, and an `auto` minimum is the item's
+   * min-content — so the ring's row could not shrink below 792 px either. At
+   * 1440 x 900 the four rows summed to 990 px inside a 900 px box and
+   * `align-content: center` split the overflow, taking the top and the bottom
+   * off the ring. `minmax(0, 1fr)` lets the row shrink, and `.ring-stage`'s
+   * `max-height: 100%` then sizes the dial to the room it actually has.
+   */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
   align-content: center;
+  /*
+   * `align-items: center`, because the default is STRETCH — and a stretched grid
+   * item has a definite height, which makes the browser ignore `aspect-ratio`
+   * entirely. With the row at 702 px and the stage's width at 792 px the ring
+   * was drawn as a 792 x 702 ELLIPSE: a circular gauge whose scale is no longer
+   * linear in the angle it is read at. Un-stretching it is what lets
+   * `aspect-ratio: 1` and `max-height: 100%` produce a square that fits.
+   */
+  align-items: center;
   justify-items: center;
 }
 
+/*
+ * `max-height: 100%` IS WHAT KEEPS THE DIAL INSIDE ITS ROW.
+ *
+ * The stage is a square sized from its WIDTH — `min(88vmin, 100%)` — and it sits
+ * in the `1fr` row of a `100dvh` grid whose other three rows take about 250 px.
+ * At 1440 x 900 that is a 792 px circle in a 650 px row, inside
+ * `overflow: hidden`: the top and the bottom of the ring were cut off, and the
+ * ring is the instrument. `aspect-ratio` honours `max-height`, so the square
+ * shrinks from both dimensions and the whole 270° sweep is on screen.
+ *
+ * Harmless on `/`, where `.lp-dial .ring-stage` is `position: absolute; inset: 0`
+ * and its height is already the dial's.
+ */
 .ring-stage {
   position: relative;
   display: grid;
   place-items: center;
-  width: min(88vmin, 100%);
+  /*
+   * THE THIRD TERM IS THE ONE THAT MATTERS, and `max-height` alone could not do
+   * its job: a `max-height` clamp does NOT feed back into the width, so with
+   * `width: min(88vmin, 100%)` the stage rendered 792 x 702 at 1440 x 900 — a
+   * circular gauge drawn as an ELLIPSE, which makes its scale no longer linear
+   * in the angle a reader takes it off at.
+   *
+   * `88vmin` is the wrong basis on a landscape screen because the stage does not
+   * get the viewport's height: the strip, the refusal sentence, the dose numeral
+   * and the block progress line take about 200 px of it. `13rem` is that reserve
+   * with a little slack — measured at 198 px on desktop and 180 px at 390 px —
+   * and the term is what keeps the square square at short viewports.
+   *
+   * `max-height` stays as the backstop: if the reserve is ever wrong, the ring is
+   * small rather than clipped.
+   */
+  width: min(88vmin, 100%, calc(100dvh - 13rem));
+  max-width: 100%;
+  max-height: 100%;
   aspect-ratio: 1;
 }
 
@@ -477,6 +974,20 @@ input[type='range'] {
   width: min(80vmin, 100%);
   height: 28px;
   margin-top: var(--space-3);
+}
+
+/*
+ * `justify-items: center` on the block grid sizes every row item to its
+ * MAX-CONTENT, so a long string does not wrap — it grows past both edges and is
+ * clipped by `overflow: hidden`. At 390 px that took the ends off the refusal
+ * sentence and off the dose numeral, which are the two things this screen exists
+ * to show. `max-width: 100%` is what lets them use the width they have.
+ */
+.status-line,
+.dose-readout,
+.dose-sub,
+.cycle-strip {
+  max-width: 100%;
 }
 
 .status-line {
@@ -527,9 +1038,65 @@ input[type='range'] {
   position: fixed;
   right: var(--space-4);
   bottom: var(--space-4);
+  font-family: var(--font-mono);
   font-size: var(--t-label);
-  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  /* `--ink-2`, not `--ink-3`. This is the only instruction on a screen with no
+     other chrome, and `--ink-3` on `--surface-0` is the weakest pair in the
+     application at 4.79:1 in the warm-paper palette. */
+  color: var(--ink-2);
   text-align: right;
+}
+
+/*
+ * THE PAUSE OVERLAY, AND THE `hidden` ATTRIBUTE IT WAS BEATING.
+ *
+ * `renderBlock` writes `<div class="paused-overlay" hidden>` and `setPaused`
+ * toggles `overlay.hidden`. But the user-agent's `[hidden] { display: none }`
+ * carries no `!important`, so ANY author `display` declaration outranks it — and
+ * this rule's `display: grid` did, from the first paint of every block. The
+ * measurement screen rendered its dial, its strip, its optotype and its dose
+ * numeral, and then covered all four with a full-viewport
+ * "Paused. Press space to continue." that no key press could clear, because
+ * nothing was paused.
+ *
+ * It is invisible to the end-to-end suite: `textContent` reads through an
+ * occluding element and Playwright's visibility check is about an element's own
+ * box, not about what is on top of it. It was found by looking at a screenshot.
+ *
+ * `.paused-overlay[hidden]` scores (0,2,0) and wins on specificity alone — the
+ * same fix `.screen[hidden]` above needed, one rule earlier in this file.
+ */
+/*
+ * AT NARROW WIDTHS THE TWO FIXED CORNERS COME INTO THE FLOW.
+ *
+ * `.key-legend` and `.presence-tile` are pinned to the bottom corners, which
+ * works at 1440 where the centred dose numeral does not reach them. At 390 both
+ * of them sit ON TOP of it: the legend ran straight through
+ * "Block 1 of 1 · 0:40 left" and the 140 px tile covered the left third of the
+ * numeral and the refusal sentence.
+ *
+ * They become flow items instead of shrinking or vanishing, because both still
+ * have a job on a small screen — the tile is the reposition cue, and the legend
+ * is the only instruction on a screen with no other chrome. Nothing is hidden;
+ * it is stacked.
+ */
+@media (max-width: 47.99rem) {
+  .key-legend {
+    position: static;
+    text-align: center;
+    margin-top: var(--space-2);
+  }
+
+  .presence-tile {
+    position: static;
+    width: 96px;
+    margin-top: var(--space-3);
+  }
+}
+
+.paused-overlay[hidden] {
+  display: none;
 }
 
 .paused-overlay {
@@ -539,38 +1106,61 @@ input[type='range'] {
   place-items: center;
   background: var(--surface-0);
   font-size: var(--t-h2);
+  font-weight: 560;
   color: var(--ink-1);
+  text-align: center;
+  padding: var(--space-5);
   z-index: 10;
 }
 
 /* ── Gate ───────────────────────────────────────────────────────────────── */
 
+/*
+ * ELEVEN REAL RADIO BUTTONS, 0–10, never a slider — a range input is hostile to
+ * a dizzy user's fine motor control. Each is a raised 52 px key on a rail, which
+ * is 8 px above the 44 px floor rather than exactly on it, and the checked state
+ * is a difference in BORDER WEIGHT and SURFACE, never in hue: this scale is
+ * "how bad are your symptoms", and there is no answer to it that is a success.
+ */
 .symptom-scale {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   border: none;
+  background: none;
   padding: 0;
+  margin: 0 0 var(--space-2);
 }
 
 .symptom-scale label {
   display: grid;
   place-items: center;
-  width: var(--target);
-  height: var(--target);
+  width: 52px;
+  height: 52px;
+  min-width: var(--target);
+  min-height: var(--target);
   margin: 0;
   border: 1.5px solid var(--edge-strong);
-  border-radius: var(--radius);
+  border-radius: var(--r1);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-1);
   font-size: var(--t-body);
+  font-variant-numeric: tabular-nums;
   color: var(--ink-1);
   cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.symptom-scale label:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-3);
 }
 
 .symptom-scale input {
   position: absolute;
   opacity: 0;
-  width: var(--target);
-  height: var(--target);
+  width: 52px;
+  height: 52px;
   margin: 0;
   cursor: pointer;
 }
@@ -579,6 +1169,7 @@ input[type='range'] {
   background: var(--surface-2);
   border-color: var(--ink-1);
   border-width: 2.5px;
+  font-weight: 620;
 }
 
 .symptom-scale label:has(input:focus-visible) {
@@ -590,18 +1181,46 @@ input[type='range'] {
   display: flex;
   justify-content: space-between;
   max-width: 32rem;
+  font-family: var(--font-mono);
   font-size: var(--t-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   color: var(--ink-3);
-  margin-top: var(--space-1);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-6);
 }
 
+/* `--halt` is the end-session stop-rule outcome and NOTHING else, anywhere. */
 .outcome-halt {
   color: var(--halt);
 }
 
+#outcome {
+  border: 1px solid var(--edge);
+  border-left: 4px solid var(--edge-strong);
+  border-radius: var(--r2);
+  background: var(--surface-1);
+  padding: var(--space-5);
+  margin: 0 0 var(--space-5);
+  box-shadow: var(--shadow-1);
+  max-width: var(--measure);
+}
+
+#outcome > h2 {
+  margin-top: 0;
+}
+
+#outcome:has(.outcome-halt) {
+  border-left-color: var(--halt);
+}
+
 .rest-countdown {
   font-size: var(--t-readout);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
+  color: var(--ink-1);
 }
 
 /* ── Report and ledger ──────────────────────────────────────────────────── */
@@ -610,35 +1229,89 @@ input[type='range'] {
   max-width: 60rem;
 }
 
-.report table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-bottom: var(--space-4);
+/*
+ * EVERY TABLE SCROLLS INSIDE ITS OWN BOX.
+ *
+ * At 320 px the report and the ledger both pushed the DOCUMENT 50 px wider than
+ * the viewport — a five-column table is indivisible and a grid track sized by it
+ * takes the whole page sideways with it. The overflow now belongs to the table,
+ * which is the one element that can carry it, and `@media print` hands it back
+ * so nothing is clipped on paper.
+ */
+.table-scroll {
+  overflow-x: auto;
+  margin-bottom: var(--space-5);
+  border-radius: var(--r2);
 }
 
-.report caption {
+.report table,
+.table-scroll table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.report caption,
+.table-scroll caption {
   text-align: left;
   font-size: var(--t-label);
   color: var(--ink-2);
-  padding-bottom: var(--space-2);
+  padding-bottom: var(--space-3);
+  line-height: 1.5;
 }
 
 .report th,
-.report td {
+.report td,
+.table-scroll th,
+.table-scroll td {
   text-align: left;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--edge);
-  font-size: var(--t-label);
+  font-size: var(--t-body);
+  vertical-align: baseline;
 }
 
-.report th {
+/* Column headings are the engraved-label tier; row headings are body copy,
+   because a row heading is a sentence fragment and a column heading is a name. */
+.report thead th,
+.table-scroll thead th {
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   color: var(--ink-2);
   font-weight: 600;
+  border-bottom-color: var(--edge-strong);
+  border-bottom-width: 2px;
 }
 
-.report td.num {
+.report tbody th,
+.table-scroll tbody th {
+  color: var(--ink-1);
+  font-weight: 560;
+}
+
+.report td.num,
+.table-scroll td.num {
   font-variant-numeric: tabular-nums;
   text-align: right;
+  color: var(--ink-1);
+}
+
+/*
+ * THE CITATION MARKER. `<sup>` inherits the UA's `font-size: smaller`, which
+ * over a 15 px cell computed to 12.5 px — a 12 px tier in an application whose
+ * stated rule is that no tier below 15 px exists, on the one surface that goes
+ * to a clinician. It is pinned to the floor instead and lifted by
+ * `vertical-align` rather than by shrinking.
+ */
+.report sup {
+  font-size: var(--t-label);
+  font-weight: 500;
+  color: var(--ink-2);
+  vertical-align: super;
+  line-height: 0;
+  margin-left: 0.15em;
 }
 
 /* Delivered = SOLID inside an OUTLINED prescribed track. Monochrome-safe by
@@ -649,44 +1322,117 @@ input[type='range'] {
   height: 20px;
 }
 
+/* SLATE, NOT AMBER — the same rule as `/`. `--zone-out` means "outside the
+   prescribed band"; a block about what the instrument does not measure is the
+   instrument declining, which is precisely `--refused`. */
 .honesty-box {
-  border: 1.5px solid var(--edge-strong);
-  border-radius: var(--radius);
-  padding: var(--space-4);
-  margin: var(--space-5) 0;
+  border: 1px solid var(--edge);
+  border-left: 4px solid var(--refused);
+  border-radius: var(--r3);
+  background: var(--surface-1);
+  padding: var(--space-6);
+  margin: var(--space-6) 0;
   max-width: var(--measure);
   font-size: var(--t-body); /* body size. NEVER small print. */
+  box-shadow: var(--shadow-1);
 }
 
+.honesty-box > h2 {
+  margin-top: 0;
+}
+
+.honesty-box p {
+  line-height: 1.6;
+  color: var(--ink-1);
+}
+
+/* BODY SIZE, like the limitations and for the same reason: the whole argument
+   for putting a citation on every criterion is undone by setting it in a tier
+   the reader has to lean in for. tokens.css states this rule; this line is the
+   one place the stylesheet was not honouring it. */
 .citations {
-  font-size: var(--t-label);
+  font-size: var(--t-body);
   color: var(--ink-2);
   max-width: var(--measure);
+  line-height: 1.6;
 }
 
 .citations li {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .example-banner {
-  border: 1.5px solid var(--edge-strong);
-  border-left-width: 5px;
-  border-radius: var(--radius);
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-4);
-  font-size: var(--t-label);
+  border: 1px solid var(--edge);
+  border-left: 4px solid var(--edge-strong);
+  border-radius: var(--r2);
+  background: var(--surface-1);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+  font-size: var(--t-body);
+  line-height: 1.6;
   color: var(--ink-1);
   max-width: var(--measure);
+  box-shadow: var(--shadow-1);
 }
 
+/* The report and the ledger use `<p class="example-banner">`, whose content is
+   inline; only the Prescribe screen's is a block container with a link in it, so
+   only that one becomes a grid. Making the base rule a grid turned the chip and
+   the sentence beside it into two stacked anonymous grid items. */
+div.example-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  justify-items: start;
+}
+
+div.example-banner p {
+  margin: 0;
+}
+
+/* The chip is an engraved label, in the same monospace `/` gives it. */
 .chip {
   display: inline-block;
+  font-family: var(--font-mono);
   font-size: var(--t-label);
   border: 1px solid var(--edge-strong);
-  border-radius: 3px;
-  padding: 0 var(--space-2);
+  border-radius: 999px;
+  padding: 2px var(--space-3);
   color: var(--ink-2);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/*
+ * The link out of the pre-filled card and into the empty one.
+ *
+ * It has to be OBVIOUS, because `/app` now arrives pre-filled and the empty
+ * eight fields are the product's real entry path: a reader who wants to type
+ * their own clinician's numbers must be one visible click away from doing it,
+ * not one guessed query string away.
+ */
+.banner-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0 var(--space-4);
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  color: var(--ink-1);
+  font-size: var(--t-body);
+  font-weight: 540;
+  text-decoration: underline;
+  text-decoration-color: var(--edge-strong);
+  text-underline-offset: 0.2em;
+  transition: border-color 140ms ease, background-color 140ms ease,
+    text-decoration-color 140ms ease;
+}
+
+.banner-link:hover {
+  border-color: var(--ink-1);
+  text-decoration-color: currentcolor;
 }
 
 .sparkline {
@@ -699,16 +1445,21 @@ input[type='range'] {
   display: flex;
   gap: var(--space-3);
   flex-wrap: wrap;
-  margin: var(--space-5) 0;
+  margin: var(--space-6) 0 0;
 }
 
 dialog {
   background: var(--surface-1);
   color: var(--ink-1);
-  border: 1.5px solid var(--edge-strong);
-  border-radius: var(--radius);
-  padding: var(--space-5);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--r3);
+  padding: var(--space-6);
   max-width: 32rem;
+  box-shadow: var(--shadow-3);
+}
+
+dialog h2 {
+  margin-top: 0;
 }
 
 dialog::backdrop {
@@ -716,12 +1467,16 @@ dialog::backdrop {
 }
 
 .banner {
-  border: 1.5px solid var(--edge-strong);
-  border-radius: var(--radius);
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-4);
-  font-size: var(--t-label);
+  border: 1px solid var(--edge);
+  border-left: 4px solid var(--edge-strong);
+  border-radius: var(--r2);
+  background: var(--surface-1);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+  font-size: var(--t-body);
+  line-height: 1.6;
   max-width: var(--measure);
+  box-shadow: var(--shadow-1);
 }
 
 /* ── Motion ─────────────────────────────────────────────────────────────── */

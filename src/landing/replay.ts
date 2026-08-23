@@ -2,11 +2,14 @@ import { createDial, bindDial, arcAngleDeg, Dial } from '../ui/dial.ts';
 import { INSTRUMENT_LIMITS } from '../dsp/limits.ts';
 import { REASON_LABELS } from '../ui/copy.ts';
 import { esc, el, all, reducedMotion } from '../ui/dom.ts';
+import type { CycleOutcome } from '../dsp/types.ts';
 import {
   TRACE,
   CHAPTERS,
+  OUTCOME_STOPS,
   chapterFor,
   deliveredAfter,
+  peakLabel,
   ILLUSTRATION_CARD,
   PRESCRIBED_SECONDS,
   CREDITED_COUNT,
@@ -172,13 +175,50 @@ function stripHtml(): string {
   return `<ol class="lp-strip" id="rp-strip">${cells}</ol>`;
 }
 
+/**
+ * THE SIX-OUTCOME SELECTOR.
+ *
+ * The gate has six outcomes and this panel used to show two of them. A reader
+ * could watch the hero for a minute and come away believing "too slow" was the
+ * whole rule — which sells the instrument short in precisely the direction it is
+ * strongest, because `low-confidence` and `face-lost` are the ones that prove it
+ * refuses to EMIT rather than smoothing.
+ *
+ * WHY THIS LIVES ON `/` AND NOT IN `/app`. Producing a `face-lost` cycle in the
+ * application means covering the camera mid-block; producing an `off-cadence`
+ * one means oscillating at the wrong tempo on purpose while dizzy. Neither is a
+ * thing to ask a patient to do to see a feature. Here it is one button, and the
+ * `ILLUSTRATION — not a measurement` chip stays on the panel the whole time,
+ * which is what makes showing the edge cases the honest option rather than the
+ * convenient one.
+ *
+ * Each button jumps to the first cycle in the trace that `scoreCycle` ACTUALLY
+ * returned that reason for — `OUTCOME_STOPS` finds the index rather than
+ * declaring it — so a button can never point at a cycle that no longer produces
+ * the outcome printed on it.
+ */
+function selectorHtml(): string {
+  const buttons = OUTCOME_STOPS.map(
+    (stop) =>
+      `<li><button type="button" class="lp-ctl lp-outcome-btn" data-outcome="${stop.reason}"
+        data-jump="${stop.index}" aria-pressed="false">${esc(REASON_LABELS[stop.reason])}</button></li>`,
+  ).join('');
+  return `<div class="lp-replay-outcomes">
+    <p class="lp-meta-label" id="rp-outcomes-label">Every verdict the gate can reach</p>
+    <ul class="lp-outcome-list" aria-labelledby="rp-outcomes-label">${buttons}</ul>
+    <p class="lp-outcome-note">Six outcomes: credited, plus the five refusals. Each button steps the
+      trace to the repetition that reached it — still scored by <code>scoreCycle()</code>, still an
+      illustration.</p>
+  </div>`;
+}
+
 function transcriptHtml(): string {
   const rows = TRACE.map((c) => {
     const verdict = c.credited
       ? `credited · +${c.doseSeconds.toFixed(1)} s`
       : `refused · ${esc(c.sentence)}`;
     return `<li><span class="lp-tr-n tnum">Rep ${c.index + 1}</span>
-      <span class="lp-tr-v tnum">${c.peakOmega} °/s</span>
+      <span class="lp-tr-v tnum">${peakLabel(c.peakOmega)} °/s</span>
       <span class="lp-tr-t">${verdict}</span></li>`;
   }).join('');
   // Counted, not typed: "the four refused reps" was a literal in the one module
@@ -202,6 +242,7 @@ function transcriptHtml(): string {
 export function mountReplay(host: HTMLElement, chapterHost: HTMLElement): void {
   const reduce = reducedMotion();
   const dial = createDial(ILLUSTRATION_CARD);
+  const firstReason = (TRACE[0]?.reason ?? 'ok') as CycleOutcome;
 
   /*
    * THE PAUSE CONTROL IS IN THE PANEL'S TOP BAR, not with the other two.
@@ -278,6 +319,8 @@ export function mountReplay(host: HTMLElement, chapterHost: HTMLElement): void {
     -->
     <p class="lp-replay-status" id="rp-status" data-refused="false"></p>
 
+    ${selectorHtml()}
+
     <div class="lp-replay-controls">
       <button type="button" id="rp-step" class="lp-ctl">Step one rep</button>
       <button type="button" id="rp-reset" class="lp-ctl">Restart</button>
@@ -302,8 +345,8 @@ export function mountReplay(host: HTMLElement, chapterHost: HTMLElement): void {
 
   chapterHost.innerHTML = `
     <span class="lp-chapter-eyebrow">On the dial right now</span>
-    <span class="lp-chapter-title" id="rp-ch-title">Below the band</span>
-    <span class="lp-chapter-detail" id="rp-ch-detail">${esc(CHAPTERS[0]?.detail ?? '')}</span>`;
+    <span class="lp-chapter-title" id="rp-ch-title">${esc(CHAPTERS[firstReason].title)}</span>
+    <span class="lp-chapter-detail" id="rp-ch-detail">${esc(CHAPTERS[firstReason].detail)}</span>`;
 
   const els = bindDial(host);
   if (!els) return;
@@ -322,6 +365,7 @@ export function mountReplay(host: HTMLElement, chapterHost: HTMLElement): void {
   const playBtn = el<HTMLButtonElement>(host, '#rp-play');
   const stepBtn = el<HTMLButtonElement>(host, '#rp-step');
   const resetBtn = el<HTMLButtonElement>(host, '#rp-reset');
+  const outcomeBtns = all<HTMLButtonElement>(host, '.lp-outcome-btn');
 
   /** Cycles already committed to the strip. */
   let committed = 0;
@@ -331,10 +375,20 @@ export function mountReplay(host: HTMLElement, chapterHost: HTMLElement): void {
   /** Stops the intersection observer restarting a replay the reader chose to stop. */
   let userPaused = reduce;
 
+  /**
+   * The selector reports which verdict is on the dial RIGHT NOW, whether the
+   * reader pressed a button or the replay simply arrived there. `aria-pressed`
+   * on the matching button is the whole state — no second variable to hold it,
+   * so the control cannot disagree with the panel it controls.
+   */
   const setChapter = (index: number): void => {
     const c = chapterFor(index);
     chTitle.textContent = c.title;
     chDetail.textContent = c.detail;
+    const reason = TRACE[index]?.reason;
+    for (const btn of outcomeBtns) {
+      btn.setAttribute('aria-pressed', String(btn.dataset.outcome === reason));
+    }
   };
 
   /**
@@ -357,10 +411,15 @@ export function mountReplay(host: HTMLElement, chapterHost: HTMLElement): void {
     }
     gapEl.setAttribute('d', bracketPath(peak / RING_MAX, edge / RING_MAX, GAP_R, GAP_REACH));
     gapEl.setAttribute('opacity', '1');
+    // ROUNDED, and rounded through the same helper the sentence and the
+    // transcript use. `peakOmegaFor(2, 8)` is 100.53096491487338, so an
+    // unrounded subtraction printed "49.46903508512662 °/s short of the 150 °/s
+    // floor" — seventeen significant figures of shortfall from an instrument
+    // whose whole argument is that it does not overstate what it knows.
     deficitEl.textContent =
       peak < FLOOR
-        ? `${edge - peak} °/s short of the ${edge} °/s floor`
-        : `${peak - edge} °/s past the ${edge} °/s ceiling`;
+        ? `${peakLabel(edge - peak)} °/s short of the ${edge} °/s floor`
+        : `${peakLabel(peak - edge)} °/s past the ${edge} °/s ceiling`;
   };
 
   const setQuality = (q: number): void => {
@@ -378,7 +437,7 @@ export function mountReplay(host: HTMLElement, chapterHost: HTMLElement): void {
     const cell = cells[index];
     if (cell) {
       cell.dataset.state = c.credited ? 'credited' : 'refused';
-      cell.title = `Rep ${index + 1} · ${c.peakOmega} °/s · ${REASON_LABELS[c.reason]}`;
+      cell.title = `Rep ${index + 1} · ${peakLabel(c.peakOmega)} °/s · ${REASON_LABELS[c.reason]}`;
     }
 
     setQuality(c.qMin);
@@ -522,6 +581,36 @@ export function mountReplay(host: HTMLElement, chapterHost: HTMLElement): void {
     reset();
     if (playing) cycleStartMs = 0;
   });
+
+  /**
+   * Walk the trace from the start to `index` and stop there.
+   *
+   * REPLAYED, NOT TELEPORTED. Committing every cycle up to the target is what
+   * leaves the strip carrying the real run of blocks and holes that preceded the
+   * chosen verdict, and leaves the dose numeral at the value those cycles
+   * actually produced. Jumping straight to the cycle would have shown a strip of
+   * nine pending stubs beside one hatched hole and a dose of 0.0 s — a picture of
+   * a session that never happened, on the one panel that must not draw one.
+   *
+   * It pauses first, for the same reason `Step` does: a reader who has just asked
+   * to look at `face-lost` does not want the replay walking off it a second and a
+   * half later.
+   */
+  const jumpTo = (index: number): void => {
+    if (index < 0 || index >= TRACE.length) return;
+    if (playing) {
+      userPaused = true;
+      setPlaying(false);
+    }
+    clear();
+    for (let i = 0; i <= index; i++) commit(i);
+    const c = TRACE[index];
+    if (c) ring.setLive(c.peakOmega, c.credited, performance.now());
+  };
+
+  for (const btn of outcomeBtns) {
+    btn.addEventListener('click', () => jumpTo(Number(btn.dataset.jump)));
+  }
 
   // Nothing runs while the panel is off screen or the tab is hidden. Cheap, and
   // it means a page left open in a background tab is not quietly animating.

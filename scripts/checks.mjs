@@ -191,29 +191,64 @@ check('U-CARD ', 'Gimbal has no path to originate a prescription (claim C1)', ()
     problems.push('exampleLedger.ts touches the card draft');
   }
 
-  // Limb (c): the labelled example prescription behind `/app?demo`.
+  // Limb (c): the labelled example prescription, which is now what `/app`
+  // ARRIVES WITH rather than what `/app?demo` opts into.
   //
-  // The screen must not know it exists — it renders whatever draft it is handed.
-  // That is what keeps limb (a) meaningful now that a filled draft is reachable
-  // at all: `src/main.ts` is the single place the flag is read, and it sets the
-  // draft and the on-screen label from the SAME flag, so a pre-filled form that
-  // has stopped saying it is pre-filled is not constructible.
+  // THE LIMB CHANGED WITH THE DEFAULT, AND IT HAD TO.
+  //
+  // It used to assert that the pre-filled draft was unreachable unless a reader
+  // typed `?demo` — that the emptiness was the default. That sentence is no
+  // longer true and the check must not pretend otherwise, so it now asserts the
+  // properties that ACTUALLY carry claim C1 once the default has moved. Each of
+  // the four below is a thing that would have to be deleted for Gimbal to gain a
+  // path to originate a prescription:
+  //
+  //   (i)   the screen still holds no card data of its own;
+  //   (ii)  the blank origination path still exists, and the flag is derived
+  //         from THAT parameter — so blank is a route, not an absence;
+  //   (iii) the draft and the on-screen label still come from the same flag, so
+  //         a pre-filled form that has stopped saying it is pre-filled is not
+  //         constructible;
+  //   (iv)  the clinician attestation is never pre-ticked, and `prescribe.ts`
+  //         reflects the draft's flag rather than hard-coding `checked`. This is
+  //         the load-bearing one now: filling in a number is a convenience, and
+  //         nothing downstream of this screen exists until a human ticks a box
+  //         no code in this repository is allowed to tick for them.
   if (/exampleParameters|EXAMPLE_VALUES|exampleDraft/.test(prescribe)) {
     problems.push('prescribe.ts reaches for the example parameters; it must only render the draft it is given');
   }
   const boot = read('src/main.ts');
+  if (!/const usingExampleParameters = !new URLSearchParams\([^)]*\)\.has\('blank'\)/.test(boot)) {
+    problems.push("main.ts no longer derives the example flag from the ?blank route — the blank origination path must be what the flag turns off");
+  }
   if (!/usingExampleParameters \? exampleDraft\(\) : emptyDraft\(\)/.test(boot)) {
-    problems.push('main.ts no longer derives the draft from the ?demo flag');
+    problems.push('main.ts no longer derives the draft from the example flag');
   }
   if (!/exampleBanner: usingExampleParameters \? EXAMPLE_DRAFT_BANNER : null/.test(boot)) {
     problems.push('main.ts no longer derives the on-screen example label from the same flag as the draft');
   }
+  // The visible way back to the empty card. A blank route nobody can find is a
+  // blank route that does not answer the question the default moving raised.
+  if (!/BLANK_CARD_HREF/.test(prescribe) || !/id="blank-card"/.test(prescribe)) {
+    problems.push('prescribe.ts no longer renders the visible link to the blank card');
+  }
+  const copy = read('src/ui/copy.ts');
+  if (!/BLANK_CARD_HREF = '\/app\?blank'/.test(copy)) {
+    problems.push("src/ui/copy.ts: BLANK_CARD_HREF is not /app?blank");
+  }
+  // THE ATTESTATION IS NEVER TICKED BY CODE, from either route.
+  const params = read('src/protocol/exampleParameters.ts');
+  if (!/gateAcknowledged: false/.test(params) || /gateAcknowledged: true/.test(params)) {
+    problems.push('exampleParameters.ts no longer leaves the clinician attestation unticked');
+  }
+  if (!/\$\{draft\.gateAcknowledged \? 'checked' : ''\}/.test(prescribe)) {
+    problems.push("prescribe.ts no longer reflects the draft's own attestation flag onto the checkbox");
+  }
 
   // And the eight numbers are ONE set of numbers. README.md is what a judge is
-  // told to type; `exampleParameters.ts` is what `?demo` fills in. Two tables
+  // told to type; `exampleParameters.ts` is what `/app` arrives with. Two tables
   // that disagree is how a judge ends up measuring against a different card than
   // the one the documentation describes.
-  const params = read('src/protocol/exampleParameters.ts');
   const readme = read('README.md');
   const block = params.match(/EXAMPLE_VALUES[^=]*=\s*\{([\s\S]*?)\n\};/);
   if (!block) {

@@ -12,8 +12,8 @@
 
 **[https://gimbal.edycu.dev](https://gimbal.edycu.dev)** · [Demo walkthrough](DEMO.md) · [Methods](METHODS.md) · [Limitations](LIMITATIONS.md)
 
-*This repository is **private until submission**. The hosted application at the
-address above is public now.*
+*This repository is **public**, and so is the hosted application at the address
+above. Nothing here is gated.*
 
 *There are no badges on this page, deliberately. Its central claim is that
 nothing here reaches a third-party origin, and opening with four images fetched
@@ -48,11 +48,11 @@ not decide the therapy. It measures whether the therapy was delivered.
 
 | Stage | What happens |
 |---|---|
-| **Prescription in** | The patient types their clinician's parameters into a protocol card. Eight required numeric fields, **no defaults and no presets on the entry path.** Gimbal has no path to originate a prescription: the one route that arrives pre-filled, `/app?demo`, is labelled as an example on screen and on the printed report, and still cannot tick the clinician gate. |
+| **Prescription in** | The patient types their clinician's parameters into a protocol card. Eight required numeric fields, **no presets and no second source of numbers.** Gimbal has no path to originate a prescription: `/app?blank` is the empty card the product ships, the one set of values that can ever arrive pre-filled comes from `src/protocol/exampleParameters.ts` by a labelled route, and **nothing in this repository can tick the clinician-attestation checkbox for you.** |
 | **Measure** | `FaceLandmarker` at ~30 Hz → yaw in degrees on the camera's own frame clock → central-difference angular velocity → cycle segmentation → bias-corrected peak \|ω\| per cycle |
 | **Coach, eyes-free** | A Web Audio click train sets tempo; one oscillator's pitch bends continuously as peak velocity leaves the prescribed band |
 | **Verify gaze without measuring gaze** | A Landolt C re-randomises every 2.5–5.0 s; the patient answers its gap orientation with an arrow key, during motion |
-| **Refuse** | Five named refusals — `too-slow`, `too-fast`, `off-cadence`, `low-confidence`, `face-lost` — each **credited zero** and painted as a gap with the reason in words. `npm run bench` drives all five plus `ok` end-to-end |
+| **Refuse** | Five named refusals — `too-slow`, `too-fast`, `off-cadence`, `low-confidence`, `face-lost` — each **credited zero** and painted as a gap with the reason in words. `npm run bench` drives all five plus `ok` end-to-end, and the labelled illustration on `/` steps through the same six from the same drives |
 | **Gate** | A 0–10 symptom rating at every block boundary runs a pure stop-rule function against the session's own baseline |
 | **Report out** | One printable page: delivered vs prescribed per block, refusal histogram, gaze tally, symptom entries, a "Why?" citation on every criterion |
 
@@ -63,15 +63,26 @@ stopwatch.
 
 Open **[gimbal.edycu.dev](https://gimbal.edycu.dev)** — nothing to install.
 
-`/` explains the instrument. **`/app`** is the instrument, and
-**`/app?demo`** is `/app` with the eight numbers below already typed in, so a
-reader with no clinician's handout in front of them can still reach the
-measurement. That route labels itself: a persistent banner above the form, an
-`EXAMPLE` chip on every one of the eight values, and `EXAMPLE …` as the source
-string that prints in the report's "Why?" disclosure. **It does not tick the
-clinician-attestation checkbox for you** — filling in a number is a convenience,
-ticking someone's attestation on their behalf is not. `/app` on its own is still
-completely empty, and an e2e assertion holds it there.
+`/` explains the instrument. **`/app`** is the instrument.
+
+| Route | What you get |
+|---|---|
+| **`/app`** | the eight numbers below, already typed in and labelled as an example |
+| **`/app?demo`** | the same thing, named — the address `DEMO.md` publishes |
+| **`/app?blank`** | the eight empty fields: the origination path the product ships |
+
+`/app` arrives pre-filled so that a reader with no clinician's handout in front
+of them can reach the measurement, and it labels itself the whole way: a
+persistent banner above the form, an `EXAMPLE` chip on every one of the eight
+values, and `EXAMPLE …` as the source string that prints in the report's "Why?"
+disclosure and therefore travels onto paper. A visible link beside that banner
+goes straight to the blank card.
+
+**It does not tick the clinician-attestation checkbox for you.** Filling in a
+number is a convenience; ticking someone's attestation on their behalf is not,
+and it is the tick — not the numbers — that lets a card exist at all. Nothing
+downstream of that box exists until a human presses it. Check `U-CARD` and both
+a unit test and an e2e assertion hold that, and hold `/app?blank` empty.
 
 Or run it locally:
 
@@ -94,14 +105,18 @@ seconds.** That is the whole product in one gesture.
 ### The eight numbers, for evaluation only
 
 These are **numbers a clinician would have written**, supplied here so you have
-something to type. They are **not a recommendation and not a default.** They
-reach the application through exactly one route — `/app?demo` — which announces
-itself as an example everywhere it appears and cannot complete the clinician
-gate. On `/app` the eight fields are empty, and that emptiness is what makes
-"Gimbal cannot originate a prescription" a structural property rather than a
-claim. Check `U-CARD` asserts that this table and
-`src/protocol/exampleParameters.ts` carry the same eight values, so the numbers
-you are told to type and the numbers `?demo` fills in cannot disagree.
+something to type. They are **not a recommendation.** They are the only eight
+numbers anywhere in the application: there is no preset list, no "typical values"
+control and no second source, so a filled card can only ever have arrived through
+the one labelled route that announces itself as an example everywhere it appears
+— and that route still cannot complete the clinician gate.
+
+That last clause is what makes "Gimbal cannot originate a prescription" a
+structural property rather than a claim, and it is where the property now lives:
+`/app?blank` still renders the eight empty fields, and no code in this repository
+is allowed to tick the attestation. Check `U-CARD` asserts both, asserts that
+this table and `src/protocol/exampleParameters.ts` carry the same eight values,
+and asserts that the visible route back to the blank card is still on screen.
 
 | Field | Value |
 |---|---|
@@ -125,12 +140,12 @@ capability executes for real on the default path, or it does not execute at all.
 
 ```bash
 npm ci
-npm test            # 88 tests against analytic ground truth + 8 mechanical source checks
+npm test            # 90 tests against analytic ground truth + 8 mechanical source checks
 npm run bench       # all six gate outcomes end-to-end, then the frame-budget timings
 npm run check:build # builds the production bundle, then greps it
 ```
 
-`npm test` runs **88** automated tests plus eight mechanical source checks. Four
+`npm test` runs **90** automated tests plus eight mechanical source checks. Four
 more checks — `U-DIST`, `U-CFG`, `U-DOC`, `U-DEP` — read a build artifact or a
 deployed URL and therefore live in `check:build` and `check:deploy` instead, for
 **twelve** in total. The split is a rule rather than a convenience: a check that
@@ -246,7 +261,7 @@ is not worth trading it for.
 | Layer | What runs | Where |
 |---|---|---|
 | Types | `tsc --noEmit` over `src/` and `tests/` on every build — `strict`, plus `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` and `noUncheckedIndexedAccess` | `npm run build`, `tsconfig.json` |
-| Unit | 88 tests against analytic ground truth | `npm test` → `vitest` |
+| Unit | 90 tests against analytic ground truth | `npm test` → `vitest` |
 | Mechanical checks | 12 greps, each closing one documented failure pattern: `U-FLAG` `U-DEV` `U-CARD` `U-LIMITS` `U-SRC` `U-OUTLINE` `U-COUNT` `greppable` in `npm test`; `U-DIST` `U-CFG` `U-DOC` `U-DEP` in the builder commands | `scripts/checks.mjs`, `check-dist.mjs`, `check-deploy.mjs` |
 | Behavioural | the six-outcome gate partition, then p50/p95/p99 against the frame budget | `npm run bench` |
 | End-to-end | the accessibility, origin, print, measurement and disclosure suites in Chromium | `npx playwright test` |

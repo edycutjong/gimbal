@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { TRACE, CREDITED_COUNT, deliveredAfter, ILLUSTRATION_CARD, REPLAY_SLOWDOWN } from '../src/landing/trace.ts';
+import {
+  TRACE,
+  CREDITED_COUNT,
+  OUTCOME_STOPS,
+  CHAPTERS,
+  deliveredAfter,
+  ILLUSTRATION_CARD,
+  REPLAY_SLOWDOWN,
+} from '../src/landing/trace.ts';
+import { ALL_OUTCOMES } from '../src/dsp/types.ts';
 import { exampleDraft, EXAMPLE_VALUES, EXAMPLE_SOURCE } from '../src/protocol/exampleParameters.ts';
 import { draftErrors, cardFromDraft } from '../src/protocol/card.ts';
 
@@ -9,14 +18,50 @@ import { draftErrors, cardFromDraft } from '../src/protocol/card.ts';
  */
 describe('the landing page illustration', () => {
   it('takes every verdict from scoreCycle rather than asserting one', () => {
-    // Nothing in src/landing/trace.ts writes a `credited` flag. Three cycles are
-    // below the card's velocity floor, one is inside the band but below the
-    // instrument's confidence floor, and six are clean.
+    // Nothing in src/landing/trace.ts writes a `credited` flag. The ten cycles
+    // are built from the six drives scripts/bench.mjs asserts end-to-end, and
+    // every `reason` below came back from `scoreCycle`.
     const reasons = TRACE.map((c) => c.reason);
-    expect(reasons.filter((r) => r === 'too-slow').length).toBe(3);
+    expect(reasons.filter((r) => r === 'too-slow').length).toBe(2);
     expect(reasons.filter((r) => r === 'low-confidence').length).toBe(1);
-    expect(CREDITED_COUNT).toBe(6);
+    expect(reasons.filter((r) => r === 'face-lost').length).toBe(1);
+    expect(CREDITED_COUNT).toBe(4);
     expect(TRACE.length).toBe(10);
+  });
+
+  it('reaches all six gate outcomes, so the selector can step through the whole gate', () => {
+    // `ALL_OUTCOMES` is imported rather than restated — exactly as bench.mjs
+    // does it — so a seventh outcome added to the gate fails HERE rather than
+    // quietly going unillustrated on the page that explains the gate.
+    const reached = new Set(TRACE.map((c) => c.reason));
+    expect([...reached].sort()).toEqual([...ALL_OUTCOMES].sort());
+
+    // Every selector stop points at a cycle that ACTUALLY reached its outcome.
+    // The index is found, never written, so a button cannot survive a reorder
+    // of the trace pointing at the wrong repetition.
+    expect(OUTCOME_STOPS.length).toBe(ALL_OUTCOMES.length);
+    for (const stop of OUTCOME_STOPS) {
+      expect(stop.index, `no cycle reaches ${stop.reason}`).toBeGreaterThanOrEqual(0);
+      expect(TRACE[stop.index]?.reason).toBe(stop.reason);
+    }
+  });
+
+  it('gives the two instrument refusals their own words, not a generic one', () => {
+    // These two are the answer to the largest technical risk in the project —
+    // head-pose fidelity at 2 Hz on a commodity webcam — and the answer is that
+    // the instrument refuses to EMIT rather than smoothing. `too-slow` alone
+    // reads as a bug; `too-slow` plus these reads as a policy, which is why
+    // collapsing them into one "refused" string would publish the easy half.
+    const doubted = TRACE.find((c) => c.reason === 'low-confidence');
+    const blind = TRACE.find((c) => c.reason === 'face-lost');
+    expect(doubted?.sentence).toBe('Rep not counted — tracking unreliable. Try more light.');
+    expect(blind?.sentence).toBe('Rep not counted — your face left the frame.');
+    expect(doubted?.sentence).not.toBe(blind?.sentence);
+    // And the narration card names them differently too.
+    expect(CHAPTERS['low-confidence'].title).not.toBe(CHAPTERS['face-lost'].title);
+    for (const outcome of ALL_OUTCOMES) {
+      expect(CHAPTERS[outcome].detail.length, `${outcome} has no narration`).toBeGreaterThan(40);
+    }
   });
 
   it('refuses the good-looking number when the instrument does not trust itself', () => {
@@ -38,13 +83,20 @@ describe('the landing page illustration', () => {
     // The dose numeral does not move across the first three cycles. That
     // sentence is the hero of the page, so it is a test.
     expect(deliveredAfter(3)).toBe(0);
-    expect(deliveredAfter(TRACE.length)).toBeCloseTo(3.0, 9);
+    expect(deliveredAfter(TRACE.length)).toBeCloseTo(2.0, 9);
   });
 
   it('prints both numbers in every velocity refusal, never a bare verdict', () => {
     const slow = TRACE.find((c) => c.reason === 'too-slow');
     expect((slow as (typeof TRACE)[number]).sentence).toBe(
-      'Rep not counted — too slow (below 150 °/s; measured 91 °/s).',
+      'Rep not counted — too slow (below 150 °/s; measured 101 °/s).',
+    );
+    // And the ceiling refusal prints both of its numbers too, from the same
+    // template — a refusal that named only the rule would be telling a patient
+    // they failed without telling them by how much.
+    const fast = TRACE.find((c) => c.reason === 'too-fast');
+    expect((fast as (typeof TRACE)[number]).sentence).toBe(
+      'Rep not counted — too fast (above 350 °/s; measured 377 °/s).',
     );
     // A credited cycle says nothing at all. In-zone is the resting state.
     expect((TRACE.find((c) => c.credited) as (typeof TRACE)[number]).sentence).toBe('');

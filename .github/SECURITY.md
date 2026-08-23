@@ -53,7 +53,7 @@ under **Settings → Code security**:
 |---|---|
 | Dependabot alerts | Turns `.github/dependabot.yml` from a version-bump schedule into a vulnerability feed. To check the current state: `gh api repos/edycutjong/gimbal/vulnerability-alerts` returns 204 when it is on and 404 when it is off. |
 | Dependabot security updates | Opens a patch PR for an alert without waiting for the monthly window. |
-| Secret scanning + push protection | Available on public repositories at no cost; on a private repository it needs GitHub Advanced Security. This repository is private until submission, so `.github/workflows/gitleaks.yml` covers the gap in the meantime and scans full history rather than only new pushes. |
+| Secret scanning + push protection | Available on public repositories at no cost, and this repository is public, so it should be on. `.github/workflows/gitleaks.yml` runs regardless and scans full history rather than only new pushes — two independent sweeps, which is the point. |
 | Code scanning (CodeQL) | Runs from the committed `.github/workflows/codeql.yml` once the workflow has run on the default branch. |
 
 The equivalent commands, for a maintainer who would rather not click:

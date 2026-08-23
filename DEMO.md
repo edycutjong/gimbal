@@ -13,7 +13,9 @@ npm run dev
 ```
 
 `/` is a page that explains the instrument and replays the refusal as a labelled
-illustration. **`/app`** is the instrument itself.
+illustration — with a selector that steps through all six outcomes the credit
+gate can reach, driven by the same six analytic drives `npm run bench` asserts
+end-to-end. **`/app`** is the instrument itself.
 
 Then:
 
@@ -23,11 +25,16 @@ Then:
 4. Allow the camera. Let the 10-second light-and-frame-rate check finish.
 5. Start.
 
-**If you have no handout in front of you, open `/app?demo`** and step 2 is
-already done. Those eight values announce themselves as an example — a banner
+**If you have no handout in front of you, step 2 is already done for you.**
+`/app` arrives with the eight values pre-filled, and `/app?demo` is the same
+thing under a name. Those values announce themselves as an example — a banner
 above the form, an `EXAMPLE` chip on each value, and an `EXAMPLE …` source
-string that prints on the report — and the route still will not tick step 1 for
-you, because that checkbox is an attestation by a human.
+string that prints on the report — and neither route will tick step 1 for you,
+because that checkbox is an attestation by a human.
+
+**`/app?blank`** is the empty card, one visible click away from the banner. That
+is the entry path the product ships, and it is why Gimbal has no path to
+originate a prescription.
 
 **There are no flags.** No `MOCK=`, no `--dry-run`, no `OFFLINE=1`, no
 environment variables, no keys, no account, no seeded state. The judged
@@ -36,8 +43,9 @@ A check in `npm test` fails the build if any of those tokens ever appears in thi
 file or in `README.md`.
 
 **About a minute, not thirty seconds** — the Prescribe form has eight required
-fields and no defaults, and that emptiness is the safety property, not an
-oversight.
+fields, and on `/app?blank` every one of them is empty. That emptiness is the
+safety property, not an oversight; pre-filling it on the default route is a
+convenience laid on top, and the attestation underneath it is untouched.
 
 ## The thirty seconds that matter
 

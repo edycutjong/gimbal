@@ -57,6 +57,7 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
   host.innerHTML = `
     ${settingsRow(props.theme)}
     <article class="report">
+      <p class="eyebrow">For your clinician</p>
       <h1 id="screen-title" tabindex="-1">Gaze stabilization (VORx1, yaw) — home session report</h1>
       <p class="caption">${esc(date)} ${esc(time)} · card <code>${esc(m.cardId)}</code> ·
          ${esc(m.appVersion)} · ${esc(m.methodsRev)}</p>
@@ -73,7 +74,7 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
 
       <section class="report-band">
         <h2>Prescription</h2>
-        <table>
+        <div class="table-scroll"><table>
           <caption>Every number here was typed in from a clinician's handout, with its source.</caption>
           <thead><tr><th scope="col">Parameter</th><th scope="col">Value</th><th scope="col">Source</th></tr></thead>
           <tbody>
@@ -87,7 +88,7 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
               )
               .join('')}
           </tbody>
-        </table>
+        </table></div>
       </section>
 
       <section class="report-band">
@@ -110,7 +111,7 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
 
       <section class="report-band">
         <h2>Every cycle, and what happened to it</h2>
-        <table>
+        <div class="table-scroll"><table>
           <caption>Six outcome rows. Five of them are refusals. A refused cycle added exactly 0.000 seconds.</caption>
           <thead><tr><th scope="col">Outcome</th><th scope="col">Cycles</th><th scope="col">Share</th><th scope="col"></th></tr></thead>
           <tbody>
@@ -125,7 +126,7 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
               )
               .join('')}
           </tbody>
-        </table>
+        </table></div>
         <p class="caption">&ldquo;Tracking unreliable&rdquo; and &ldquo;face left the frame&rdquo; are instrument
            conditions, not patient performance.${
              m.saturatedCycles > 0
@@ -137,7 +138,7 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
 
       <section class="report-band">
         <h2>Gaze verification</h2>
-        <table>
+        <div class="table-scroll"><table>
           <caption>${esc(GAZE_CHANCE_LINE)}</caption>
           <thead><tr><th scope="col">Block</th><th scope="col">Correct</th><th scope="col">Shown</th><th scope="col">Result</th></tr></thead>
           <tbody>
@@ -156,13 +157,13 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
               )
               .join('')}
           </tbody>
-        </table>
+        </table></div>
         <p class="caption">${esc(GAZE_HONESTY_LINE)}</p>
       </section>
 
       <section class="report-band">
         <h2>Frequency compliance</h2>
-        <table>
+        <div class="table-scroll"><table>
           <caption>Measured dominant frequency per block, with the resolution it carries.</caption>
           <thead><tr><th scope="col">Block</th><th scope="col">Measured</th><th scope="col">Resolution</th></tr></thead>
           <tbody>
@@ -176,12 +177,12 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
               )
               .join('')}
           </tbody>
-        </table>
+        </table></div>
       </section>
 
       <section class="report-band">
         <h2>Symptom entries</h2>
-        <table>
+        <div class="table-scroll"><table>
           <caption>Rated by the patient. The thresholds are the ones on their clinician's card.</caption>
           <thead><tr><th scope="col">When</th><th scope="col">Rating</th><th scope="col">Ruling</th></tr></thead>
           <tbody>
@@ -200,7 +201,7 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
                 : ''
             }
           </tbody>
-        </table>
+        </table></div>
       </section>
 
       <section class="report-band">

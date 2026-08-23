@@ -151,9 +151,12 @@
      drawing printed on one. `dim` turns it off entirely. */
   --lp-glow: rgb(91 214 174 / 0.05);
   --lp-glow-2: rgb(217 166 60 / 0.045);
-  --lp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.45), 0 8px 20px -10px rgb(0 0 0 / 0.6);
-  --lp-shadow-2: 0 2px 6px rgb(0 0 0 / 0.5), 0 26px 60px -26px rgb(0 0 0 / 0.8);
-  --lp-shadow-3: 0 4px 12px rgb(0 0 0 / 0.55), 0 46px 100px -34px rgb(0 0 0 / 0.9);
+  /* The three-step elevation now lives in themes.css, so `/` and `/app` cannot
+     drift into two different ideas of how far off the page a card sits. The
+     values are unchanged; only their home is. */
+  --lp-shadow-1: var(--shadow-1);
+  --lp-shadow-2: var(--shadow-2);
+  --lp-shadow-3: var(--shadow-3);
   --lp-cta-ink: #060a0f;
 }
 
@@ -188,9 +191,9 @@
   --lp-wash-refused: rgb(129 140 153 / 0.06);
   --lp-glow: transparent;
   --lp-glow-2: transparent;
-  --lp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.6), 0 8px 20px -10px rgb(0 0 0 / 0.7);
-  --lp-shadow-2: 0 2px 6px rgb(0 0 0 / 0.65), 0 26px 60px -26px rgb(0 0 0 / 0.85);
-  --lp-shadow-3: 0 4px 12px rgb(0 0 0 / 0.7), 0 46px 100px -34px rgb(0 0 0 / 0.9);
+  --lp-shadow-1: var(--shadow-1);
+  --lp-shadow-2: var(--shadow-2);
+  --lp-shadow-3: var(--shadow-3);
   --lp-cta-ink: #04060a;
 }
 
@@ -223,9 +226,9 @@
   --lp-wash-refused: rgb(78 87 97 / 0.08);
   --lp-glow: rgb(10 107 79 / 0.05);
   --lp-glow-2: rgb(122 79 0 / 0.05);
-  --lp-shadow-1: 0 1px 2px rgb(74 60 38 / 0.1), 0 6px 16px -8px rgb(74 60 38 / 0.18);
-  --lp-shadow-2: 0 2px 6px rgb(74 60 38 / 0.12), 0 20px 44px -20px rgb(74 60 38 / 0.28);
-  --lp-shadow-3: 0 4px 12px rgb(74 60 38 / 0.14), 0 36px 80px -28px rgb(74 60 38 / 0.34);
+  --lp-shadow-1: var(--shadow-1);
+  --lp-shadow-2: var(--shadow-2);
+  --lp-shadow-3: var(--shadow-3);
   --lp-cta-ink: #faf7f1;
 }
 
@@ -853,18 +856,20 @@
   .lp-replay {
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
     grid-template-areas:
-      'head   head'
-      'stage  meta'
-      'status status'
-      'ctl    ctl'
-      'cap    cap'
-      'text   text';
+      'head     head'
+      'stage    meta'
+      'status   status'
+      'outcomes outcomes'
+      'ctl      ctl'
+      'cap      cap'
+      'text     text';
   }
 
   .lp-replay > .lp-replay-head { grid-area: head; }
   .lp-replay > .lp-replay-stage { grid-area: stage; }
   .lp-replay > .lp-replay-meta { grid-area: meta; }
   .lp-replay > .lp-replay-status { grid-area: status; }
+  .lp-replay > .lp-replay-outcomes { grid-area: outcomes; }
   .lp-replay > .lp-replay-controls { grid-area: ctl; }
   .lp-replay > .lp-replay-cap { grid-area: cap; }
   .lp-replay > .lp-replay-text { grid-area: text; }
@@ -1451,6 +1456,57 @@
   max-width: var(--measure);
   font-size: var(--lp-t-micro);
   line-height: 1.5;
+}
+
+/* ── The six-outcome selector ───────────────────────────────────────────────
+ *
+ * The gate has six outcomes and the panel used to show two, so a reader could
+ * come away believing "too slow" was the whole rule. These six buttons step the
+ * trace to the repetition that reached each verdict.
+ *
+ * THE PRESSED STATE IS A SURFACE AND A BORDER, NEVER A HUE. Painting the
+ * `low-confidence` button slate and the `ok` button green would put four
+ * saturated swatches in a row on a page whose entire colour argument is that
+ * `--zone-in` and `--zone-out` mean one thing each. The verdict's colour belongs
+ * to the dial, the strip and the status rule; the button that selects it is
+ * chrome, and chrome is neutral.
+ *
+ * NO MOTION IS ADDED. The buttons carry the same 140 ms hover/focus feedback
+ * every other control on this page has, and pressing one does not animate — it
+ * commits the run and stops, which is also what `Step one rep` does.
+ */
+.lp-replay-outcomes {
+  display: grid;
+  gap: var(--lp-s2);
+  padding: var(--lp-s3) var(--lp-s4);
+}
+
+.lp-outcome-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lp-s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-outcome-list li {
+  padding: 0;
+}
+
+.landing .lp-outcome-btn[aria-pressed='true'] {
+  background: var(--lp-well);
+  border-color: var(--lp-ink-1);
+  color: var(--lp-ink-1);
+  font-weight: 620;
+}
+
+.landing .lp-outcome-note {
+  margin: 0;
+  font-size: var(--lp-t-micro);
+  line-height: 1.5;
+  color: var(--lp-ink-3);
+  max-width: var(--measure);
 }
 
 .lp-replay-controls {
@@ -2625,7 +2681,22 @@
   text-decoration-color: currentcolor;
 }
 
-.landing .lp-foot-legal {
+/*
+ * `.lp-foot .lp-foot-legal`, NOT `.lp-foot-legal`.
+ *
+ * The legal line is a `<p>` inside `.lp-foot`, so `.landing .lp-foot p` above
+ * scores (0,2,1) and BEAT the single-class rule's `margin: 0 auto` at (0,2,0) —
+ * quietly replacing it with `margin: 0 0 var(--lp-s2)`. The `auto` never
+ * applied, so the block sat flush left inside a 74 rem box while every other
+ * footer column was centred by the same measure: at 1440 the sentence started at
+ * x = 48 and the columns above it at x = 176, and the hairline rule over it ran
+ * from the wrong edge too, because that rule is this element's own border.
+ *
+ * A descendant selector is the whole fix. It ties the paragraph rule at
+ * specificity and wins on source order, which is the relationship these two
+ * always meant to have.
+ */
+.landing .lp-foot .lp-foot-legal {
   max-width: var(--lp-shell);
   margin: 0 auto;
   padding: var(--lp-s4) var(--lp-pad) var(--lp-s6);

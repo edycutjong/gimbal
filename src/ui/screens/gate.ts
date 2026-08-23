@@ -39,6 +39,7 @@ export function renderGate(host: HTMLElement, props: GateProps): void {
 
   host.innerHTML = `
     ${settingsRow(props.theme)}
+    <p class="eyebrow">Symptom check</p>
     <h1 id="screen-title" tabindex="-1">${esc(question)}</h1>
     <p class="muted">0 is none. 10 is the worst you have felt.</p>
 
