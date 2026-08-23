@@ -2,6 +2,16 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.2.0 — 2026-08-24
+
+### Features
+
+- **app:** one visual language across / and /app, and the example by default
+
+### Chores
+
+- **version:** drop the existsSync import left behind by the race fix
+
 ## 1.1.3 — 2026-08-24
 
 ### Fixes
