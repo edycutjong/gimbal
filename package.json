@@ -11,11 +11,15 @@
     "preview": "vite preview",
     "test": "node scripts/checks.mjs && vitest run",
     "test:watch": "vitest",
+    "bench": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/bench.mjs",
     "verify": "node scripts/verify.mjs",
     "check:build": "vite build && node scripts/check-dist.mjs",
     "check:deploy": "node scripts/check-deploy.mjs",
     "build:example-ledger": "node scripts/build-example-ledger.mjs",
     "seed:demo": "node scripts/seed-demo.mjs"
+  },
+  "engines": {
+    "node": ">=22.7"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.22-rc.20250304"
