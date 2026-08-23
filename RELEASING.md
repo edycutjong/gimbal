@@ -3,6 +3,15 @@
 Versioning is automatic and derived from commit messages. There is no manual
 version bump, and `package.json`'s `version` field is written by CI, not by hand.
 
+**The line starts at `v1.0.0`** (2026-08-23), set once by hand as a decision
+rather than reached by a bump: the public API — the protocol card, the report,
+and the eight prescribed parameters — is one a clinician could be handed, so
+breaking it deserves a major. That is the only hand-written version this repo
+has, and `scripts/version.mjs` computes every one after it from the tags.
+Because the project is at or above 1.0.0, a `feat!:` or `BREAKING CHANGE:`
+footer now bumps the **major** — below 1.0.0 the script deliberately demoted it
+to a minor, and that branch is now unreachable.
+
 ## Commit convention
 
 [Conventional Commits](https://www.conventionalcommits.org). The subject line
@@ -10,7 +19,7 @@ decides the release:
 
 | Commit | Bump |
 |---|---|
-| `feat!: …` or a `BREAKING CHANGE:` footer | **major** (minor while below 1.0.0 — the API is explicitly not stable yet) |
+| `feat!: …` or a `BREAKING CHANGE:` footer | **major** |
 | `feat: …` | **minor** |
 | `fix: …`, `perf: …`, `revert: …` | **patch** |
 | `docs:`, `test:`, `build:`, `ci:`, `refactor:`, `chore:` | **no release** — the commit still deploys |
@@ -20,7 +29,7 @@ median frame interval over a cycle`.
 
 ## What happens on a push to `main`
 
-1. `npm test` — 76 unit tests plus the seven mechanical greps.
+1. `npm test` — 88 unit tests plus the eight mechanical greps.
 2. `npm run check:build` — the production bundle, then `U-DIST` over it.
 3. `npm run verify` — the R11 gate, including the model-bundle hash.
 4. `scripts/version.mjs` reads the tags and the commits since the last one, and
