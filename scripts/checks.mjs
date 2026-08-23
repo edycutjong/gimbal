@@ -96,6 +96,21 @@ const HTML_PAGES = ['index.html', 'app/index.html'];
  */
 const CANONICAL_PREFIXES = ['https://gimbal.edycu.dev', 'https://github.com/edycutjong/gimbal'];
 
+/**
+ * True when `raw` parses as a URL whose HOST is exactly one of `hosts`.
+ *
+ * The whole point is that it is not a substring test. `url.includes('w3.org')`
+ * is satisfied by `https://evil.test/?ref=w3.org` and by
+ * `https://w3.org.attacker.test/`; comparing the parsed `hostname` is not.
+ */
+function hostIsOneOf(raw, hosts) {
+  try {
+    return hosts.includes(new URL(raw).hostname);
+  } catch {
+    return false;
+  }
+}
+
 function allowedUrl(raw) {
   let url;
   try {
@@ -325,8 +340,14 @@ check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact, 
     }
     if (/fetch\(\s*['"`]https?:/.test(text)) problems.push(`${rel(file)}: fetches a cross-origin URL`);
     for (const url of text.match(/https?:\/\/[^\s'"`)]+/g) ?? []) {
-      const allowed = url.includes('w3.org') || url.includes('storage.googleapis.com');
-      if (!allowed) problems.push(`${rel(file)}: references ${url}`);
+      // HOST-MATCHED, never substring-matched (CodeQL
+      // js/incomplete-url-substring-sanitization). `includes('w3.org')` accepts
+      // `https://evil.test/?ref=w3.org`, which is precisely the cross-origin
+      // reference this check exists to keep out, wearing the allowed string as
+      // a costume. Same defect, same fix as `allowedUrl` above.
+      if (!hostIsOneOf(url, ['www.w3.org', 'w3.org', 'storage.googleapis.com'])) {
+        problems.push(`${rel(file)}: references ${url}`);
+      }
     }
   }
 

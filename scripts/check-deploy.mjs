@@ -32,6 +32,40 @@ const URL_UNDER_TEST = process.env.GIMBAL_URL;
  */
 const CANONICAL_URL = process.env.GIMBAL_CANONICAL_URL ?? 'https://gimbal.edycu.dev';
 
+/**
+ * URL allowlisting, done on the PARSED url rather than on the string.
+ *
+ * A substring test is not a URL test: `startsWith(CANONICAL_URL)` says yes to
+ * `https://gimbal.edycu.dev.attacker.test/x`, and `includes('github.com/…')`
+ * says yes to `https://evil.test/?u=github.com/…`. Both are exactly the
+ * non-canonical address U-DOC exists to find.
+ */
+const parse = (raw) => {
+  try {
+    return new URL(raw);
+  } catch {
+    return null;
+  }
+};
+
+// Exact host, or its `www.` form — and nothing else. `www.example.org` and
+// `example.org` are the same site; `example.org.attacker.test` is not, and a
+// substring test cannot tell the difference.
+const hostMatches = (raw, host) => {
+  const h = parse(raw)?.hostname;
+  return h === host || h === `www.${host}`;
+};
+
+const atHostPath = (raw, host, prefix) => {
+  const u = parse(raw);
+  return u?.hostname === host && (u.pathname === prefix || u.pathname.startsWith(`${prefix}/`));
+};
+
+const onCanonicalOrigin = (raw) => {
+  const canonical = parse(CANONICAL_URL);
+  return canonical !== null && parse(raw)?.origin === canonical.origin;
+};
+
 if (!URL_UNDER_TEST) {
   process.stderr.write(
     '\nGIMBAL_URL is not set.\n\n' +
@@ -129,12 +163,18 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
     // correct `NOTICE.md` — the check accusing the attribution file of being
     // wrong when the omission was the check's own.
     for (const url of text.match(/https?:\/\/[^\s'"`)\]]+/g) ?? []) {
+      // HOST-AND-PATH MATCHED, never substring-matched (CodeQL
+      // js/incomplete-url-substring-sanitization). `startsWith(CANONICAL_URL)`
+      // accepts `https://gimbal.edycu.dev.attacker.test/`, and
+      // `includes('conventionalcommits.org')` accepts any host that merely
+      // mentions it in a query string. Both are the exact non-canonical URL
+      // this check exists to catch.
       const allowed =
-        url.startsWith(CANONICAL_URL) ||
-        url.includes('github.com/google-ai-edge/mediapipe') ||
-        url.includes('storage.googleapis.com/mediapipe-models') ||
-        url.includes('github.com/rsms/inter') ||
-        url.includes('conventionalcommits.org');
+        onCanonicalOrigin(url) ||
+        atHostPath(url, 'github.com', '/google-ai-edge/mediapipe') ||
+        atHostPath(url, 'storage.googleapis.com', '/mediapipe-models') ||
+        atHostPath(url, 'github.com', '/rsms/inter') ||
+        hostMatches(url, 'conventionalcommits.org');
       if (!allowed) problems.push(`U-DOC: ${name} states a URL that is not canonical: ${url}`);
     }
   }

@@ -177,9 +177,16 @@ writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 
 const changelogPath = join(ROOT, 'CHANGELOG.md');
 const header = '# Changelog\n\nGenerated from Conventional Commits by `scripts/version.mjs`.\n\n';
-const existing = existsSync(changelogPath)
-  ? readFileSync(changelogPath, 'utf8').replace(header, '')
-  : '';
+// Read-then-handle-ENOENT rather than existsSync-then-read. The two-step form
+// is a TOCTOU race (CodeQL js/file-system-race): the file can vanish between
+// the check and the read, and the check buys nothing the read does not already
+// tell us.
+let existing = '';
+try {
+  existing = readFileSync(changelogPath, 'utf8').replace(header, '');
+} catch (err) {
+  if (err.code !== 'ENOENT') throw err;
+}
 writeFileSync(changelogPath, header + changelogEntry(next, commits, dateIso) + '\n' + existing);
 
 process.stdout.write(`  wrote package.json and CHANGELOG.md\n\n`);

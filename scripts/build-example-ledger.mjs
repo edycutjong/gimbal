@@ -121,9 +121,16 @@ if (CHECK_ONLY) {
 mkdirSync(join(ROOT, 'public', 'fixtures'), { recursive: true });
 writeFileSync(OUTPUT, serialised);
 
-const existing = existsSync(CHECKSUMS)
-  ? readFileSync(CHECKSUMS, 'utf8').split('\n').filter((l) => l.trim() && !l.includes('example-ledger.json'))
-  : [];
+// Read-then-handle-ENOENT rather than existsSync-then-read: the two-step form
+// is a TOCTOU race (CodeQL js/file-system-race).
+let existing = [];
+try {
+  existing = readFileSync(CHECKSUMS, 'utf8')
+    .split('\n')
+    .filter((l) => l.trim() && !l.includes('example-ledger.json'));
+} catch (err) {
+  if (err.code !== 'ENOENT') throw err;
+}
 writeFileSync(CHECKSUMS, [...existing, `${sha}  example-ledger.json`].join('\n') + '\n');
 
 process.stdout.write(`\nWrote ${records.length} example sessions.\n  sha256 ${sha}\n\n`);
