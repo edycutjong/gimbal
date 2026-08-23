@@ -35,16 +35,16 @@ export function bandFigure(): string {
     const x = 34 + step * (i + 0.5);
     const y = yFor(c.peakOmega);
     if (c.credited) {
-      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="var(--zone-in)" />`;
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="var(--zone-in)" />`;
     }
     // A refusal is an ABSENCE, here as everywhere: an outlined ring, never a
     // filled red dot. The tracking-unreliable one also gets a slash, because it
     // sits inside the band and would otherwise look like a drawing error.
     const slash =
       c.reason === 'low-confidence'
-        ? `<line x1="${(x - 7).toFixed(1)}" y1="${(y + 7).toFixed(1)}" x2="${(x + 7).toFixed(1)}" y2="${(y - 7).toFixed(1)}" stroke="var(--refused)" stroke-width="1.6" />`
+        ? `<line x1="${(x - 8).toFixed(1)}" y1="${(y + 8).toFixed(1)}" x2="${(x + 8).toFixed(1)}" y2="${(y - 8).toFixed(1)}" stroke="var(--refused)" stroke-width="1.8" />`
         : '';
-    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="none" stroke="var(--refused)" stroke-width="1.8" />${slash}`;
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="none" stroke="var(--refused)" stroke-width="2" />${slash}`;
   }).join('');
 
   const bandY = yFor(CEILING);
@@ -78,14 +78,22 @@ export function bandFigure(): string {
     <div class="lp-plot-body">
       <svg viewBox="0 0 ${W} ${H}" class="lp-plot-svg" role="img"
            aria-label="Peak head velocity for ${TRACE.length} consecutive cycles plotted against a prescribed band of ${FLOOR} to ${CEILING} degrees per second. ${belowFloor} cycles fall below the floor, ${credited} fall inside the band and are credited, and ${refusedInBand} inside the band is refused for low tracking confidence.">
+        <!-- TWO REGIONS, TWO HUES, AND THEY ARE THE ONLY TWO SEMANTICS THERE ARE.
+             Below the floor is out-of-band, so it is washed in the out-of-band
+             hue; the prescribed band is in-band, so it is washed in the in-band
+             one. Both are backgrounds behind the same series, and neither is
+             load-bearing on its own: every dot also carries fill, outline and
+             slash. -->
+        <rect x="34" y="${yFor(FLOOR).toFixed(1)}" width="${W - 46}" height="${(PLOT_BOTTOM - yFor(FLOOR)).toFixed(1)}"
+              fill="var(--zone-out)" opacity="0.18" />
         <rect x="34" y="${bandY.toFixed(1)}" width="${W - 46}" height="${bandH.toFixed(1)}"
-              fill="var(--zone-in)" opacity="0.1" />
+              fill="var(--zone-in)" opacity="0.14" />
         <line x1="34" y1="${bandY.toFixed(1)}" x2="${W - 12}" y2="${bandY.toFixed(1)}"
-              stroke="var(--edge-strong)" stroke-width="1" stroke-dasharray="4 3" />
+              stroke="var(--zone-in)" stroke-width="1.2" stroke-dasharray="5 4" />
         <line x1="34" y1="${yFor(FLOOR).toFixed(1)}" x2="${W - 12}" y2="${yFor(FLOOR).toFixed(1)}"
-              stroke="var(--edge-strong)" stroke-width="1" stroke-dasharray="4 3" />
-        <line x1="34" y1="${PLOT_BOTTOM}" x2="${W - 12}" y2="${PLOT_BOTTOM}" stroke="var(--edge)" stroke-width="1" />
-        <line x1="34" y1="${PLOT_TOP}" x2="34" y2="${PLOT_BOTTOM}" stroke="var(--edge)" stroke-width="1" />
+              stroke="var(--zone-in)" stroke-width="1.2" stroke-dasharray="5 4" />
+        <line x1="34" y1="${PLOT_BOTTOM}" x2="${W - 12}" y2="${PLOT_BOTTOM}" stroke="var(--lp-line-2)" stroke-width="1" />
+        <line x1="34" y1="${PLOT_TOP}" x2="34" y2="${PLOT_BOTTOM}" stroke="var(--lp-line-2)" stroke-width="1" />
         ${dots}
       </svg>
     </div>
