@@ -22,7 +22,7 @@
  * workflow can decide whether to tag, push and deploy.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
