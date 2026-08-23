@@ -6,9 +6,19 @@
  *  WHAT THIS MEASURES, AND WHAT IT DOES NOT
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * MEASURES: how long the shipped signal-processing path takes to execute, in
- * microseconds, against the 33.33 ms budget one camera frame gets at 30 fps.
- * It is a COMPUTE-COST measurement of pure functions.
+ * MEASURES: two things, in this order.
+ *
+ *  1. CORRECTNESS — all SIX outcomes of the credit/refusal gate (`ok`,
+ *     `too-slow`, `too-fast`, `off-cadence`, `low-confidence`, `face-lost`),
+ *     each driven END-TO-END from an analytic signal through the shipped
+ *     stream, quality score, segmenter and gate. Not a `Cycle` literal handed
+ *     to `scoreCycle` — that proves the gate branches; this proves the pipeline
+ *     can produce the cycle the branch is for.
+ *  2. COMPUTE COST — how long the shipped signal-processing path takes to
+ *     execute, in microseconds, against the 33.33 ms budget one camera frame
+ *     gets at 30 fps. A measurement of pure functions.
+ *
+ * (1) gates (2): if any assertion fails, no timing is printed at all.
  *
  * DOES **NOT** MEASURE: accuracy, agreement with any reference sensor, or
  * anything clinical. **The bench-agreement figure this project owes — webcam
@@ -54,8 +64,13 @@
  *
  * It also honours `scripts/checks.mjs`'s partition rule: every file this script
  * reads is committed in this repository, and it makes zero network requests. It
- * runs on a clean clone, offline, with `npm ci` and nothing else. It is kept out
- * of `npm test` only because a timing assertion in CI is a flaky assertion.
+ * runs on a clean clone, offline, with `npm ci` and nothing else.
+ *
+ * It runs in CI as its own step rather than inside `npm test`, because the two
+ * halves want different treatment: the COUNTS are asserted and are
+ * byte-deterministic across machines, while the TIMINGS are printed and never
+ * asserted — a timing assertion on a shared runner is a flaky assertion, and a
+ * flaky gate teaches everyone to ignore it.
  *
  * Usage:  npm run bench            human-readable table
  *         npm run bench -- --json  machine-readable, to stdout
@@ -76,10 +91,11 @@ import { arch, cpus, platform, totalmem } from 'node:os';
 import { VelocityStream } from '../src/dsp/stream.ts';
 import { CycleSegmenter } from '../src/dsp/segment.ts';
 import { scoreCycle } from '../src/dsp/score.ts';
-import { frameQuality } from '../src/dsp/quality.ts';
+import { FIT_RESIDUAL_TOLERANCE, frameQuality } from '../src/dsp/quality.ts';
 import { dominantFrequency, FFT_SIZE } from '../src/dsp/fft.ts';
 import { peakAccelFor, peakOmegaFor } from '../src/dsp/velocity.ts';
 import { INSTRUMENT_LIMITS, deadbandDegPerSec, minSampleRateHz } from '../src/dsp/limits.ts';
+import { ALL_OUTCOMES } from '../src/dsp/types.ts';
 import { parseCard } from '../src/protocol/card.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -109,6 +125,68 @@ const LAZY_AMPLITUDE_DEG = 8;
 const SECONDS = 60;
 const FRAME_COUNT = SECONDS * FPS;
 
+// ── The other four outcomes ────────────────────────────────────────────────
+//
+// The gate has SIX outcomes. Two of them — `ok` and `too-slow` — are the pair
+// the product's pitch turns on, and they were the only two this benchmark ever
+// drove end-to-end; the remaining four were covered by a unit test that handed
+// `scoreCycle` a hand-built `Cycle` literal. That proves the gate BRANCHES. It
+// does not prove the PIPELINE CAN PRODUCE those cycles from a signal, which is
+// a different and stronger claim, and it is the one a reader of a "dose meter"
+// should want checked.
+//
+// `low-confidence` matters most of the four. It is the answer to the largest
+// technical risk in the project — head-pose fidelity at 2 Hz on a commodity
+// webcam — and the answer is that the instrument REFUSES TO EMIT rather than
+// smoothing. `too-slow` alone reads as a bug; `too-slow` and `low-confidence`
+// together read as a policy. Driving only the first published the easy half.
+//
+// Every constant below is DERIVED from a shipped one, never re-stated as a
+// literal. `qFloor` is one of the two `PROVISIONAL_FROM_SPIKE` values in
+// `src/dsp/limits.ts`, so a literal `0.55` here would silently stop testing
+// anything on the day that threshold is calibrated.
+
+/** 2π·2.0·30 = 377.0 °/s — above the card's 350 °/s ceiling, below the 655.34 °/s quantisation limit. */
+const FAST_AMPLITUDE_DEG = 30;
+
+/**
+ * The right velocity at the wrong tempo. At ±30° and 1.2 Hz the peak is
+ * 2π·1.2·30 = 226.2 °/s, comfortably INSIDE [150, 350] — so velocity cannot be
+ * the cause — while 1.2 Hz is outside the card's [1.7, 2.3] band. `off-cadence`
+ * is last in `REASON_PRECEDENCE`, so it is only reachable when every check
+ * above it passes, which is exactly what this drive arranges.
+ */
+const OFF_CADENCE_HZ = 1.2;
+
+/**
+ * A degenerate rigid fit, sized against the constants rather than guessed.
+ *
+ *   q_fit = 1 − fitResidual / FIT_RESIDUAL_TOLERANCE      (src/dsp/quality.ts)
+ *
+ * Solve it for a target q at three-quarters of the floor, and the cycle's `qMin`
+ * lands below `qFloor` with margin on both sides — far enough under to be
+ * unambiguous, far enough above zero that it is a degraded measurement rather
+ * than an absent one. `q = min(q_presence, q_cadence, q_fit, q_kinematic)`, and
+ * at ±20°/2 Hz the other three terms are 1, so q_fit is the binding one.
+ */
+const LOW_CONFIDENCE_TARGET_Q = INSTRUMENT_LIMITS.qFloor * 0.75;
+const LOW_CONFIDENCE_FIT_RESIDUAL = FIT_RESIDUAL_TOLERANCE * (1 - LOW_CONFIDENCE_TARGET_Q);
+
+/**
+ * THE APPROXIMATION IN THE `face-lost` DRIVE, STATED.
+ *
+ * In the live capture loop a face-absent frame means `FaceLandmarker` emitted
+ * nothing at all, and THAT ABSENCE IS THE SIGNAL (`src/dsp/quality.ts`). This
+ * drive instead feeds `facePresent: false` alongside a yaw series that keeps
+ * going, which exercises **the gate's handling of a face-absent frame** — the
+ * segmenter carrying `faceLost` onto the cycle, `frameQuality` returning 0, and
+ * `REASON_PRECEDENCE` reporting `face-lost` ahead of the `low-confidence` that
+ * q = 0 would otherwise produce. It is NOT a claim about what the capture loop
+ * does when the model goes quiet. An unstated approximation in a benchmark is
+ * how a benchmark starts lying, so it is stated.
+ */
+const FACE_LOST_PRESENT = false;
+
 /**
  * Frame-interval jitter. A real camera does not deliver a constant 33.3 ms, and
  * a pipeline that assumed it would would be measured here as faster than it is
@@ -127,7 +205,7 @@ function lcg(seed) {
   };
 }
 
-function driveSignal(amplitudeDeg) {
+function driveSignal(amplitudeDeg, { hz = DRIVE_HZ, fitResidual = null, facePresent = true } = {}) {
   const next = lcg(LCG_SEED);
   const frames = [];
   let tMs = 0;
@@ -136,13 +214,19 @@ function driveSignal(amplitudeDeg) {
     const dt = NOMINAL_DT_MS * (0.88 + 0.24 * next());
     tMs += dt;
     const tSec = tMs / 1000;
+    // Drawn UNCONDITIONALLY, even when the residual is being overridden, so that
+    // pinning it cannot shift the interval sequence behind it. Every drive then
+    // shares one frame clock and the six runs stay comparable — and the two
+    // drives that predate this change produce byte-identical frames to before.
+    const wellConditioned = 0.004 + 0.002 * next();
     frames.push({
       tMs,
       dtMs: dt,
-      yaw: amplitudeDeg * Math.sin(2 * Math.PI * DRIVE_HZ * tSec),
+      yaw: amplitudeDeg * Math.sin(2 * Math.PI * hz * tSec),
       // A well-conditioned rigid fit. The orthonormality residual of a real
       // MediaPipe rotation block sits far below the 0.05 tolerance.
-      fitResidual: 0.004 + 0.002 * next(),
+      fitResidual: fitResidual ?? wellConditioned,
+      facePresent,
     });
   }
   return frames;
@@ -179,7 +263,6 @@ function summarise(name, unit, samplesUs) {
 const card = parseCard(JSON.parse(readFileSync(`${ROOT}public/cards/demo-vorx1-yaw-seated.json`, 'utf8')));
 const [, bandHi] = card.frequencyBand.value;
 const targetIntervalMs = 1000 / minSampleRateHz(bandHi);
-const plausibleAccel = peakAccelFor(DRIVE_HZ, AMPLITUDE_DEG);
 const analyticPeakOmega = peakOmegaFor(DRIVE_HZ, AMPLITUDE_DEG);
 
 // ── B1: the whole per-frame path ───────────────────────────────────────────
@@ -188,11 +271,15 @@ const analyticPeakOmega = peakOmegaFor(DRIVE_HZ, AMPLITUDE_DEG);
 // One timed region per frame, exactly the work the 30 Hz capture loop does
 // after `FaceLandmarker` hands back a rotation matrix.
 
-function runPipeline(frames, { timed, amplitudeDeg }) {
+function runPipeline(frames, { timed, amplitudeDeg, hz = DRIVE_HZ }) {
   const stream = new VelocityStream();
   const segmenter = new CycleSegmenter({
+    // `fHat` follows the drive, exactly as it follows the FFT estimate in the
+    // live loop. Pinning it at 2.0 Hz for a 1.2 Hz drive would mis-scale the
+    // central-difference correction and make the off-cadence run measure the
+    // wrong velocity for the right reason.
     deadbandDegPerSec: deadbandDegPerSec(card.peakVelocityFloor.value),
-    fHat: DRIVE_HZ,
+    fHat: hz,
     limits: INSTRUMENT_LIMITS,
   });
 
@@ -208,14 +295,14 @@ function runPipeline(frames, { timed, amplitudeDeg }) {
     const v = stream.push(f.tMs, f.yaw);
     if (v) {
       const q = frameQuality({
-        facePresent: true,
+        facePresent: f.facePresent,
         frameIntervalMs: f.dtMs,
         targetIntervalMs,
         fitResidual: f.fitResidual,
         angularAccel: v.accel,
-        plausibleAccel: peakAccelFor(DRIVE_HZ, amplitudeDeg),
+        plausibleAccel: peakAccelFor(hz, amplitudeDeg),
       });
-      const cycle = segmenter.push({ tMs: v.tMs, omega: v.omega, quality: q, facePresent: true });
+      const cycle = segmenter.push({ tMs: v.tMs, omega: v.omega, quality: q, facePresent: f.facePresent });
       if (cycle) {
         cycles++;
         const result = scoreCycle(cycle, card);
@@ -271,85 +358,152 @@ function runGate(cycle, iterations) {
 // p95. These assertions are what make the timings mean something.
 
 const failures = [];
+let assertionCount = 0;
 function assert(label, condition, detail) {
+  assertionCount += 1;
   if (!condition) failures.push(`${label}: ${detail}`);
 }
 
-const frames = driveSignal(AMPLITUDE_DEG);
-const lazyFrames = driveSignal(LAZY_AMPLITUDE_DEG);
+// ── The six drives, one per gate outcome ───────────────────────────────────
+//
+// `ALL_OUTCOMES` is imported from `src/dsp/types.ts` rather than restated, so a
+// seventh outcome added to the gate FAILS THIS BENCHMARK on the partition
+// assertion below rather than quietly going unmeasured.
 
-// Warm-up. Two full passes of each so the JIT has tiered up before anything is
-// timed, and so neither path is measured cold against the other.
-for (let i = 0; i < 2; i++) {
-  runPipeline(frames, { timed: false, amplitudeDeg: AMPLITUDE_DEG });
-  runPipeline(lazyFrames, { timed: false, amplitudeDeg: LAZY_AMPLITUDE_DEG });
+const DRIVES = [
+  {
+    outcome: 'ok',
+    amplitudeDeg: AMPLITUDE_DEG,
+    hz: DRIVE_HZ,
+    timed: 'per-frame, credited',
+    why: 'inside the velocity window, on cadence, well tracked',
+  },
+  {
+    outcome: 'too-slow',
+    amplitudeDeg: LAZY_AMPLITUDE_DEG,
+    hz: DRIVE_HZ,
+    timed: 'per-frame, refused',
+    why: 'the same tempo, a smaller sweep — detected, then refused',
+  },
+  {
+    outcome: 'too-fast',
+    amplitudeDeg: FAST_AMPLITUDE_DEG,
+    hz: DRIVE_HZ,
+    why: 'above the ceiling; faster is not better, and the card says so',
+  },
+  {
+    outcome: 'off-cadence',
+    amplitudeDeg: FAST_AMPLITUDE_DEG,
+    hz: OFF_CADENCE_HZ,
+    why: 'right velocity, wrong tempo — last in precedence, so all else passed',
+  },
+  {
+    outcome: 'low-confidence',
+    amplitudeDeg: AMPLITUDE_DEG,
+    hz: DRIVE_HZ,
+    fitResidual: LOW_CONFIDENCE_FIT_RESIDUAL,
+    why: 'a creditable sweep the instrument will not vouch for',
+  },
+  {
+    outcome: 'face-lost',
+    amplitudeDeg: AMPLITUDE_DEG,
+    hz: DRIVE_HZ,
+    facePresent: FACE_LOST_PRESENT,
+    why: 'the instrument could not see — reported ahead of low-confidence',
+  },
+];
+
+for (const d of DRIVES) {
+  d.frames = driveSignal(d.amplitudeDeg, {
+    hz: d.hz,
+    fitResidual: d.fitResidual ?? null,
+    facePresent: d.facePresent ?? true,
+  });
+  d.opts = { amplitudeDeg: d.amplitudeDeg, hz: d.hz };
+  d.analyticPeakOmega = peakOmegaFor(d.hz, d.amplitudeDeg);
+  d.analyticCycles = SECONDS * d.hz;
 }
 
-const run = runPipeline(frames, { timed: true, amplitudeDeg: AMPLITUDE_DEG });
-const lazy = runPipeline(lazyFrames, { timed: true, amplitudeDeg: LAZY_AMPLITUDE_DEG });
+// Warm-up. Two full untimed passes of each drive that will be timed, so the JIT
+// has tiered up before anything is measured and neither path is measured cold
+// against the other.
+for (let i = 0; i < 2; i++) {
+  for (const d of DRIVES) if (d.timed) runPipeline(d.frames, { timed: false, ...d.opts });
+}
 
-// 60 s of oscillation at 2.0 Hz is 120 full cycles. The stream withholds its
-// first samples (5-point smoother + 3-point difference) and the segmenter needs
-// a first sign change to open a cycle, so a small deficit at the head is
-// correct — a surplus would mean phantom sweeps, which is the failure the
-// hysteresis exists to prevent.
-const analyticCycles = SECONDS * DRIVE_HZ;
-assert(
-  'cycle count',
-  run.cycles >= analyticCycles - 3 && run.cycles <= analyticCycles,
-  `segmented ${run.cycles}; 2.0 Hz for 60 s is ${analyticCycles} cycles, expected ${analyticCycles - 3}..${analyticCycles}`,
-);
-assert(
-  'credit path exercised',
-  run.credited > 0,
-  `0 cycles credited — the drive signal must reach the credit path, not only the refusal path`,
-);
-assert(
-  'every cycle credited',
-  run.credited === run.cycles,
-  // The band membership is COMPUTED, never asserted in prose. Hard-coding
-  // "is inside" here printed the self-refuting `100.5 °/s is inside [150, 350]`
-  // the moment someone changed the drive amplitude — a diagnostic that lies
-  // about the thing it was printed to diagnose is worse than no diagnostic.
-  `${run.cycles - run.credited} of ${run.cycles} refused (${JSON.stringify(run.outcomes)}); ` +
-    `analytic peak 2π·${DRIVE_HZ}·${AMPLITUDE_DEG} = ${analyticPeakOmega.toFixed(1)} °/s is ` +
-    `${
-      analyticPeakOmega >= card.peakVelocityFloor.value && analyticPeakOmega <= card.peakVelocityCeiling.value
-        ? 'inside'
-        : 'OUTSIDE'
-    } ` +
-    `[${card.peakVelocityFloor.value}, ${card.peakVelocityCeiling.value}] and ${DRIVE_HZ} Hz is ` +
-    `${DRIVE_HZ >= card.frequencyBand.value[0] && DRIVE_HZ <= card.frequencyBand.value[1] ? 'inside' : 'OUTSIDE'} ` +
-    `[${card.frequencyBand.value.join(', ')}]`,
-);
-assert(
-  'dose accumulates',
-  Math.abs(run.doseSeconds - run.cycles / DRIVE_HZ) < 1.0,
-  `delivered dose ${run.doseSeconds.toFixed(3)} s; ${run.cycles} cycles at ${DRIVE_HZ} Hz is ~${(run.cycles / DRIVE_HZ).toFixed(3)} s`,
-);
+for (const d of DRIVES) d.run = runPipeline(d.frames, { timed: Boolean(d.timed), ...d.opts });
 
-// ── The refusal path, asserted mechanically ────────────────────────────────
-//
-// THIS IS THE PRODUCT CLAIM, checked without a camera: the same tempo at a
-// visibly smaller sweep must be detected, refused by name, and contribute
-// EXACTLY 0.000 s of dose. Not "approximately zero" — zero.
-const lazyPeakOmega = peakOmegaFor(DRIVE_HZ, LAZY_AMPLITUDE_DEG);
+const byOutcome = Object.fromEntries(DRIVES.map((d) => [d.outcome, d]));
+const frames = byOutcome.ok.frames;
+const run = byOutcome.ok.run;
+const lazy = byOutcome['too-slow'].run;
+const lazyPeakOmega = byOutcome['too-slow'].analyticPeakOmega;
+
+/**
+ * 60 s of oscillation at f Hz is 60f full cycles. The stream withholds its first
+ * samples (5-point smoother + 3-point difference) and the segmenter needs a
+ * first sign change to open a cycle, so a small deficit at the head is correct.
+ * A SURPLUS would mean phantom sweeps, which is the failure the hysteresis
+ * exists to prevent and which would inflate the one number the product is about.
+ */
+const CYCLE_DEFICIT_TOLERANCE = 3;
+
+for (const d of DRIVES) {
+  const r = d.run;
+  const inWindow =
+    d.analyticPeakOmega >= card.peakVelocityFloor.value && d.analyticPeakOmega <= card.peakVelocityCeiling.value;
+  const onCadence = d.hz >= card.frequencyBand.value[0] && d.hz <= card.frequencyBand.value[1];
+  // Band membership is COMPUTED for the diagnostic, never asserted in prose.
+  // Hard-coding "is inside" once printed the self-refuting
+  // `100.5 °/s is inside [150, 350]` the moment a drive amplitude changed — a
+  // diagnostic that lies about the thing it was printed to diagnose is worse
+  // than no diagnostic.
+  const where =
+    `±${d.amplitudeDeg}° at ${d.hz} Hz → 2π·${d.hz}·${d.amplitudeDeg} = ${d.analyticPeakOmega.toFixed(1)} °/s, ` +
+    `${inWindow ? 'inside' : 'OUTSIDE'} [${card.peakVelocityFloor.value}, ${card.peakVelocityCeiling.value}]; ` +
+    `${d.hz} Hz is ${onCadence ? 'inside' : 'OUTSIDE'} [${card.frequencyBand.value.join(', ')}]`;
+
+  assert(
+    `${d.outcome} — the sweeps are detected, not lost`,
+    r.cycles >= d.analyticCycles - CYCLE_DEFICIT_TOLERANCE && r.cycles <= d.analyticCycles,
+    `segmented ${r.cycles}; ${d.hz} Hz for ${SECONDS} s is ${d.analyticCycles} analytic cycles, expected ` +
+      `${d.analyticCycles - CYCLE_DEFICIT_TOLERANCE}..${d.analyticCycles}. Peak ` +
+      `${d.analyticPeakOmega.toFixed(1)} °/s must clear the ` +
+      `${deadbandDegPerSec(card.peakVelocityFloor.value).toFixed(1)} °/s hysteresis deadband. ${where}`,
+  );
+  assert(
+    `${d.outcome} — every cycle reaches this outcome and no other`,
+    r.outcomes[d.outcome] === r.cycles && Object.keys(r.outcomes).length === 1,
+    `outcomes ${JSON.stringify(r.outcomes)} over ${r.cycles} cycles; every one should be ${d.outcome}. ${where}`,
+  );
+  if (d.outcome === 'ok') {
+    // THE CREDIT PATH. A benchmark that only exercised refusals would time half
+    // the gate and miss the half that pays.
+    assert(
+      'ok — dose accumulates one period per credited cycle',
+      r.credited === r.cycles && r.credited > 0 && Math.abs(r.doseSeconds - r.cycles / d.hz) < 1.0,
+      `${r.credited} of ${r.cycles} credited, delivered dose ${r.doseSeconds.toFixed(3)} s; ` +
+        `${r.cycles} cycles at ${d.hz} Hz is ~${(r.cycles / d.hz).toFixed(3)} s. ${where}`,
+    );
+  } else {
+    // THE PRODUCT CLAIM, checked five ways without a camera: a refusal
+    // contributes EXACTLY 0.000 s. Not approximately zero — zero, from the one
+    // `refuse()` helper every refusal path in `scoreCycle` returns through.
+    assert(
+      `${d.outcome} — a refused rep contributes exactly zero dose`,
+      r.credited === 0 && r.doseSeconds === 0,
+      `${r.credited} credited, delivered dose ${r.doseSeconds}; a refusal must be exactly 0, not approximately`,
+    );
+  }
+}
+
+// The partition itself: six drives, six outcomes, none unreached and none
+// reached twice. This is the assertion the old two-row gate could not make.
+const reached = DRIVES.map((d) => d.outcome);
 assert(
-  'lazy reps are still detected',
-  lazy.cycles >= analyticCycles - 3 && lazy.cycles <= analyticCycles,
-  `segmented ${lazy.cycles} lazy cycles; expected ${analyticCycles - 3}..${analyticCycles}. ` +
-    `Peak ${lazyPeakOmega.toFixed(1)} °/s must clear the ${deadbandDegPerSec(card.peakVelocityFloor.value).toFixed(1)} °/s deadband`,
-);
-assert(
-  'every lazy rep is refused too-slow',
-  lazy.credited === 0 && lazy.outcomes['too-slow'] === lazy.cycles,
-  `${lazy.credited} credited, outcomes ${JSON.stringify(lazy.outcomes)}; ` +
-    `${lazyPeakOmega.toFixed(1)} °/s is below the card's ${card.peakVelocityFloor.value} °/s floor`,
-);
-assert(
-  'a refused rep contributes exactly zero dose',
-  lazy.doseSeconds === 0,
-  `delivered dose is ${lazy.doseSeconds}, not exactly 0`,
+  'the drives partition the gate — all six outcomes, each exactly once',
+  reached.length === ALL_OUTCOMES.length && ALL_OUTCOMES.every((o) => reached.filter((x) => x === o).length === 1),
+  `drives reach [${reached.join(', ')}]; the gate declares [${ALL_OUTCOMES.join(', ')}]`,
 );
 
 // The omega series the FFT bench runs on comes out of the same shipped stream.
@@ -395,8 +549,12 @@ if (failures.length > 0) {
 
 // ── Results ────────────────────────────────────────────────────────────────
 
-const b1 = summarise('per-frame, credited', 'one camera frame: stream → quality → segmenter → gate', run.perFrameUs);
-const b1b = summarise('per-frame, refused', 'same path, every cycle refused too-slow', lazy.perFrameUs);
+const b1 = summarise(
+  byOutcome.ok.timed,
+  'one camera frame: stream → quality → segmenter → gate',
+  run.perFrameUs,
+);
+const b1b = summarise(byOutcome['too-slow'].timed, 'same path, every cycle refused too-slow', lazy.perFrameUs);
 const b2 = summarise('256-point Hann FFT', 'one window: dominantFrequency, once per 128 frames', fft.samplesUs);
 const b3 = summarise('credit / refusal gate', 'one completed cycle: scoreCycle', gate.samplesUs);
 const TABLE = [b1, b1b, b2, b3];
@@ -418,32 +576,33 @@ if (JSON_OUT) {
   process.stdout.write(
     `${JSON.stringify(
       {
-        what: 'compute cost of the shipped DSP pipeline. NOT an accuracy figure and NOT the bench-agreement measurement, which does not exist.',
+        what: 'all six credit/refusal gate outcomes driven end-to-end, then the compute cost of the shipped DSP pipeline. NOT an accuracy figure and NOT the bench-agreement measurement, which does not exist.',
         drive: {
           seed: LCG_SEED,
           fps: FPS,
-          frequency_hz: DRIVE_HZ,
-          amplitude_deg: AMPLITUDE_DEG,
-          lazy_amplitude_deg: LAZY_AMPLITUDE_DEG,
           seconds: SECONDS,
           frames: FRAME_COUNT,
           interval_jitter_pct: 12,
         },
         correctness: {
-          therapeutic: {
-            peak_omega_deg_per_s: Number(analyticPeakOmega.toFixed(1)),
-            cycles: run.cycles,
-            credited: run.credited,
-            outcomes: run.outcomes,
-            delivered_dose_s: Number(run.doseSeconds.toFixed(3)),
-          },
-          sub_therapeutic: {
-            peak_omega_deg_per_s: Number(lazyPeakOmega.toFixed(1)),
-            cycles: lazy.cycles,
-            credited: lazy.credited,
-            outcomes: lazy.outcomes,
-            delivered_dose_s: lazy.doseSeconds,
-          },
+          assertions: assertionCount,
+          gate_outcomes_declared: ALL_OUTCOMES,
+          // One drive per declared outcome. The partition is asserted, not
+          // described: a seventh outcome without a seventh drive exits 1.
+          drives: DRIVES.map((d) => ({
+            outcome: d.outcome,
+            amplitude_deg: d.amplitudeDeg,
+            frequency_hz: d.hz,
+            fit_residual: d.fitResidual ?? null,
+            face_present: d.facePresent ?? true,
+            peak_omega_deg_per_s: Number(d.analyticPeakOmega.toFixed(1)),
+            analytic_cycles: d.analyticCycles,
+            cycles: d.run.cycles,
+            credited: d.run.credited,
+            outcomes: d.run.outcomes,
+            delivered_dose_s: Number(d.run.doseSeconds.toFixed(3)),
+            why: d.why,
+          })),
           f_hat_hz: Number(fft.estimate.frequencyHz.toFixed(4)),
           bin_width_hz: Number(binWidth.toFixed(4)),
         },
@@ -470,7 +629,7 @@ COMPUTE COST ONLY. This says nothing about measurement accuracy, and it is NOT
 the webcam-vs-gyroscope agreement figure — that needs a physical recording,
 it does not exist, and nothing here may be quoted as though it did.
 
-Drive signal   ${DRIVE_HZ.toFixed(1)} Hz yaw, ${SECONDS} s, ${FRAME_COUNT} frames at ${FPS} fps, two amplitudes
+Drive signal   ${DRIVES.length} analytic yaw drives, ${SECONDS} s each, ${FRAME_COUNT} frames at ${FPS} fps
                ±12 % frame-interval jitter, LCG seed ${LCG_SEED} (deterministic)
 Card           public/cards/demo-vorx1-yaw-seated.json — band ${card.frequencyBand.value.join('–')} Hz,
                velocity ${card.peakVelocityFloor.value}–${card.peakVelocityCeiling.value} °/s
@@ -478,15 +637,28 @@ Card           public/cards/demo-vorx1-yaw-seated.json — band ${card.frequency
 Correctness gate — asserted before any timing was printed, and the reason these
 timings mean something. A pipeline returning early would post a beautiful p95.
 
-  THERAPEUTIC  ±${AMPLITUDE_DEG}° → 2π·${DRIVE_HZ}·${AMPLITUDE_DEG} = ${analyticPeakOmega.toFixed(1)} °/s, inside [${card.peakVelocityFloor.value}, ${card.peakVelocityCeiling.value}]
-  ✓ ${pad(`${run.cycles} cycles segmented`, 32)} ${DRIVE_HZ} Hz × ${SECONDS} s = ${analyticCycles} analytic
-  ✓ ${pad(`${run.credited} credited, 0 refused`, 32)} outcomes ${JSON.stringify(run.outcomes)}
-  ✓ ${pad(`${run.doseSeconds.toFixed(3)} s delivered dose`, 32)} ${run.cycles} cycles ÷ ${DRIVE_HZ} Hz
+ALL SIX GATE OUTCOMES, each driven end-to-end from an analytic signal through the
+shipped stream, quality score, segmenter and gate — not from a hand-built Cycle
+handed to scoreCycle. ${assertionCount} assertions; any one of them exits 1 before the table.
 
-  SUB-THERAPEUTIC  ±${LAZY_AMPLITUDE_DEG}° → ${lazyPeakOmega.toFixed(1)} °/s, below the ${card.peakVelocityFloor.value} °/s floor
-  ✓ ${pad(`${lazy.cycles} cycles segmented`, 32)} detected, not lost — deadband is ${deadbandDegPerSec(card.peakVelocityFloor.value).toFixed(1)} °/s
-  ✓ ${pad(`0 credited, ${lazy.cycles} refused too-slow`, 32)} outcomes ${JSON.stringify(lazy.outcomes)}
-  ✓ ${pad(`${lazy.doseSeconds.toFixed(3)} s delivered dose`, 32)} exactly zero, not approximately
+  ${pad('outcome', 17)}${pad('drive', 19)}${pad('peak |ω|', 13)}${pad('cycles', 10)}${pad('credited', 10)}dose
+  ${'─'.repeat(76)}
+${DRIVES.map(
+  (d) =>
+    `  ${pad(d.outcome, 17)}${pad(`±${d.amplitudeDeg}° @ ${d.hz.toFixed(1)} Hz`, 19)}` +
+    `${pad(`${d.analyticPeakOmega.toFixed(1)} °/s`, 13)}` +
+    `${pad(`${d.run.cycles}/${d.analyticCycles}`, 10)}${pad(String(d.run.credited), 10)}` +
+    `${d.run.doseSeconds.toFixed(3)} s\n      ${d.why}`,
+).join('\n')}
+
+  Every refusal above is EXACTLY 0.000 s, not approximately zero — one refuse()
+  helper, one code path, asserted with ===.
+  The sub-therapeutic sweeps are DETECTED and then refused, not lost: ${lazyPeakOmega.toFixed(1)} °/s
+  clears the ${deadbandDegPerSec(card.peakVelocityFloor.value).toFixed(1)} °/s hysteresis deadband. That distinction is the difference
+  between a policy and a dropout, and it is what the ${byOutcome['too-slow'].run.cycles} segmented cycles show.
+  The face-lost drive feeds facePresent: false alongside a continuing yaw series.
+  It exercises the GATE's handling of an absent face; it is not a claim about what
+  the capture loop does when the model goes quiet.
 
   ✓ ${pad(`f̂ = ${fft.estimate.frequencyHz.toFixed(4)} Hz`, 32)} bin width ${binWidth.toFixed(4)} Hz
 
