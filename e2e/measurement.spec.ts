@@ -20,7 +20,7 @@ test.describe('GT-3 — a stationary face credits exactly zero', () => {
 
   test('delivered dose is 0.000 s and no velocity number is rendered', async ({ page }) => {
     await injectRecordedCamera(page, clip.path);
-    await page.goto('/');
+    await page.goto('/app');
     await completePrescribe(page, { blockSeconds: '20', blockCount: '1' });
     await startBlock(page);
     await page.waitForSelector('#screen-gate:not([hidden])', { timeout: 120_000 });
@@ -48,7 +48,7 @@ test.describe('GT-4 — an empty room refuses face-lost and never emits NaN', ()
     page.on('pageerror', (e) => errors.push(e.message));
 
     await injectRecordedCamera(page, clip.path);
-    await page.goto('/');
+    await page.goto('/app');
     await completePrescribe(page, { blockSeconds: '10', blockCount: '1' });
     await startBlock(page);
     await page.waitForTimeout(12_000);
@@ -66,7 +66,7 @@ test.describe('GT-2 — a scripted 2.000 Hz oscillation recovers its own frequen
 
   test('the reported dominant frequency lands within one bin of 2.000 Hz', async ({ page }) => {
     await injectRecordedCamera(page, clip.path);
-    await page.goto('/');
+    await page.goto('/app');
     await completePrescribe(page, { blockSeconds: '60', blockCount: '1' });
     await startBlock(page);
     await page.waitForSelector('#screen-gate:not([hidden])', { timeout: 150_000 });
@@ -88,7 +88,7 @@ test.describe('P1 — the deployed URL, loaded cold, reaches a credited cycle', 
 
   test('a real MediaStream through the real model produces credit', async ({ page }) => {
     await injectRecordedCamera(page, clip.path, true);
-    await page.goto('/');
+    await page.goto('/app');
     await completePrescribe(page, { blockSeconds: '30', blockCount: '1' });
     await startBlock(page);
     await page.waitForFunction(() => {

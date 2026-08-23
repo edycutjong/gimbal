@@ -16,13 +16,43 @@
  *
  * Every ratio in the comments below is computed WCAG 2.x contrast against
  * s0 / s1 / s2. Every text token clears AA (4.5:1) on every surface it is
- * permitted on; --ink-1 and --ink-2 clear AAA (7:1) everywhere; every state
- * colour and --edge-strong clears the 3:1 non-text requirement on every surface.
+ * permitted on; every state colour and --edge-strong clears the 3:1 non-text
+ * requirement on every surface.
+ *
+ * AAA (7:1), STATED EXACTLY, because "everywhere" was not true and the palette
+ * it was untrue about is the MUST-tier one:
+ *
+ *   --ink-1  clears AAA on all three surfaces in all three palettes.
+ *   --ink-2  clears AAA in Dark (9.17 / 8.35 / 7.32) and Light
+ *            (7.75 / 8.46 / 8.92), and does NOT in Dim (6.74 / 6.39 / 5.83).
+ *   --ink-3  is an AA-tier label token in every palette, by design. It is used
+ *            for eyebrows, rail labels, axis ticks and unit notes — never for
+ *            body copy — and never on s2, where it drops to 4.28 in Dark.
+ *
+ * Dim's shortfall is a CHOICE, not an oversight. Dim exists for deep
+ * photophobia, where total light output is the symptom; raising --ink-2 to
+ * #a0aab6 would clear 7:1 on all three surfaces and would do it by putting more
+ * light on the screen, which is the one thing this palette is for not doing.
+ * A reader who wants the contrast back has two routes that cost nothing:
+ * `prefers-contrast: more` (which promotes --ink-3 to --ink-2), and Dark, which
+ * is AAA throughout. The requirement is AA, and Dim clears it everywhere with
+ * 5.83 as its worst pair.
+ */
+
+/*
+ * `color-scheme` is set on every palette, and it is not cosmetic.
+ *
+ * A checkbox, a radio, a range thumb and the number-input spinners are painted
+ * by the browser, not by this stylesheet, and without this declaration Chrome
+ * paints them for a light page — which put a 28 px white block on a #0b0e12
+ * screen for the one control the entire product is gated on. In a photophobic
+ * population a stray white block is not a styling nit.
  */
 
 /* ── Dark (default) ─────────────────────────────────────────────────────── */
 :root,
 :root[data-theme='dark'] {
+  color-scheme: dark;
   --surface-0: #0b0e12;
   --surface-1: #141922;
   --surface-2: #1d2530;
@@ -43,6 +73,7 @@
 
 /* ── Dim (deep photophobia) ─────────────────────────────────────────────── */
 :root[data-theme='dim'] {
+  color-scheme: dark;
   --surface-0: #04060a;
   --surface-1: #0b0f15;
   --surface-2: #131a22;
@@ -63,6 +94,7 @@
 
 /* ── Light (warm paper, SHOULD-tier) ────────────────────────────────────── */
 :root[data-theme='light'] {
+  color-scheme: light;
   --surface-0: #ede8df;
   --surface-1: #f6f2ea;
   --surface-2: #fbf8f2;
@@ -84,6 +116,7 @@
 /* Seed the initial theme from the OS. The picker overrides it and persists. */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
+    color-scheme: light;
     --surface-0: #ede8df;
     --surface-1: #f6f2ea;
     --surface-2: #fbf8f2;
@@ -104,9 +137,17 @@
 /*
  * A TOKEN OVERRIDE, not a theme switch — so it behaves identically in whichever
  * palettes survive the feature freeze.
+ *
+ * `:root[data-theme]` is in the selector list, and it is load-bearing rather
+ * than defensive. `:root` alone scores (0,1,0) and LOSES to
+ * `:root[data-theme='dark']` at (0,2,0), so with only the bare selector this
+ * whole block quietly did nothing the moment a reader touched the theme picker
+ * — which is to say, it did nothing for exactly the photophobic readers it
+ * exists for. The attribute selector ties at (0,2,0) and wins on source order.
  */
 @media (prefers-contrast: more) {
-  :root {
+  :root,
+  :root[data-theme] {
     --ink-3: var(--ink-2);
   }
   .control,

@@ -36,7 +36,7 @@ not decide the therapy. It measures whether the therapy was delivered.
 
 | Stage | What happens |
 |---|---|
-| **Prescription in** | The patient types their clinician's parameters into a protocol card. Eight required numeric fields, **no defaults, no presets, no sample card on screen.** Gimbal has no path to originate a prescription. |
+| **Prescription in** | The patient types their clinician's parameters into a protocol card. Eight required numeric fields, **no defaults and no presets on the entry path.** Gimbal has no path to originate a prescription: the one route that arrives pre-filled, `/app?demo`, is labelled as an example on screen and on the printed report, and still cannot tick the clinician gate. |
 | **Measure** | `FaceLandmarker` at ~30 Hz → yaw in degrees on the camera's own frame clock → central-difference angular velocity → cycle segmentation → bias-corrected peak \|ω\| per cycle |
 | **Coach, eyes-free** | A Web Audio click train sets tempo; one oscillator's pitch bends continuously as peak velocity leaves the prescribed band |
 | **Verify gaze without measuring gaze** | A Landolt C re-randomises every 2.5–5.0 s; the patient answers its gap orientation with an arrow key, during motion |
@@ -50,6 +50,16 @@ stopwatch.
 ## Try it in about a minute
 
 Open **[gimbal.edycu.dev](https://gimbal.edycu.dev)** — nothing to install.
+
+`/` explains the instrument. **`/app`** is the instrument, and
+**`/app?demo`** is `/app` with the eight numbers below already typed in, so a
+reader with no clinician's handout in front of them can still reach the
+measurement. That route labels itself: a persistent banner above the form, an
+`EXAMPLE` chip on every one of the eight values, and `EXAMPLE …` as the source
+string that prints in the report's "Why?" disclosure. **It does not tick the
+clinician-attestation checkbox for you** — filling in a number is a convenience,
+ticking someone's attestation on their behalf is not. `/app` on its own is still
+completely empty, and an e2e assertion holds it there.
 
 Or run it locally:
 
@@ -72,10 +82,14 @@ seconds.** That is the whole product in one gesture.
 ### The eight numbers, for evaluation only
 
 These are **numbers a clinician would have written**, supplied here so you have
-something to type. They are **not a recommendation, not a default, and they do
-not exist anywhere in the application** — the app ships zero defaults and zero
-presets, which is what makes "Gimbal cannot originate a prescription" a
-structural property rather than a claim.
+something to type. They are **not a recommendation and not a default.** They
+reach the application through exactly one route — `/app?demo` — which announces
+itself as an example everywhere it appears and cannot complete the clinician
+gate. On `/app` the eight fields are empty, and that emptiness is what makes
+"Gimbal cannot originate a prescription" a structural property rather than a
+claim. Check `U-CARD` asserts that this table and
+`src/protocol/exampleParameters.ts` carry the same eight values, so the numbers
+you are told to type and the numbers `?demo` fills in cannot disagree.
 
 | Field | Value |
 |---|---|
@@ -102,11 +116,34 @@ npm test            # unit tests against analytic ground truth + the mechanical 
 npm run check:build # builds the production bundle, then greps it
 ```
 
-`npm test` runs **76** automated tests plus seven mechanical source checks. It is
+`npm test` runs **88** automated tests plus eight mechanical source checks. It is
 **fully offline** and reads only files committed in this repo — no network, no
 build artifact, no file outside the clone. A check that passes vacuously on a
 clean clone is worse than no check, so any that would have are in
 `check:build`/`check:deploy` instead.
+
+And the DSP has a benchmark, which needs **no camera and no fixture**:
+
+```bash
+npm ci
+npm run bench
+```
+
+It drives the shipped modules — imported from `src/`, never re-implemented —
+with an analytic 2.0 Hz yaw signal at two amplitudes, and **asserts the
+product's central claim before it prints a single timing**: ±20° credits 119 of
+119 cycles for 59.506 s of dose; ±8° at the *same tempo* segments the same 119
+cycles, refuses every one `too-slow`, and delivers **exactly 0.000 s**. Then it
+reports p50/p95/p99 against the 33.33 ms frame budget — the per-frame path costs
+**single-digit microseconds at p95, under 0.02 % of the budget.** The counts are
+byte-deterministic across machines and the timings are not, so `DEMO.md`
+publishes the timings as observed *ranges* with the machine named, and rests the
+claim on the four orders of magnitude of headroom rather than on a spot value
+nobody else can reproduce.
+
+**That benchmark is a compute-cost measurement.** It is not an accuracy figure
+and it is emphatically not the bench validation described under *Status* below,
+which has not been recorded.
 
 Highlights of what those tests actually claim:
 
@@ -149,9 +186,23 @@ src/
 ├─ session/   blockRunner.ts · dose.ts
 ├─ store/     local · session · ledger · deviceSignature · exampleLedger · export
 ├─ report/    report.ts · limitations.ts
-├─ styles/    tokens · themes · screen · print
+├─ styles/    tokens · themes · fonts · screen · landing · print
+├─ landing/   main.ts · replay.ts · trace.ts · figures.ts   (the page at /)
 └─ ui/        screens/* · dial · strip · sparkline · live · copy · dom
 ```
+
+Two HTML entry points and no router in either: `index.html` is the landing page,
+`app/index.html` is the six-screen instrument. They share every stylesheet, and
+the landing page's hero replay imports the real `Dial`, the real `scoreCycle`
+and the real refusal copy rather than redrawing them — so the picture on `/`
+cannot drift away from the product on `/app`.
+
+One typeface is vendored: a Latin subset of **Inter 4.1** (SIL OFL 1.1,
+73.9 kB, both variable axes intact), served same-origin from `/fonts/` with its
+licence beside it. `font-src 'self'` means a font CDN would be blocked by the
+browser rather than merely disallowed by policy, so a vendored copy is the only
+kind of web font this project can have. Attribution and the exact subset are in
+`NOTICE.md`.
 
 **Dependencies: 1 runtime (`@mediapipe/tasks-vision`), 4 dev (`vite`,
 `typescript`, `vitest`, `@playwright/test`).** Greppable in `package.json`,
@@ -165,6 +216,70 @@ cross-origin isolation is required and the app runs from a plain static host.
 
 `METHODS.md` has the full derivations: the bias correction, the sampling floor,
 the tracking-quality score, and where each stops being trustworthy.
+
+## Grounded — and a boundary list longer than the grounding
+
+`METHODS.md` §11 is a reference list, not a gesture at one. **Every entry carries
+a DOI or PMID and was opened before it was written**, and every entry says what
+the source supports *and what it does not*. Five things it establishes, in the
+literature's own words:
+
+- **The problem is real and the treatment is indicated.** The Amsterdam
+  consensus statement — *"If dizziness, neck pain and/or headaches persist for
+  more than 10 days, cervicovestibular rehabilitation is recommended"*
+  (doi:10.1136/bjsports-2023-106898) — and the Living Concussion Guidelines,
+  Recommendation 10.5, evidence level A. Schneider et al.'s RCT
+  (doi:10.1136/bjsports-2013-093267) cleared 73 % of its treatment arm within
+  eight weeks against 7 % of controls, n = 31.
+- **This therapy is prescribed as a quantity.** The APTA vestibular CPG
+  (doi:10.1097/NPT.0000000000000382) states a home-programme dose in sessions per
+  day, minutes per day and weeks — *3–5×/day, at least 20 min/day, for 4–6 weeks*
+  for chronic unilateral hypofunction. **On the guideline's own grading that dose
+  is weak evidence** — *"based on moderate to weak evidence, clinicians **may**
+  prescribe"* — and it is scoped to peripheral vestibular hypofunction, not
+  concussion. Both qualifiers travel with it everywhere it appears, here
+  included. What it establishes is not that *this* dose is right: it is that a
+  dose is **prescribed at all**. A quantity that is prescribed is a quantity that
+  can be under-delivered.
+- **Not measuring eye movement is the guideline's position, not a shortcut.**
+  The strongest objection to Gimbal is that a *gaze*-stabilization tool ought to
+  measure gaze. The ANPT's own clinical algorithm answers it at **Level I,
+  strong** — and unlike the dose, this one holds up when you check it against the
+  parent guideline, where it is **Action Statement 4, evidence quality I,
+  recommendation strength strong**: voluntary saccadic or smooth-pursuit eye
+  exercises *"should **NOT** be offered in isolation as gaze stabilization
+  exercises."* Eye movement without
+  head movement is not the exercise; head movement against a held visual target
+  is — and that is exactly and only what Gimbal measures. The same algorithm
+  names **Dynamic Visual Acuity** and the **Gaze Stabilization Test** as the
+  recommended measures on the visual-blurring-with-head-movement branch, which is
+  the lane the Landolt C task borrows its shape from.
+- **Self-report over-counts what was delivered.** Nicolson et al. concealed an
+  accelerometer inside the ankle weight and found *"exercise adherence was
+  significantly overestimated in diaries"* — diary median 220 exercises against
+  176 measured, P < .001 (doi:10.2519/jospt.2018.8275). **And the finding is not
+  a tidy inflation factor** — the same paper reports "large between-participant
+  variability in agreement" and concludes that self-report has "questionable
+  validity". The bias varies from person to person, which is exactly why it
+  cannot be corrected for on paper and has to be measured on the person in front
+  of you.
+- **The kinematics are the therapy's active parameters.** VOR adaptation is
+  *specific to the parameters it was trained at* — frequency-selective in humans
+  (doi:10.1152/jn.00162.2019), velocity-selective in mouse
+  (doi:10.1007/s00221-014-3988-8). That is why this instrument measures °/s and
+  Hz instead of minutes.
+
+**And then §11.6, which is the part worth reading.** It is a table of eleven
+claims Gimbal could plausibly have made and does not — including that the CPG's
+dose transfers to concussion (it is scoped to peripheral hypofunction), that
+faster head movement is better (nothing supports it; the card has a **ceiling**
+for exactly that reason), and that any number on the protocol card comes from a
+guideline. **None does.** No published parameter could be pinned for any of the
+eight fields, every one is clinician-entry only with a mandatory source string,
+and check `U-SRC` fails the build if one is empty.
+
+The literature says why the measurement is worth making. It never says what
+number to enforce, and Gimbal never pretends otherwise.
 
 ## Accessibility is the design constraint, not a checklist bolted to it
 
@@ -206,6 +321,12 @@ accessibility score; the exercise demanded it.
   assertive `role="alert"` reserved for exactly two events.
 - **No `outline: none` exists in `src/styles/`**, and a check in `npm test`
   fails the build if one appears.
+- **The landing page at `/` is held to the same bar as the instrument** — the
+  same three palettes, the same 15 px floor, the same 44 px targets, the same
+  focus ring, no horizontal scroll at 360 px, and one hero animation that is
+  paused by default under `prefers-reduced-motion`, seeded at the refusal it
+  depicts, and pausable by everyone else. There is no scroll-triggered motion
+  anywhere on it. Ten e2e assertions cover exactly these properties.
 
 **The honest boundary:** every screen is fully keyboard-operable, and on the
 block screen the keyboard is the only input. Screen-reader operation covers every
@@ -229,9 +350,13 @@ There is no age gate and no age-specific claim.
 
 Single device, single camera, one stated lighting condition. Sessions recorded on a different camera, browser or resolution are stored but never plotted on the same trend line.
 
+Verified in desktop Chromium only — the end-to-end suite declares one browser project. The layout is responsive down to 360 px, but phone, tablet and other browsers are untested, and no support for them is claimed.
+
 Data lives in one browser profile. There is no cross-device history, no clinician-side view, and no upload path of any kind. Clear it with one button.
 
 Every parameter on this page was typed in by the patient from their clinician. Gimbal did not originate any of them.
+
+No concussion patient has used this, and no clinician has reviewed it. It has been run by the person who built it, on one machine, and by nobody else. Nothing here has been validated against an independent sensor or against any clinical outcome.
 
 This is not a diagnosis and not a clearance. It supplements your clinician; it does not replace them.
 <!-- LIMITATIONS-BODY-END -->

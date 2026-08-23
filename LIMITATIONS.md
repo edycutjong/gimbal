@@ -1,10 +1,13 @@
 # What Gimbal does not measure
 
-This is the canonical text. It has four in-repo copies — this file, the string
-the report prints (`src/report/limitations.ts`), the `README.md` block and the
-`DEMO.md` block — and check **U-LIMITS** byte-compares all four. The Devpost
-description is a fifth surface no in-repo check can read; it is pasted by hand
-from this file.
+This is the canonical text. It has five in-repo locations — this file, the
+string the report prints (`src/report/limitations.ts`), the `README.md` block,
+the `DEMO.md` block, and the block on the landing page in `index.html` — and
+check **U-LIMITS** byte-compares all of them against
+`src/report/limitations.ts`. The landing-page copy was added and registered in
+the same change; a visible copy that no check reads is a copy that drifts. The
+Devpost description is a sixth surface no in-repo check can reach; it is pasted
+by hand from this file.
 
 It prints at body size on the report, never as small print. Burying a limitation
 in small type is the opposite of what a safety criterion rewards.
@@ -22,9 +25,13 @@ There is no age gate and no age-specific claim.
 
 Single device, single camera, one stated lighting condition. Sessions recorded on a different camera, browser or resolution are stored but never plotted on the same trend line.
 
+Verified in desktop Chromium only — the end-to-end suite declares one browser project. The layout is responsive down to 360 px, but phone, tablet and other browsers are untested, and no support for them is claimed.
+
 Data lives in one browser profile. There is no cross-device history, no clinician-side view, and no upload path of any kind. Clear it with one button.
 
 Every parameter on this page was typed in by the patient from their clinician. Gimbal did not originate any of them.
+
+No concussion patient has used this, and no clinician has reviewed it. It has been run by the person who built it, on one machine, and by nobody else. Nothing here has been validated against an independent sensor or against any clinical outcome.
 
 This is not a diagnosis and not a clearance. It supplements your clinician; it does not replace them.
 <!-- LIMITATIONS-BODY-END -->
