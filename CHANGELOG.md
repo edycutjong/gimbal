@@ -2,6 +2,12 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.2.1 — 2026-08-24
+
+### Fixes
+
+- **verify:** the vendored WASM runtime must match the package that drives it
+
 ## 1.2.0 — 2026-08-24
 
 ### Features
