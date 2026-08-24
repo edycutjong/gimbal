@@ -78,6 +78,49 @@ if (!MODEL.includes(actual.slice(0, 8))) {
 }
 process.stdout.write('  ✓ the content-addressed filename agrees with the bytes\n');
 
+// ── The vendored runtime must match the package that drives it ─────────────
+//
+// `public/model/vision_wasm_internal.{js,wasm}` are committed COPIES of files
+// shipped inside `@mediapipe/tasks-vision`. The app imports the package's JS
+// glue through the bundler and loads the WASM from `/model/` at runtime, so the
+// two must come from the same release — and nothing in npm's model knows that.
+//
+// A dependency bump updates the glue and leaves the vendored runtime at the old
+// version. Dependabot opened exactly that PR (0.10.22-rc → 0.10.35) and no
+// existing check would have caught it: `U-DIST` only asserts the files ship,
+// and the model `.task` hash is unrelated to the runtime. The failure would
+// have surfaced as a landmarker that does not initialise, in the browser, on
+// the judged path.
+//
+// Skipped rather than failed when `node_modules` is absent, because this file
+// also runs where only the committed tree exists.
+const VENDORED_RUNTIME = ['vision_wasm_internal.wasm', 'vision_wasm_internal.js'];
+const pkgWasmDir = join(ROOT, 'node_modules', '@mediapipe', 'tasks-vision', 'wasm');
+if (existsSync(pkgWasmDir)) {
+  for (const file of VENDORED_RUNTIME) {
+    const vendored = join(ROOT, 'public', 'model', file);
+    const fromPackage = join(pkgWasmDir, file);
+    if (!existsSync(vendored) || !existsSync(fromPackage)) {
+      process.stderr.write(`FAIL: ${file} is missing from public/model/ or from the package.\n`);
+      process.exit(1);
+    }
+    const a = createHash('sha256').update(readFileSync(vendored)).digest('hex');
+    const b = createHash('sha256').update(readFileSync(fromPackage)).digest('hex');
+    if (a !== b) {
+      process.stderr.write(
+        `FAIL: public/model/${file} does not match the installed @mediapipe/tasks-vision.\n` +
+          `  vendored  ${a}\n  package   ${b}\n` +
+          `  The JS glue and the WASM runtime would be from different releases.\n` +
+          `  Re-vendor: cp node_modules/@mediapipe/tasks-vision/wasm/${file} public/model/${file}\n`,
+      );
+      process.exit(1);
+    }
+  }
+  process.stdout.write('  ✓ the vendored WASM runtime matches the installed package\n');
+} else {
+  process.stdout.write('  · vendored-runtime check skipped — node_modules is absent\n');
+}
+
 // ── Step 1: ensure a browser exists, so a clean clone needs only `npm ci` ───
 //
 // THE ONE NETWORK REQUEST IN THE PROOF SUITE, and only when the machine has no
