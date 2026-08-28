@@ -2,6 +2,12 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.2.3 — 2026-08-29
+
+### Fixes
+
+- **seo:** a 404 a judge can read, and descriptions that survive truncation
+
 ## 1.2.2 — 2026-08-29
 
 ### Fixes
