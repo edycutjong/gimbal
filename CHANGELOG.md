@@ -2,6 +2,16 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.2.2 — 2026-08-29
+
+### Fixes
+
+- **landing:** the published test count must be the count the suite reports
+
+### Documentation
+
+- **landing:** the datasheet design comment cites the count it explains
+
 ## 1.2.1 — 2026-08-24
 
 ### Fixes
