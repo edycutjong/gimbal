@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page not found — Gimbal</title>
+    <meta name="robots" content="noindex" />
+    <!--
+      Served by Vercel for any path that does not resolve. Before this file
+      existed the platform's own `404: NOT_FOUND / Code: NOT_FOUND / ID: …`
+      was what a judge saw after one mistyped character.
+
+      SELF-CONTAINED ON PURPOSE. No stylesheet link, no script, no font file:
+      a 404 must render even when the thing that is broken is the asset
+      pipeline. The styles are inline, which `style-src 'unsafe-inline'`
+      already allows; there is no inline script, because `script-src` is
+      'self' and adding a nonce for a static error page is not worth it.
+
+      The palette is the dark theme's, hard-coded rather than pulled from
+      tokens.css for the same reason: this page cannot depend on a build.
+    -->
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: #0b0d10;
+        color: #e6e9ee;
+        font: 400 17px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main { max-width: 34rem; }
+      p.code {
+        margin: 0 0 1rem;
+        font: 500 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #8b95a3;
+      }
+      h1 { margin: 0 0 0.75rem; font-size: 1.85rem; line-height: 1.2; font-weight: 600; }
+      p.lede { margin: 0 0 1.75rem; color: #b8c0cc; }
+      ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+      a {
+        display: inline-block;
+        padding: 0.7rem 1.1rem;
+        border: 1px solid #2b323c;
+        border-radius: 10px;
+        color: #e6e9ee;
+        text-decoration: none;
+        background: #141821;
+        min-height: 44px;
+      }
+      a:hover { border-color: #3d4653; }
+      a:focus-visible { outline: 3px solid #7fb0e8; outline-offset: 2px; }
+      a.primary { background: #e6e9ee; color: #0b0d10; border-color: #e6e9ee; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="code">Error 404</p>
+      <h1>That page is not here.</h1>
+      <p class="lede">
+        The address did not match anything on this site. Nothing was measured and nothing
+        was lost — Gimbal keeps every session in your own browser, so there is no account
+        to recover and nothing to sign back in to.
+      </p>
+      <ul>
+        <li><a class="primary" href="/">Back to the landing page</a></li>
+        <li><a href="/app">Open the instrument</a></li>
+        <li><a href="/app?blank">Start with a blank card</a></li>
+      </ul>
+    </main>
+  </body>
+</html>
