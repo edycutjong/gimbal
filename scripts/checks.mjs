@@ -351,18 +351,51 @@ check('U-OUTLINE', 'focus rings are never removed', () => {
 });
 
 // ── U-COUNT ───────────────────────────────────────────────────────────────
-check('U-COUNT', 'the test count printed in README is the count the suite reports', () => {
+//
+// This check read README.md and nothing else until 2026-08-29, and the landing
+// page drifted behind it exactly the way U-LIMITS predicts an unchecked copy
+// will: the suite went 88 -> 90 at v1.2.0, README followed because this check
+// made it, and `index.html` sat at 88 in two places — the headline stat and the
+// datasheet row — on the most-read surface in the project. A judge reads that
+// number on the landing page and disproves it with one command.
+//
+// So the count is now asserted everywhere it is PUBLISHED, not just where it
+// was convenient to assert. `index.html` states it inside `<span class="tnum">`
+// / `<dd class="lp-spec-v tnum">`, and those elements carry other numbers too
+// (velocities, dependency counts), so the surrounding label is what identifies
+// the claim — the same discipline U-SRC uses for card fields.
+check('U-COUNT', 'the test count printed in README and on the landing page is the count the suite reports', () => {
   const testFiles = walk('tests', (f) => f.endsWith('.test.ts'));
   let actual = 0;
   for (const file of testFiles) {
     actual += read(rel(file)).split('\n').filter((l) => /^\s*it\(/.test(l)).length;
   }
+
+  const problems = [];
+
   const printed = read('README.md').match(/\*\*(\d+)\*\* automated (?:checks|tests)/);
-  if (!printed) return ['README.md does not print a test count'];
-  if (Number(printed[1]) !== actual) {
-    return [`README says ${printed[1]}; the suite contains ${actual}`];
+  if (!printed) problems.push('README.md does not print a test count');
+  else if (Number(printed[1]) !== actual) {
+    problems.push(`README says ${printed[1]}; the suite contains ${actual}`);
   }
-  return [];
+
+  const html = read('index.html');
+
+  // The headline stat: <span ...>N</span> followed by "automated tests".
+  const stat = html.match(/<span class="lp-fact-n tnum">(\d+)<\/span>\s*<span class="lp-fact-l">automated tests/);
+  if (!stat) problems.push('index.html does not print the headline test count');
+  else if (Number(stat[1]) !== actual) {
+    problems.push(`index.html headline stat says ${stat[1]}; the suite contains ${actual}`);
+  }
+
+  // The datasheet row: the <dd> that follows the "Automated tests" <dt>.
+  const spec = html.match(/Automated tests[\s\S]{0,220}?<dd class="lp-spec-v tnum">(\d+)<\/dd>/);
+  if (!spec) problems.push('index.html does not print the datasheet test count');
+  else if (Number(spec[1]) !== actual) {
+    problems.push(`index.html datasheet row says ${spec[1]}; the suite contains ${actual}`);
+  }
+
+  return problems;
 });
 
 // ── The claims that must stay greppable ──────────────────────────────────
