@@ -39,6 +39,17 @@ export interface SetupState {
   audioOff: boolean;
   volume: number;
   measuredFps: number;
+  /**
+   * One measurement at a time.
+   *
+   * `measuredFps` is NaN for the whole 10 s window, so `fpsKnown` is false for
+   * the whole 10 s window, so EVERY re-render during it used to start another
+   * measurement — and any control that re-renders (Hide my video, the volume
+   * slider, the theme picker) would do it. Two `FrameClock`s then compete on one
+   * video, the verdict is announced to the live region twice, and the last one
+   * to resolve wins `measuredFps`. This flag is what makes the check idempotent.
+   */
+  measuring: boolean;
   devices: MediaDeviceInfo[];
   selectedDeviceId: string | null;
 }
@@ -64,6 +75,7 @@ export function defaultSetupState(): SetupState {
     audioOff: false,
     volume: 0.5,
     measuredFps: NaN,
+    measuring: false,
     devices: [],
     selectedDeviceId: null,
   };
@@ -278,6 +290,11 @@ export function renderSetup(host: HTMLElement, props: SetupProps): void {
     host.querySelector<HTMLButtonElement>('#start')?.addEventListener('click', props.onStart);
     host.querySelector<HTMLButtonElement>('#recheck')?.addEventListener('click', () => {
       state.measuredFps = NaN;
+      // BOTH of these can start the measurement and only one ever will: the
+      // re-render re-enters this function, where `!fpsKnown` is now true, and
+      // the call below covers a host whose `rerender` does not re-enter. The
+      // `measuring` guard inside `measureFps` is what makes running both safe
+      // — before it existed this reliably started two at once.
       props.rerender();
       void measureFps(props);
     });
@@ -297,12 +314,15 @@ export function renderSetup(host: HTMLElement, props: SetupProps): void {
  */
 async function measureFps(props: SetupProps): Promise<void> {
   const { video, state } = props;
+  if (state.measuring) return;
+  state.measuring = true;
   const clock = new FrameClock(video, () => undefined);
   clock.reset();
   clock.start();
   await new Promise((resolve) => setTimeout(resolve, SETUP_CHECK_MS));
   clock.stop();
   state.measuredFps = clock.effectiveFps();
+  state.measuring = false;
 
   const bandHi = props.card.frequencyBand.value[1];
   const pass = Number.isFinite(state.measuredFps) && !cardExceedsInstrument(bandHi, state.measuredFps);
