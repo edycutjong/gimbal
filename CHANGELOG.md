@@ -2,6 +2,16 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.3.0 — 2026-08-29
+
+### Features
+
+- **readme:** an architecture diagram, a GitHub mark, and 2.3 MB less to download
+
+### Chores
+
+- **deps:** bump the actions group across 1 directory with 4 updates (#4)
+
 ## 1.2.3 — 2026-08-29
 
 ### Fixes
