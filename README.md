@@ -4,7 +4,7 @@
      alt="Gimbal icon — a committed marker stopped short of the prescribed velocity band"
      width="144">
 
-# Gimbal
+# Gimbal 🖲
 
 **A webcam dose meter that proves you actually did your prescribed vestibular rehab at therapeutic velocity.**
 
@@ -120,9 +120,16 @@ browser rather than merely disallowed by policy, so a vendored copy is the only
 kind of web font this project can have. Attribution and the exact subset are in
 `NOTICE.md`.
 
-**Dependencies: 1 runtime (`@mediapipe/tasks-vision`), 4 dev (`vite`,
-`typescript`, `vitest`, `@playwright/test`).** Greppable in `package.json`,
-which is how you check it. `npm audit` reports zero vulnerabilities.
+**Dependencies: 1 runtime (`@mediapipe/tasks-vision`), 6 dev — `vite`,
+`typescript`, `vitest`, `@playwright/test`, plus `@vitest/coverage-v8` and
+`jsdom`, which are the coverage reporter and the DOM the unit tests run
+against.** Greppable in `package.json`, which is how you check it, and asserted
+on every push by Stage 2 of `check.yml` so the number here cannot drift from the
+number there again. `npm audit` reports zero vulnerabilities.
+
+**The runtime count is the one that matters**, and it is 1. Nothing in the dev
+list reaches a user: the shipped bundle is greppable too, and `U-DIST` reads it
+on every build.
 
 The MediaPipe WASM runtime and the `face_landmarker` model bundle are **vendored
 same-origin** under `/model/`, content-addressed, and committed. Nothing is
@@ -328,7 +335,7 @@ Highlights of what the unit suite actually claims:
 
 Every gate below runs on every push and every pull request, and again before
 anything deploys. **None of it costs a dependency** — that is the constraint the
-harness was built under, because "1 runtime, 4 dev, `npm audit` 0
+harness was built under, because "1 runtime, 6 dev, `npm audit` 0
 vulnerabilities" is evidence a reviewer verifies in five seconds and boilerplate
 is not worth trading it for.
 
@@ -556,6 +563,59 @@ Each absence is load-bearing.
 | **Any acuity (logMAR) score** | Requires viewing distance and display pixel pitch; the browser supplies neither. |
 | **Calibration wizard / camera intrinsics / PnP** | Angular velocity is a *difference* of rotations, so constant bias differentiates away to first order. |
 | **Signed exports, blockchain receipts** | Ceremony that proves nothing. The real anti-gaming property is structural: **the only way to fake the dose is to perform the therapy.** |
+
+## 🔁 What we got wrong — retractions, dated
+
+*Updated 2026-08-29.*
+
+Every entry below is a claim this project **made and later disproved**, or a
+behaviour it believed it had and did not. They are recorded here rather than
+quietly edited out, because a retraction in a commit message is invisible to
+anyone reading the repository, and because a project whose entire pitch is that
+an instrument should refuse to state a number it cannot support does not get to
+be shy about the numbers it got wrong.
+
+Each is checkable: the commit is named, and `git show <sha>` is the whole
+argument.
+
+### Open, unresolved as of 2026-08-29
+
+**The test count printed in this README is not the count the suite reports.**
+This page says **1,057**; `npm test` prints **1,062 passed**. Both are honest and
+the gap is mechanical: check `U-COUNT` counts *source lines* matching `it(` under
+`tests/`, and `tests/screens-setup.cov.test.ts:718` is one such line sitting
+inside a loop that generates five tests from a case table. The static count
+therefore under-counts by exactly those five — **and the check went green,
+because it compares its own static count against this README rather than against
+the runner.** A check that cannot see the quantity it is guarding is a green tick
+standing in for evidence, which is the exact failure the twelve-check split above
+was written to avoid. It is named here rather than papered over, and the fix is
+to teach `U-COUNT` to read the runner's own output.
+
+### Fixed, and each one found by a check this project built to catch itself
+
+| What was wrong | Why it mattered | Fix |
+|---|---|---|
+| **Every printed report carried a five-release-stale version stamp.** `APP_VERSION` was hard-coded at `0.1.0` while `package.json` had moved to `1.3.0`. | The version is on the *clinical page a therapist keeps*. Every report printed since v0.2.0 stated a build that was not the build that produced it. | `e6d865f` — the release version is now **read, not typed** |
+| **A footnote marker pointed at no footnote.** An out-of-budget citation rendered as `⁰` on the printed report. | On a page whose organising principle is that *every criterion carries the document it came from*, a marker leading nowhere is worse than no marker. | `b824078` |
+| **The landing figure's alt text named the wrong reason.** It attributed every in-band refusal to low tracking confidence — true of **one of three** — and read "3 … is". | The accessibility argument was itself inaccessible-and-wrong: a screen-reader user got a different, incorrect account of the refusals than a sighted one. | `dc148e4` |
+| **A pasted thousands separator silently corrupted a prescription.** The paste guard replaced only the *first* comma, so `1,000` became `1.000` and was read as **1**; `1,7,5` silently cleared the field. | Silent numeric corruption in the one form where every number came from a clinician. A wrong value is worse than a rejected one. | `20c75e9` |
+| **A stopped frame clock could re-arm itself.** `interrupt()` followed by `start()` could leave two live step chains running MediaPipe inference **twice per camera frame**. | Double inference on the measurement path is exactly the class of defect that produces plausible wrong numbers. | `0bc4e82` |
+| **The setup check ran two overlapping frame-rate measurements** and announced the verdict to the live region twice. | The measurement that decides whether the instrument may start was racing itself. | `06177f3` |
+| **The architecture diagram's arrow landed on the wrong box.** | A diagram that misdescribes the pipeline is architecture inflation with better graphics. | `bd2a9f2` |
+| **This README published the wrong dependency count.** It said **1 runtime, 4 dev** while `package.json` held **six** dev dependencies — the four named plus `@vitest/coverage-v8` and `jsdom`, which arrived with the 100 %-coverage work and were never written down. | The sentence carrying it ends *"greppable in `package.json`, which is how you check it"* — an invitation to disprove it in five seconds. Neither package ships, so the runtime count and the privacy argument were always right; the number beside them was not. | Corrected above, and **Stage 2 of `check.yml` now fails the build if either count moves**, so the document and the manifest cannot drift apart again |
+| **The documentation described the opposite of the shipped routes.** Before `89f8785` the blank card was the default at `/app`; after it, `/app` and `/app?demo` open the labelled example and the blank card moved to `/app?blank`. Text asserting "no fields are pre-filled at `/app`" was wrong for the interval. | A judge following the docs would have been told to type eight numbers into a form that arrived full. | `89f8785`, and the capture assertion that caught it |
+
+**The pattern is the point.** Seven of the eight were surfaced by a mechanical
+check, an assertion, or a test that this project wrote against itself — the
+frame-clock and frame-rate defects by the unit suite, the route inversion by a
+screenshot precondition that refused to fire, the alt-text and citation defects
+by assertions on the rendered output. The one exception is the open item at the
+top, and it is the interesting one: it survived precisely **because** its check
+was comparing a document against itself instead of against the world.
+
+That is the same argument the instrument makes about a cycle it cannot see well
+enough to score. A check that cannot fail is not a check.
 
 ## 📄 Licence and contributing
 
