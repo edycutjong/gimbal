@@ -2,6 +2,29 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.5.0 — 2026-08-29
+
+### Features
+
+- **landing:** the release version is read, not typed, and shown as a badge
+
+### Fixes
+
+- **docs:** the architecture arrow must land on the box it points at
+- **prescribe:** a pasted thousands separator is not a decimal comma
+- **report:** a citation marker that points at no citation is worse than none
+- **landing:** the plot's alt text must name the reason it actually counted
+- **setup:** one frame-rate measurement at a time
+- **capture:** a stopped frame clock must not re-arm itself
+
+### Tests
+
+- every source file reaches 100% statements, branches, functions and lines
+
+### Chores
+
+- **assets:** 1x renders, losslessly optimised, and two duplicates removed
+
 ## 1.4.0 — 2026-08-29
 
 ### Features
