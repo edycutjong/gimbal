@@ -146,6 +146,16 @@ export class FrameClock {
       }
       this.lastTMs = tMs;
       this.onFrame({ tMs, intervalMs });
+      // `onFrame` is allowed to stop this clock SYNCHRONOUSLY, and the runner
+      // does exactly that: `BlockRunner.finish()` runs from inside this call
+      // when a block completes or the stop rule interrupts mid-frame. Without
+      // this guard, `stop()` cancels an already-fired handle (a no-op), zeroes
+      // `handle`, and then the line below arms a fresh callback on a clock that
+      // is supposed to be stopped. One orphan frame is harmless — the guard at
+      // the top rejects it. Restarting is not: `interrupt()` then `start()`
+      // would leave TWO live `step` chains on one video, running
+      // `detectForVideo` and every downstream callback twice per camera frame.
+      if (!this.running) return;
       this.handle = this.video.requestVideoFrameCallback(step);
     };
     this.handle = this.video.requestVideoFrameCallback(step);
