@@ -52,7 +52,19 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
   // author/year/title/section for every source, lives in METHODS.md, which the
   // README links — so a judge who never prints the page still sees the sources.
   const citations = Array.from(new Set(m.prescription.map((c) => c.source))).slice(0, 8);
-  const citationIndex = (source: string): number => citations.indexOf(source) + 1;
+  /*
+   * A marker is printed ONLY if it points at a listed source.
+   * `indexOf(...) + 1` returns 0 for anything the `slice(0, 8)` budget cut, and
+   * a `<sup>0</sup>` on a clinical page is a footnote reference to an entry
+   * that is not there — the reader cannot tell whether the source was omitted
+   * or the number is wrong. Today a real card yields at most 7 distinct
+   * sources so the budget never bites, which is exactly why this would have
+   * shipped unnoticed the first time a prescription grew.
+   */
+  const citationMarker = (source: string): string => {
+    const i = citations.indexOf(source);
+    return i < 0 ? '' : `<sup>${i + 1}</sup>`;
+  };
 
   host.innerHTML = `
     ${settingsRow(props.theme)}
@@ -81,7 +93,7 @@ export function renderReport(host: HTMLElement, props: ReportProps): void {
             ${m.prescription
               .map(
                 (c) => `<tr>
-                  <th scope="row">${esc(c.label)}<sup>${citationIndex(c.source)}</sup></th>
+                  <th scope="row">${esc(c.label)}${citationMarker(c.source)}</th>
                   <td class="num">${esc(c.value)}</td>
                   <td>${whyDisclosure(c.source)}</td>
                 </tr>`,
