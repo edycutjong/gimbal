@@ -69,11 +69,11 @@ left the frame. A refusal is drawn in slate and never in red.</desc>
      fill="none" marker-end="url(#a)"/><path d="M 366 334 L 392 334" stroke="#a8b4c0" stroke-width="2"
      fill="none" marker-end="url(#a)"/><path d="M 708 334 L 734 334" stroke="#a8b4c0" stroke-width="2"
      fill="none" marker-end="url(#a)"/><path d="M 1050 334 L 1076 334" stroke="#a8b4c0" stroke-width="2"
-     fill="none" marker-end="url(#a)"/><path d="M 1236 234 L 1236 250
-        Q 1236 262 1224 262
-        L 222 262
-        Q 210 262 210 274
-        L 210 276" stroke="#a8b4c0" stroke-width="2"
+     fill="none" marker-end="url(#a)"/><path d="M 1236 234 L 1236 236
+        Q 1236 244 1228 244
+        L 218 244
+        Q 210 244 210 252
+        L 210 277" stroke="#a8b4c0" stroke-width="2"
         fill="none" marker-end="url(#a)"/><path d="M 1236 388 L 1236 424" stroke="#a8b4c0"
         stroke-width="2" fill="none"/><path d="M 1236 424 L 520 424" stroke="#a8b4c0" stroke-width="2" fill="none"/><path d="M 520 424 L 520 458" stroke="#5bd6ae"
         stroke-width="2.5" fill="none" marker-end="url(#g)"/><path d="M 1236 424 L 1236 458" stroke="#98a2b0"
