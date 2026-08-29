@@ -2,6 +2,20 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.5.1 — 2026-08-29
+
+### Fixes
+
+- **checks:** U-COUNT reads the runner, not the call sites
+
+### Documentation
+
+- **readme:** what we got wrong, dated — and the dependency count was one
+
+### CI
+
+- six named stages, and each one asserts a claim this repo publishes
+
 ## 1.5.0 — 2026-08-29
 
 ### Features
