@@ -2,6 +2,12 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.4.0 — 2026-08-29
+
+### Features
+
+- **404:** the not-found page carries every link the footer does
+
 ## 1.3.0 — 2026-08-29
 
 ### Features
