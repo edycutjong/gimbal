@@ -2,6 +2,12 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.5.2 — 2026-08-29
+
+### Fixes
+
+- **landing:** a design comment should not quote a number that can go stale
+
 ## 1.5.1 — 2026-08-29
 
 ### Fixes
