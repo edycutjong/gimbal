@@ -9,8 +9,12 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "node scripts/checks.mjs",
     "test": "node scripts/checks.mjs && vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "ci": "npm run lint && npm run typecheck && vitest run && npm run check:build && npm run bench",
     "bench": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/bench.mjs",
     "verify": "node scripts/verify.mjs",
     "check:build": "vite build && node scripts/check-dist.mjs",
@@ -26,6 +30,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "@vitest/coverage-v8": "^4.1.11",
+    "jsdom": "^29.1.1",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"

@@ -25,10 +25,21 @@ export interface TrendAnnotation {
 /** Below six sessions on one device signature, no annotation is rendered at all. */
 export const MIN_SESSIONS_FOR_TREND = 6;
 
+/*
+ * The empty and even-length arms are unreachable through the only call site.
+ * `trendAnnotation` returns before this runs unless `used.length >= 6`, and it
+ * then slices a window of exactly 6 into two halves of exactly 3 — never 0,
+ * never even. Both arms are kept so `median` is a correct median rather than a
+ * function that happens to work on threes, and ignored rather than reached by a
+ * contrived call, since making them reachable would mean exporting a private
+ * helper purely to satisfy a coverage number.
+ */
 const median = (values: number[]): number => {
+  /* v8 ignore next */
   if (values.length === 0) return NaN;
   const s = [...values].sort((a, b) => a - b);
   const mid = s.length >> 1;
+  /* v8 ignore next */
   return s.length % 2 === 1 ? (s[mid] as number) : ((s[mid - 1] as number) + (s[mid] as number)) / 2;
 };
 

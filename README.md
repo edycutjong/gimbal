@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/icon.svg"
+<img src="docs/assets/icon-animated.svg"
      alt="Gimbal icon — a committed marker stopped short of the prescribed velocity band"
      width="144">
 
@@ -36,7 +36,7 @@ a folded paper handout she has been doing at half speed, every day, for nothing.
 individual. No testimonial, quote, or record in this project is attributed to a
 real person.)*
 
-## The problem, in three sentences
+## 💡 The problem, in three sentences
 
 Gaze-stabilization exercise is prescribed with **parameters** — head frequency,
 duration, repetitions per day — exactly like a drug. The clinic measures none of
@@ -45,7 +45,7 @@ go?"*, answered from memory, in minutes-claimed. **Every tool in this space
 watches, asks, or chats. Nothing measures the delivered dose of the prescribed
 treatment.**
 
-## What Gimbal does
+## 🎯 What Gimbal does
 
 It turns a laptop webcam into a **dosimeter for a prescribed exercise**. It does
 not decide the therapy. It measures whether the therapy was delivered.
@@ -63,7 +63,77 @@ not decide the therapy. It measures whether the therapy was delivered.
 **The product is the refusal.** A dose meter that credits everything is a
 stopwatch.
 
-## Try it in about a minute
+## 🏗️ Architecture, in one paragraph
+
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/architecture-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/architecture-light.svg">
+  <img src="docs/assets/architecture-dark.svg"
+       alt="The Gimbal measurement pipeline. One camera frame passes through eight stages inside a single browser tab with no network requests after load: camera at 30 Hz, the MediaPipe FaceLandmarker as vendored WebAssembly, head-pose yaw, Savitzky-Golay smoothing with an analytic bias correction, peak angular velocity in degrees per second, hysteretic cycle segmentation, a four-term tracking-quality score, and scoreCycle. The result is one of two terminals: credited, which adds the cycle duration to the delivered dose, or refused with a named reason — too slow, too fast, off cadence, tracking unreliable, or face left the frame."
+       width="100%">
+</picture>
+
+</div>
+
+*Two files rather than one, because an `<img>` renders an SVG as an isolated
+document behind GitHub's caching proxy, where a `prefers-color-scheme` block
+inside the file cannot be relied on. `<picture>` is the mechanism GitHub actually
+supports. Both are generated from one source, so the geometry cannot drift
+between them.*
+
+One 30 Hz measurement loop, six screens, and one printable page, running entirely
+inside a browser tab with **one runtime dependency and zero network requests
+after page load**. There is no backend because a backend would falsify the
+product's central safety claim. There is no LLM because the output is a *count*,
+and a count has no use for a generative model — while an LLM would import the
+entire hallucination surface into a submission judged on safety. There is no
+framework because the only code path being judged is a hot loop, and a re-render
+model is a hazard inside it.
+
+```
+src/
+├─ capture/   camera.ts · landmarker.ts · pose.ts
+├─ dsp/       ring · smooth · velocity · fft · segment · quality · score · limits · stream
+├─ audio/     scheduler.ts
+├─ optotype/  landoltC.ts · trials.ts
+├─ protocol/  card.ts · stopRule.ts
+├─ session/   blockRunner.ts · dose.ts
+├─ store/     local · session · ledger · deviceSignature · exampleLedger · export
+├─ report/    report.ts · limitations.ts
+├─ styles/    tokens · themes · fonts · screen · landing · print
+├─ landing/   main.ts · replay.ts · trace.ts · figures.ts   (the page at /)
+└─ ui/        screens/* · dial · strip · sparkline · live · copy · dom
+```
+
+Two HTML entry points and no router in either: `index.html` is the landing page,
+`app/index.html` is the six-screen instrument. They share every stylesheet, and
+the landing page's hero replay imports the real `Dial`, the real `scoreCycle`
+and the real refusal copy rather than redrawing them — so the picture on `/`
+cannot drift away from the product on `/app`.
+
+One typeface is vendored: a Latin subset of **Inter 4.1** (SIL OFL 1.1,
+73.9 kB, both variable axes intact), served same-origin from `/fonts/` with its
+licence beside it. `font-src 'self'` means a font CDN would be blocked by the
+browser rather than merely disallowed by policy, so a vendored copy is the only
+kind of web font this project can have. Attribution and the exact subset are in
+`NOTICE.md`.
+
+**Dependencies: 1 runtime (`@mediapipe/tasks-vision`), 4 dev (`vite`,
+`typescript`, `vitest`, `@playwright/test`).** Greppable in `package.json`,
+which is how you check it. `npm audit` reports zero vulnerabilities.
+
+The MediaPipe WASM runtime and the `face_landmarker` model bundle are **vendored
+same-origin** under `/model/`, content-addressed, and committed. Nothing is
+fetched from a CDN — which is what makes the DevTools-Network privacy proof
+honest rather than a stunt. The bundle is single-threaded WASM, so no COOP/COEP
+cross-origin isolation is required and the app runs from a plain static host.
+
+`METHODS.md` has the full derivations: the bias correction, the sampling floor,
+the tracking-quality score, and where each stops being trustworthy.
+
+## 🚀 Try it in about a minute
 
 Open **[gimbal.edycu.dev](https://gimbal.edycu.dev)** — nothing to install.
 
@@ -140,16 +210,16 @@ around.*
 **No flags. No environment variables. No keys. No account.** The judged
 capability executes for real on the default path, or it does not execute at all.
 
-## Verify the engineering
+## 📊 Verify the engineering
 
 ```bash
 npm ci
-npm test            # 90 tests against analytic ground truth + 8 mechanical source checks
+npm test            # 1057 tests against analytic ground truth + 8 mechanical source checks
 npm run bench       # all six gate outcomes end-to-end, then the frame-budget timings
 npm run check:build # builds the production bundle, then greps it
 ```
 
-`npm test` runs **90** automated tests plus eight mechanical source checks. Four
+`npm test` runs **1057** automated tests plus eight mechanical source checks. Four
 more checks — `U-DIST`, `U-CFG`, `U-DOC`, `U-DEP` — read a build artifact or a
 deployed URL and therefore live in `check:build` and `check:deploy` instead, for
 **twelve** in total. The split is a rule rather than a convenience: a check that
@@ -254,7 +324,7 @@ Highlights of what the unit suite actually claims:
 - Int16 quantisation at scale 50 round-trips within **0.01 °/s**, half an LSB,
   and a velocity beyond ±655.34 °/s is **refused, never clipped**.
 
-## The harness around it
+## 🧪 The harness around it
 
 Every gate below runs on every push and every pull request, and again before
 anything deploys. **None of it costs a dependency** — that is the constraint the
@@ -265,7 +335,7 @@ is not worth trading it for.
 | Layer | What runs | Where |
 |---|---|---|
 | Types | `tsc --noEmit` over `src/` and `tests/` on every build — `strict`, plus `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` and `noUncheckedIndexedAccess` | `npm run build`, `tsconfig.json` |
-| Unit | 90 tests against analytic ground truth | `npm test` → `vitest` |
+| Unit | 1057 tests against analytic ground truth | `npm test` → `vitest` |
 | Mechanical checks | 12 greps, each closing one documented failure pattern: `U-FLAG` `U-DEV` `U-CARD` `U-LIMITS` `U-SRC` `U-OUTLINE` `U-COUNT` `greppable` in `npm test`; `U-DIST` `U-CFG` `U-DOC` `U-DEP` in the builder commands | `scripts/checks.mjs`, `check-dist.mjs`, `check-deploy.mjs` |
 | Behavioural | the six-outcome gate partition, then p50/p95/p99 against the frame budget | `npm run bench` |
 | End-to-end | the accessibility, origin, print, measurement and disclosure suites in Chromium | `npx playwright test` |
@@ -309,77 +379,7 @@ recorded here rather than left for a reader to notice.
 there is no server to attack — and states which repository settings a maintainer
 must switch on, since a workflow file is inert until they are.
 
-## Architecture, in one paragraph
-
-<div align="center">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/architecture-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="docs/assets/architecture-light.svg">
-  <img src="docs/assets/architecture-dark.svg"
-       alt="The Gimbal measurement pipeline. One camera frame passes through eight stages inside a single browser tab with no network requests after load: camera at 30 Hz, the MediaPipe FaceLandmarker as vendored WebAssembly, head-pose yaw, Savitzky-Golay smoothing with an analytic bias correction, peak angular velocity in degrees per second, hysteretic cycle segmentation, a four-term tracking-quality score, and scoreCycle. The result is one of two terminals: credited, which adds the cycle duration to the delivered dose, or refused with a named reason — too slow, too fast, off cadence, tracking unreliable, or face left the frame."
-       width="100%">
-</picture>
-
-</div>
-
-*Two files rather than one, because an `<img>` renders an SVG as an isolated
-document behind GitHub's caching proxy, where a `prefers-color-scheme` block
-inside the file cannot be relied on. `<picture>` is the mechanism GitHub actually
-supports. Both are generated from one source, so the geometry cannot drift
-between them.*
-
-One 30 Hz measurement loop, six screens, and one printable page, running entirely
-inside a browser tab with **one runtime dependency and zero network requests
-after page load**. There is no backend because a backend would falsify the
-product's central safety claim. There is no LLM because the output is a *count*,
-and a count has no use for a generative model — while an LLM would import the
-entire hallucination surface into a submission judged on safety. There is no
-framework because the only code path being judged is a hot loop, and a re-render
-model is a hazard inside it.
-
-```
-src/
-├─ capture/   camera.ts · landmarker.ts · pose.ts
-├─ dsp/       ring · smooth · velocity · fft · segment · quality · score · limits · stream
-├─ audio/     scheduler.ts
-├─ optotype/  landoltC.ts · trials.ts
-├─ protocol/  card.ts · stopRule.ts
-├─ session/   blockRunner.ts · dose.ts
-├─ store/     local · session · ledger · deviceSignature · exampleLedger · export
-├─ report/    report.ts · limitations.ts
-├─ styles/    tokens · themes · fonts · screen · landing · print
-├─ landing/   main.ts · replay.ts · trace.ts · figures.ts   (the page at /)
-└─ ui/        screens/* · dial · strip · sparkline · live · copy · dom
-```
-
-Two HTML entry points and no router in either: `index.html` is the landing page,
-`app/index.html` is the six-screen instrument. They share every stylesheet, and
-the landing page's hero replay imports the real `Dial`, the real `scoreCycle`
-and the real refusal copy rather than redrawing them — so the picture on `/`
-cannot drift away from the product on `/app`.
-
-One typeface is vendored: a Latin subset of **Inter 4.1** (SIL OFL 1.1,
-73.9 kB, both variable axes intact), served same-origin from `/fonts/` with its
-licence beside it. `font-src 'self'` means a font CDN would be blocked by the
-browser rather than merely disallowed by policy, so a vendored copy is the only
-kind of web font this project can have. Attribution and the exact subset are in
-`NOTICE.md`.
-
-**Dependencies: 1 runtime (`@mediapipe/tasks-vision`), 4 dev (`vite`,
-`typescript`, `vitest`, `@playwright/test`).** Greppable in `package.json`,
-which is how you check it. `npm audit` reports zero vulnerabilities.
-
-The MediaPipe WASM runtime and the `face_landmarker` model bundle are **vendored
-same-origin** under `/model/`, content-addressed, and committed. Nothing is
-fetched from a CDN — which is what makes the DevTools-Network privacy proof
-honest rather than a stunt. The bundle is single-threaded WASM, so no COOP/COEP
-cross-origin isolation is required and the app runs from a plain static host.
-
-`METHODS.md` has the full derivations: the bias correction, the sampling floor,
-the tracking-quality score, and where each stops being trustworthy.
-
-## Grounded — and a boundary list longer than the grounding
+## 📚 Grounded — and a boundary list longer than the grounding
 
 `METHODS.md` §11 is a reference list, not a gesture at one. **Every entry carries
 a DOI or PMID and was opened before it was written**, and every entry says what
@@ -443,7 +443,7 @@ and check `U-SRC` fails the build if one is empty.
 The literature says why the measurement is worth making. It never says what
 number to enforce, and Gimbal never pretends otherwise.
 
-## Accessibility is the design constraint, not a checklist bolted to it
+## ♿ Accessibility is the design constraint, not a checklist bolted to it
 
 The population this is built for has **photophobia, screen sensitivity,
 motion-provoked dizziness, headache and cognitive fatigue.**
@@ -497,7 +497,7 @@ stated limitation, not an omission. And the prescribed exercise itself requires
 head movement and functional vision. Gimbal does not claim to serve a user who
 cannot perform the exercise it measures.
 
-## What this does not measure
+## 🚧 What this does not measure
 
 <!-- LIMITATIONS-BODY-START -->
 Stage is self-reported. Gimbal measures head kinematics, not posture.
@@ -523,7 +523,7 @@ No concussion patient has used this, and no clinician has reviewed it. It has be
 This is not a diagnosis and not a clearance. It supplements your clinician; it does not replace them.
 <!-- LIMITATIONS-BODY-END -->
 
-## Status
+## 📍 Status
 
 This is a hackathon build in progress. Two things a reader should know before
 drawing conclusions from it:
@@ -540,7 +540,7 @@ drawing conclusions from it:
   exists it will be stated as a bench validation — single subject, one camera,
   one lighting condition — never as a study.
 
-## Deliberate non-features
+## 🚫 Deliberate non-features
 
 Each absence is load-bearing.
 
@@ -557,7 +557,7 @@ Each absence is load-bearing.
 | **Calibration wizard / camera intrinsics / PnP** | Angular velocity is a *difference* of rotations, so constant bias differentiates away to first order. |
 | **Signed exports, blockchain receipts** | Ceremony that proves nothing. The real anti-gaming property is structural: **the only way to fake the dose is to perform the therapy.** |
 
-## Licence and contributing
+## 📄 Licence and contributing
 
 MIT — see `LICENSE`, which is the unmodified MIT text and nothing else so that a
 licence scanner can identify it. Third-party attribution is in `NOTICE.md`:

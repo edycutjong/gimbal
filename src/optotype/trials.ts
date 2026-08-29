@@ -160,6 +160,15 @@ function logGamma(z: number): number {
     676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905,
     -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
   ];
+  // The Lanczos reflection formula, kept because removing it would leave a
+  // `logGamma` that is only correct on part of its domain — but UNREACHABLE
+  // from this module's public API. `binomialTailP` returns early for
+  // `total <= 0` and clamps `k` into `[0, n]`, so all three call sites pass
+  // `logGamma(m)` with `m >= 1`; the recursive call inside this line is the
+  // only other way in, and it cannot bootstrap itself. Ignored rather than
+  // tested, because the only input that reaches it is a type-contract
+  // violation (a string `total`), which would test JS coercion, not this code.
+  /* v8 ignore next */
   if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - logGamma(1 - z);
   const x = z - 1;
   let a = 0.99999999999980993;
