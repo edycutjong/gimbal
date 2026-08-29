@@ -127,7 +127,7 @@ const srcFiles = walk('src', (f) => f.endsWith('.ts') && !f.includes('.test.'));
 const styleFiles = walk('src/styles', (f) => f.endsWith('.css'));
 const cardFiles = walk('public/cards', (f) => f.endsWith('.json'));
 
-process.stdout.write('\nMechanical checks (8 ids, every file committed, zero network)\n\n');
+process.stdout.write('\nMechanical checks (7 ids, every file committed, zero network)\n\n');
 
 // ── U-FLAG ────────────────────────────────────────────────────────────────
 check('U-FLAG ', 'the reproduce path takes no flags', () => {
@@ -350,53 +350,20 @@ check('U-OUTLINE', 'focus rings are never removed', () => {
   return problems;
 });
 
-// ── U-COUNT ───────────────────────────────────────────────────────────────
+// ── U-COUNT lives in scripts/check-count.mjs ──────────────────────────────
 //
-// This check read README.md and nothing else until 2026-08-29, and the landing
-// page drifted behind it exactly the way U-LIMITS predicts an unchecked copy
-// will: the suite went 88 -> 90 at v1.2.0, README followed because this check
-// made it, and `index.html` sat at 88 in two places — the headline stat and the
-// datasheet row — on the most-read surface in the project. A judge reads that
-// number on the landing page and disproves it with one command.
+// It used to be here, and it counted source lines matching `^\s*it\(` under
+// `tests/`. That is a count of CALL SITES, not of tests: one `it(` inside a
+// loop over a five-case table produces five tests and was counted once. The
+// static count read 1,057 while the runner reported 1,062, and this check
+// passed the whole time because it compared its own static count against the
+// README rather than against the thing a reader runs.
 //
-// So the count is now asserted everywhere it is PUBLISHED, not just where it
-// was convenient to assert. `index.html` states it inside `<span class="tnum">`
-// / `<dd class="lp-spec-v tnum">`, and those elements carry other numbers too
-// (velocities, dependency counts), so the surrounding label is what identifies
-// the claim — the same discipline U-SRC uses for card fields.
-check('U-COUNT', 'the test count printed in README and on the landing page is the count the suite reports', () => {
-  const testFiles = walk('tests', (f) => f.endsWith('.test.ts'));
-  let actual = 0;
-  for (const file of testFiles) {
-    actual += read(rel(file)).split('\n').filter((l) => /^\s*it\(/.test(l)).length;
-  }
-
-  const problems = [];
-
-  const printed = read('README.md').match(/\*\*(\d+)\*\* automated (?:checks|tests)/);
-  if (!printed) problems.push('README.md does not print a test count');
-  else if (Number(printed[1]) !== actual) {
-    problems.push(`README says ${printed[1]}; the suite contains ${actual}`);
-  }
-
-  const html = read('index.html');
-
-  // The headline stat: <span ...>N</span> followed by "automated tests".
-  const stat = html.match(/<span class="lp-fact-n tnum">(\d+)<\/span>\s*<span class="lp-fact-l">automated tests/);
-  if (!stat) problems.push('index.html does not print the headline test count');
-  else if (Number(stat[1]) !== actual) {
-    problems.push(`index.html headline stat says ${stat[1]}; the suite contains ${actual}`);
-  }
-
-  // The datasheet row: the <dd> that follows the "Automated tests" <dt>.
-  const spec = html.match(/Automated tests[\s\S]{0,220}?<dd class="lp-spec-v tnum">(\d+)<\/dd>/);
-  if (!spec) problems.push('index.html does not print the datasheet test count');
-  else if (Number(spec[1]) !== actual) {
-    problems.push(`index.html datasheet row says ${spec[1]}; the suite contains ${actual}`);
-  }
-
-  return problems;
-});
+// A check that cannot observe the quantity it guards is a green tick standing
+// in for evidence — the exact failure the eight/four partition at the top of
+// this file exists to prevent. So it moved to a script that reads the runner's
+// own JSON report, and it is honest about being build-dependent. `npm test`
+// runs it immediately after the suite.
 
 // ── The claims that must stay greppable ──────────────────────────────────
 check('greppable', 'no LLM, no *.vercel.app, no third-party origin, CSP intact, licence and community files readable', () => {

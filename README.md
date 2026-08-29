@@ -221,12 +221,12 @@ capability executes for real on the default path, or it does not execute at all.
 
 ```bash
 npm ci
-npm test            # 1057 tests against analytic ground truth + 8 mechanical source checks
+npm test            # 1062 tests against analytic ground truth + 8 mechanical source checks
 npm run bench       # all six gate outcomes end-to-end, then the frame-budget timings
 npm run check:build # builds the production bundle, then greps it
 ```
 
-`npm test` runs **1057** automated tests plus eight mechanical source checks. Four
+`npm test` runs **1062** automated tests plus eight mechanical source checks. Four
 more checks — `U-DIST`, `U-CFG`, `U-DOC`, `U-DEP` — read a build artifact or a
 deployed URL and therefore live in `check:build` and `check:deploy` instead, for
 **twelve** in total. The split is a rule rather than a convenience: a check that
@@ -342,7 +342,7 @@ is not worth trading it for.
 | Layer | What runs | Where |
 |---|---|---|
 | Types | `tsc --noEmit` over `src/` and `tests/` on every build — `strict`, plus `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` and `noUncheckedIndexedAccess` | `npm run build`, `tsconfig.json` |
-| Unit | 1057 tests against analytic ground truth | `npm test` → `vitest` |
+| Unit | 1062 tests against analytic ground truth | `npm test` → `vitest` |
 | Mechanical checks | 12 greps, each closing one documented failure pattern: `U-FLAG` `U-DEV` `U-CARD` `U-LIMITS` `U-SRC` `U-OUTLINE` `U-COUNT` `greppable` in `npm test`; `U-DIST` `U-CFG` `U-DOC` `U-DEP` in the builder commands | `scripts/checks.mjs`, `check-dist.mjs`, `check-deploy.mjs` |
 | Behavioural | the six-outcome gate partition, then p50/p95/p99 against the frame budget | `npm run bench` |
 | End-to-end | the accessibility, origin, print, measurement and disclosure suites in Chromium | `npx playwright test` |
@@ -578,21 +578,25 @@ be shy about the numbers it got wrong.
 Each is checkable: the commit is named, and `git show <sha>` is the whole
 argument.
 
-### Open, unresolved as of 2026-08-29
-
-**The test count printed in this README is not the count the suite reports.**
-This page says **1,057**; `npm test` prints **1,062 passed**. Both are honest and
-the gap is mechanical: check `U-COUNT` counts *source lines* matching `it(` under
-`tests/`, and `tests/screens-setup.cov.test.ts:718` is one such line sitting
-inside a loop that generates five tests from a case table. The static count
-therefore under-counts by exactly those five — **and the check went green,
-because it compares its own static count against this README rather than against
-the runner.** A check that cannot see the quantity it is guarding is a green tick
-standing in for evidence, which is the exact failure the twelve-check split above
-was written to avoid. It is named here rather than papered over, and the fix is
-to teach `U-COUNT` to read the runner's own output.
-
 ### Fixed, and each one found by a check this project built to catch itself
+
+**The published test count was not the count the suite reported — and the check
+that was supposed to catch that could not see it.** This README said **1,057**
+while `npm test` printed **1,062 passed**. Both numbers were honest; the gap was
+mechanical. `U-COUNT` counted *source lines* matching `it(` under `tests/`, and
+`tests/screens-setup.cov.test.ts:718` is one such line sitting inside a loop that
+generates five tests from a case table — so the static count under-counted by
+exactly those five. **The check went green throughout, because it compared its
+own static count against this README rather than against the runner.**
+
+A check that cannot observe the quantity it guards is a green tick standing in
+for evidence — the exact failure the twelve-check partition above exists to
+prevent, occurring inside that partition. `U-COUNT` now reads the runner's own
+JSON report (`scripts/check-count.mjs`) and runs immediately after the suite, so
+the number published here is the number a reader gets when they follow the
+instruction above and run `npm test`. It left `checks.mjs` because it is
+build-dependent, and saying so is better than a static check that cannot fail.
+
 
 | What was wrong | Why it mattered | Fix |
 |---|---|---|

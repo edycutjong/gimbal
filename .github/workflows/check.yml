@@ -13,7 +13,8 @@ name: check
 #
 # EVERY STAGE ASSERTS A CLAIM THIS PROJECT PUBLISHES. That is the rule for
 # adding one: if no judge-facing sentence depends on it, it does not belong here.
-#   Stage 1 → "100% coverage at an enforced threshold" and the mechanical checks
+#   Stage 1 → "100% coverage at an enforced threshold", the mechanical checks,
+#             and the published test count against the runner's own report
 #   Stage 2 → "npm audit reports zero vulnerabilities" and "1 runtime, 6 dev"
 #   Stage 3 → the shipped bundle greps clean (U-DIST)
 #   Stage 4 → the accessibility, origin, print and measurement suites
@@ -65,7 +66,13 @@ jobs:
       # the suite without --coverage never enforces it. The README publishes that
       # number, so CI has to be the thing that holds it.
       - name: Unit tests at the 100% coverage threshold
-        run: npx vitest run --coverage
+        run: npm run test:coverage
+
+      # U-COUNT, which reads the runner's JSON report rather than counting
+      # `it(` call sites. It is build-dependent by nature, so it runs here
+      # rather than inside the air-gapped `checks.mjs` set.
+      - name: Published test count matches the runner
+        run: npm run check:count
 
       - name: Upload coverage
         if: always()

@@ -17,3 +17,7 @@ blob-report/
 playwright/.cache/
 
 .vercel
+
+# The runner's JSON report. U-COUNT reads it immediately after the suite;
+# it is a build artifact, not a source of truth to be committed.
+.vitest-report.json
