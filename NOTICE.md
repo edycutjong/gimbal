@@ -53,6 +53,24 @@ page rather than guessing.
   have. It is served same-origin and counts toward the zero-third-party-origins
   claim exactly like the model bundle does.
 
+## GitHub mark — Octicons
+
+- **Where it appears:** inline `<svg>` in `index.html`, the footer's
+  *"Source on GitHub"* link. One path, no file, no request.
+- **Upstream:** the `mark-github` icon from https://github.com/primer/octicons
+- **Licence:** MIT, as declared in the Octicons repository.
+- **Modification:** none to the path data. It is rendered at `1.15em` with
+  `fill="currentColor"` so it takes the link's own colour.
+- **Why inline rather than vendored as a file:** `img-src 'self'` would permit a
+  local file, but an `<img>` is a second request for a mark that decorates a link
+  and can 404 independently of it. Inlining makes the icon and the link one
+  object. It also keeps the zero-third-party-origins claim trivially true for it.
+
+**Trademark note.** The GitHub logo is a GitHub, Inc. trademark. It is used here
+only to label a link that points at GitHub, which is what the mark is for. It is
+not used as this project's own mark, and it does not imply that GitHub endorses,
+sponsors or is affiliated with Gimbal.
+
 ## Development dependencies
 
 `vite`, `typescript`, `vitest` and `@playwright/test` are build- and test-time

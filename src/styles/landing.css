@@ -2682,6 +2682,35 @@
 }
 
 /*
+ * The GitHub mark beside "Source on GitHub".
+ *
+ * `.landing .lp-foot a` above is already `inline-flex; align-items: center`, so
+ * the icon needs a gap and a size and nothing else — no wrapper, no absolute
+ * positioning, no line-height fight.
+ *
+ * `gap` on the anchor, NOT `margin-right` on the svg. The underline that appears
+ * on hover is drawn across the anchor's inline box; a margin sits INSIDE that box
+ * and gets underlined with the text, which reads as a typo. A flex gap does not.
+ *
+ * Sized in `em` so it tracks `--lp-t-micro` if that ever moves, and filled with
+ * `currentColor` so it inherits both the resting `--lp-ink-2` and the hover
+ * `--lp-ink-1` — one colour definition, and the mark can never drift out of sync
+ * with the text it sits beside. `flex-shrink: 0` keeps it round if the label wraps.
+ */
+.landing .lp-foot a.lp-link-icon {
+  gap: 0.5em;
+}
+
+.lp-gh {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  /* Optical centring: the Octicon's mark sits fractionally high against
+     lowercase text at this size. */
+  transform: translateY(0.5px);
+}
+
+/*
  * `.lp-foot .lp-foot-legal`, NOT `.lp-foot-legal`.
  *
  * The legal line is a `<p>` inside `.lp-foot`, so `.landing .lp-foot p` above

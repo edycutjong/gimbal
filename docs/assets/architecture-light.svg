@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 712" width="1420" height="712"
+     role="img" aria-labelledby="ttl desc">
+  <title id="ttl">Gimbal measurement pipeline</title>
+  <desc id="desc">One camera frame passes through eight stages inside a single browser tab with no
+network requests after load: camera at 30 Hz, the MediaPipe FaceLandmarker running as vendored
+WebAssembly, head-pose yaw, Savitzky-Golay smoothing with an analytic bias correction, peak angular
+velocity in degrees per second, hysteretic cycle segmentation, a four-term tracking-quality score, and
+scoreCycle. The result is one of two terminals: credited, which adds the cycle duration to the delivered
+dose, or refused, with a named reason from too slow, too fast, off cadence, tracking unreliable, or face
+left the frame. A refusal is drawn in slate and never in red.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3e4750"/>
+    </marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0a6b4f"/>
+    </marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4e5761"/>
+    </marker>
+  </defs>
+  <rect width="1420" height="712" fill="#ede8df"/>
+  <text x="60" y="56" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="27" font-weight="700" fill="#14181d">What happens to one camera frame</text>
+<rect x="30" y="96" width="1360" height="544" rx="18" fill="none"
+        stroke="#d8d0c2" stroke-width="2" stroke-dasharray="7 6"/><text x="50" y="90" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" letter-spacing="1.4"
+        fill="#3e4750">ONE BROWSER TAB · 0 NETWORK REQUESTS AFTER LOAD · NO BACKEND · NO LLM</text><rect x="60" y="132" width="300" height="96" rx="12"
+          fill="#f6f2ea" stroke="#d8d0c2" stroke-width="1.5"/><text x="80" y="163" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19"
+          font-weight="600" fill="#14181d">Camera</text><text x="80" y="187" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5"
+          fill="#3e4750">30 Hz · getUserMedia</text><text x="80" y="211" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#0f4794">capture/camera.ts</text><circle cx="336" cy="156" r="13" fill="#ede8df" stroke="#d8d0c2"/><text x="336" y="161" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+          font-size="12.5" fill="#3e4750">1</text><rect x="402" y="132" width="300" height="96" rx="12"
+          fill="#f6f2ea" stroke="#d8d0c2" stroke-width="1.5"/><text x="422" y="163" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19"
+          font-weight="600" fill="#14181d">FaceLandmarker</text><text x="422" y="187" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5"
+          fill="#3e4750">MediaPipe WASM, same-origin</text><text x="422" y="211" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#0f4794">capture/landmarker.ts</text><circle cx="678" cy="156" r="13" fill="#ede8df" stroke="#d8d0c2"/><text x="678" y="161" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+          font-size="12.5" fill="#3e4750">2</text><rect x="744" y="132" width="300" height="96" rx="12"
+          fill="#f6f2ea" stroke="#d8d0c2" stroke-width="1.5"/><text x="764" y="163" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19"
+          font-weight="600" fill="#14181d">Head pose</text><text x="764" y="187" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5"
+          fill="#3e4750">yaw angle θ</text><text x="764" y="211" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#0f4794">capture/pose.ts</text><circle cx="1020" cy="156" r="13" fill="#ede8df" stroke="#d8d0c2"/><text x="1020" y="161" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+          font-size="12.5" fill="#3e4750">3</text><rect x="1086" y="132" width="300" height="96" rx="12"
+          fill="#f6f2ea" stroke="#d8d0c2" stroke-width="1.5"/><text x="1106" y="163" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19"
+          font-weight="600" fill="#14181d">Smooth + derive</text><text x="1106" y="187" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5"
+          fill="#3e4750">Savitzky–Golay, bias-corrected</text><text x="1106" y="211" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#0f4794">dsp/smooth · velocity</text><circle cx="1362" cy="156" r="13" fill="#ede8df" stroke="#d8d0c2"/><text x="1362" y="161" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+          font-size="12.5" fill="#3e4750">4</text><rect x="60" y="286" width="300" height="96" rx="12"
+          fill="#f6f2ea" stroke="#d8d0c2" stroke-width="1.5"/><text x="80" y="317" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19"
+          font-weight="600" fill="#14181d">Angular velocity</text><text x="80" y="341" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5"
+          fill="#3e4750">ω in °/s, peak per cycle</text><text x="80" y="365" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#0f4794">dsp/fft · ring</text><circle cx="336" cy="310" r="13" fill="#ede8df" stroke="#d8d0c2"/><text x="336" y="315" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+          font-size="12.5" fill="#3e4750">5</text><rect x="402" y="286" width="300" height="96" rx="12"
+          fill="#f6f2ea" stroke="#d8d0c2" stroke-width="1.5"/><text x="422" y="317" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19"
+          font-weight="600" fill="#14181d">Segment</text><text x="422" y="341" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5"
+          fill="#3e4750">hysteretic cycle detection</text><text x="422" y="365" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#0f4794">dsp/segment.ts</text><circle cx="678" cy="310" r="13" fill="#ede8df" stroke="#d8d0c2"/><text x="678" y="315" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+          font-size="12.5" fill="#3e4750">6</text><rect x="744" y="286" width="300" height="96" rx="12"
+          fill="#f6f2ea" stroke="#d8d0c2" stroke-width="1.5"/><text x="764" y="317" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19"
+          font-weight="600" fill="#14181d">Tracking quality</text><text x="764" y="341" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5"
+          fill="#3e4750">four-term score, 0–1</text><text x="764" y="365" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#0f4794">dsp/quality.ts</text><circle cx="1020" cy="310" r="13" fill="#ede8df" stroke="#d8d0c2"/><text x="1020" y="315" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+          font-size="12.5" fill="#3e4750">7</text><rect x="1086" y="286" width="300" height="96" rx="12"
+          fill="#f6f2ea" stroke="#d8d0c2" stroke-width="1.5"/><text x="1106" y="317" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19"
+          font-weight="600" fill="#14181d">scoreCycle()</text><text x="1106" y="341" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5"
+          fill="#3e4750">the verdict, per repetition</text><text x="1106" y="365" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#0f4794">dsp/score.ts</text><circle cx="1362" cy="310" r="13" fill="#ede8df" stroke="#d8d0c2"/><text x="1362" y="315" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+          font-size="12.5" fill="#3e4750">8</text><path d="M 366 180 L 392 180" stroke="#3e4750" stroke-width="2"
+     fill="none" marker-end="url(#a)"/><path d="M 708 180 L 734 180" stroke="#3e4750" stroke-width="2"
+     fill="none" marker-end="url(#a)"/><path d="M 1050 180 L 1076 180" stroke="#3e4750" stroke-width="2"
+     fill="none" marker-end="url(#a)"/><path d="M 366 334 L 392 334" stroke="#3e4750" stroke-width="2"
+     fill="none" marker-end="url(#a)"/><path d="M 708 334 L 734 334" stroke="#3e4750" stroke-width="2"
+     fill="none" marker-end="url(#a)"/><path d="M 1050 334 L 1076 334" stroke="#3e4750" stroke-width="2"
+     fill="none" marker-end="url(#a)"/><path d="M 1236 234 L 1236 250
+        Q 1236 262 1224 262
+        L 222 262
+        Q 210 262 210 274
+        L 210 276" stroke="#3e4750" stroke-width="2"
+        fill="none" marker-end="url(#a)"/><path d="M 1236 388 L 1236 424" stroke="#3e4750"
+        stroke-width="2" fill="none"/><path d="M 1236 424 L 520 424" stroke="#3e4750" stroke-width="2" fill="none"/><path d="M 520 424 L 520 458" stroke="#0a6b4f"
+        stroke-width="2.5" fill="none" marker-end="url(#g)"/><path d="M 1236 424 L 1236 458" stroke="#4e5761"
+        stroke-width="2.5" fill="none" marker-end="url(#r)"/><rect x="330" y="470" width="380" height="118" rx="12" fill="#f6f2ea"
+        stroke="#0a6b4f" stroke-width="2.5"/><text x="356" y="508" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="21" font-weight="700"
+        fill="#0a6b4f">CREDITED</text><text x="356" y="536" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" fill="#14181d">
+        ω inside the prescribed band, quality above floor.</text><text x="356" y="562" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" fill="#3e4750">
+        doseSeconds += cycle duration</text><rect x="770" y="470" width="560" height="118" rx="12" fill="#f6f2ea"
+        stroke="#4e5761" stroke-width="2.5"/><text x="796" y="508" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="21" font-weight="700"
+        fill="#14181d">REFUSED — and told why, in words</text><rect x="796" y="526" width="82.8" height="23" rx="11.5"
+          fill="none" stroke="#4e5761" stroke-width="1.2"/><text x="807" y="542" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#3e4750">too slow</text><rect x="974" y="526" width="82.8" height="23" rx="11.5"
+          fill="none" stroke="#4e5761" stroke-width="1.2"/><text x="985" y="542" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#3e4750">too fast</text><rect x="1152" y="526" width="105.6" height="23" rx="11.5"
+          fill="none" stroke="#4e5761" stroke-width="1.2"/><text x="1163" y="542" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#3e4750">off cadence</text><rect x="796" y="556" width="166.4" height="23" rx="11.5"
+          fill="none" stroke="#4e5761" stroke-width="1.2"/><text x="807" y="572" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#3e4750">tracking unreliable</text><rect x="974" y="556" width="166.4" height="23" rx="11.5"
+          fill="none" stroke="#4e5761" stroke-width="1.2"/><text x="985" y="572" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5"
+          fill="#3e4750">face left the frame</text><text x="330" y="622" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" fill="#3e4750">
+        <tspan font-weight="600" fill="#14181d">A refused repetition is never red.</tspan>
+        It is not an error — it is the measurement doing its job, so it is drawn in slate.</text><text x="60" y="690" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" fill="#3e4750">
+        1 runtime dependency (@mediapipe/tasks-vision) · 4 dev · WASM + model vendored same-origin, content-addressed</text>
+</svg>

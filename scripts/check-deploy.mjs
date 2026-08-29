@@ -128,7 +128,26 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
 // Rule: nothing states a URL that is not the canonical one, and no placeholder
 // token ever reaches the public tree.
 {
-  const forbidden = [/\bTODO\b/, /\bTBD\b/, /\bxxx\b/i, /\b0x\.\.\./, /<owner>/, /<[a-z-]+>/];
+  const forbidden = [/\bTODO\b/, /\bTBD\b/, /\bxxx\b/i, /\b0x\.\.\./, /<owner>/];
+
+  // `<[a-z-]+>` used to be in the list above, to catch template tokens like
+  // `<owner>` or `<your-url>`. It also matched every ATTRIBUTE-LESS HTML TAG,
+  // which is a false positive: `<picture>` and `<source>` are the mechanism
+  // GitHub documents for a theme-aware diagram, and the README uses them as
+  // markup, not as a blank to fill in. Stripping code fences (below) does not
+  // help — this markup is not in a fence, it is rendered.
+  //
+  // So the token hunt now knows the difference. Bare tags that are real HTML
+  // elements USED AS MARKUP IN THESE DOCS are allowed; every other `<word>` is
+  // still reported. The list is deliberately short — it is not "every HTML
+  // element", because a name that is both a tag and a plausible blank (`<data>`,
+  // `<output>`, `<address>`) should keep failing.
+  const MARKUP_TAGS = new Set([
+    'div', 'picture', 'source', 'img', 'br', 'hr', 'em', 'strong', 'p', 'a',
+    'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
+    'details', 'sub', 'sup', 'blockquote', 'span', 'kbd', 'code', 'pre',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  ]);
   const docs = ['README.md', 'DEMO.md', 'METHODS.md', 'LIMITATIONS.md', 'NOTICE.md', 'RELEASING.md'];
   for (const name of docs) {
     const path = join(ROOT, name);
@@ -142,6 +161,12 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
     const prose = text.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '');
     for (const pattern of forbidden) {
       if (pattern.test(prose)) problems.push(`U-DOC: ${name} contains a placeholder matching ${pattern}`);
+    }
+    // Angle-bracket tokens that are not markup.
+    for (const m of prose.matchAll(/<([a-z][a-z0-9-]*)>/g)) {
+      if (!MARKUP_TAGS.has(m[1])) {
+        problems.push(`U-DOC: ${name} contains an unfilled placeholder token <${m[1]}>`);
+      }
     }
     // One canonical URL, and it is the custom domain. A `*.vercel.app` address
     // is a platform artifact: it changes if the project is renamed, it is not
@@ -174,6 +199,12 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
         atHostPath(url, 'github.com', '/google-ai-edge/mediapipe') ||
         atHostPath(url, 'storage.googleapis.com', '/mediapipe-models') ||
         atHostPath(url, 'github.com', '/rsms/inter') ||
+        // The GitHub mark in the landing-page footer, attributed in NOTICE.md.
+        // Same category as the three above: the upstream page for a third-party
+        // asset this project uses. Attribution REQUIRES naming the source, so an
+        // allowlist that forbids it would force the choice between a red check
+        // and an unattributed asset. Host-and-path matched like the others.
+        atHostPath(url, 'github.com', '/primer/octicons') ||
         hostMatches(url, 'conventionalcommits.org');
       if (!allowed) problems.push(`U-DOC: ${name} states a URL that is not canonical: ${url}`);
     }

@@ -1,5 +1,9 @@
 <div align="center">
 
+<img src="docs/assets/icon.svg"
+     alt="Gimbal icon — a committed marker stopped short of the prescribed velocity band"
+     width="144">
+
 # Gimbal
 
 **A webcam dose meter that proves you actually did your prescribed vestibular rehab at therapeutic velocity.**
@@ -306,6 +310,24 @@ there is no server to attack — and states which repository settings a maintain
 must switch on, since a workflow file is inert until they are.
 
 ## Architecture, in one paragraph
+
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/architecture-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/architecture-light.svg">
+  <img src="docs/assets/architecture-dark.svg"
+       alt="The Gimbal measurement pipeline. One camera frame passes through eight stages inside a single browser tab with no network requests after load: camera at 30 Hz, the MediaPipe FaceLandmarker as vendored WebAssembly, head-pose yaw, Savitzky-Golay smoothing with an analytic bias correction, peak angular velocity in degrees per second, hysteretic cycle segmentation, a four-term tracking-quality score, and scoreCycle. The result is one of two terminals: credited, which adds the cycle duration to the delivered dose, or refused with a named reason — too slow, too fast, off cadence, tracking unreliable, or face left the frame."
+       width="100%">
+</picture>
+
+</div>
+
+*Two files rather than one, because an `<img>` renders an SVG as an isolated
+document behind GitHub's caching proxy, where a `prefers-color-scheme` block
+inside the file cannot be relied on. `<picture>` is the mechanism GitHub actually
+supports. Both are generated from one source, so the geometry cannot drift
+between them.*
 
 One 30 Hz measurement loop, six screens, and one printable page, running entirely
 inside a browser tab with **one runtime dependency and zero network requests
