@@ -67,7 +67,21 @@ export function bandFigure(): string {
    */
   const belowFloor = TRACE.filter((c) => c.peakOmega < FLOOR).length;
   const credited = TRACE.filter((c) => c.credited).length;
-  const refusedInBand = TRACE.filter((c) => !c.credited && c.peakOmega >= FLOOR && c.peakOmega <= CEILING).length;
+  const inBand = (c: (typeof TRACE)[number]): boolean =>
+    !c.credited && c.peakOmega >= FLOOR && c.peakOmega <= CEILING;
+  const refusedInBand = TRACE.filter(inBand).length;
+  /*
+   * SPLIT OUT, because the counted total was being described with an
+   * uncounted reason. The sentence used to read "<refusedInBand> inside the
+   * band is refused for low tracking confidence" — but `refusedInBand` is
+   * every in-band refusal (off-cadence and face-lost as well), and only one of
+   * them is `low-confidence`. A sighted reader sees three differently-marked
+   * dots; a blind reader was told all three were the same thing, and told it
+   * ungrammatically ("3 ... is"). The counts and the plurals are both derived
+   * now, so neither can drift from TRACE.
+   */
+  const lowConfidenceInBand = TRACE.filter((c) => inBand(c) && c.reason === 'low-confidence').length;
+  const otherInBand = refusedInBand - lowConfidenceInBand;
 
   return `
   <div class="lp-plot">
@@ -77,7 +91,7 @@ export function bandFigure(): string {
     </div>
     <div class="lp-plot-body">
       <svg viewBox="0 0 ${W} ${H}" class="lp-plot-svg" role="img"
-           aria-label="Peak head velocity for ${TRACE.length} consecutive cycles plotted against a prescribed band of ${FLOOR} to ${CEILING} degrees per second. ${belowFloor} cycles fall below the floor, ${credited} fall inside the band and are credited, and ${refusedInBand} inside the band is refused for low tracking confidence.">
+           aria-label="Peak head velocity for ${TRACE.length} consecutive cycles plotted against a prescribed band of ${FLOOR} to ${CEILING} degrees per second. ${belowFloor} cycles fall below the floor, ${credited} fall inside the band and are credited, and ${refusedInBand} fall inside the band but are refused anyway — ${lowConfidenceInBand} for low tracking confidence and ${otherInBand} for cadence or a lost face.">
         <!-- TWO REGIONS, TWO HUES, AND THEY ARE THE ONLY TWO SEMANTICS THERE ARE.
              Below the floor is out-of-band, so it is washed in the out-of-band
              hue; the prescribed band is in-band, so it is washed in the in-band
