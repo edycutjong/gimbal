@@ -5,22 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Page not found — Gimbal</title>
     <meta name="robots" content="noindex" />
+    <meta name="description" content="That address does not exist on this site. Every page Gimbal has is listed here." />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <!--
       Served by Vercel for any path that does not resolve. Before this file
-      existed the platform's own `404: NOT_FOUND / Code: NOT_FOUND / ID: …`
-      was what a judge saw after one mistyped character.
+      existed, one mistyped character served the platform's own
+      `404: NOT_FOUND / Code: NOT_FOUND / ID: sin1::…` — an error page with this
+      project's name nowhere on it.
 
-      SELF-CONTAINED ON PURPOSE. No stylesheet link, no script, no font file:
-      a 404 must render even when the thing that is broken is the asset
-      pipeline. The styles are inline, which `style-src 'unsafe-inline'`
-      already allows; there is no inline script, because `script-src` is
-      'self' and adding a nonce for a static error page is not worth it.
+      SELF-CONTAINED ON PURPOSE. No stylesheet link, no script, no web font: a
+      404 must render even when the thing that broke is the asset pipeline. The
+      styles are inline, which `style-src 'unsafe-inline'` already allows. There
+      is no inline script, because `script-src` is 'self' and a static error page
+      does not need one.
 
-      The palette is the dark theme's, hard-coded rather than pulled from
-      tokens.css for the same reason: this page cannot depend on a build.
+      It carries EVERY link the site footer carries, because the most likely way
+      to arrive here is a typo in a URL someone was given — so the recovery is
+      not "go home and hunt", it is "here is the whole site, one click away".
+
+      The palette is the real one from `src/styles/themes.css`, hard-coded rather
+      than imported for the same reason as above, and switched on
+      `prefers-color-scheme` so this page is not the one surface that ignores the
+      reader's setting.
     -->
     <style>
-      :root { color-scheme: dark; }
+      :root {
+        color-scheme: dark light;
+        --bg: #0b0e12;
+        --surface: #141922;
+        --edge: #1d2530;
+        --ink-1: #e6edf3;
+        --ink-2: #a8b4c0;
+        --focus: #9bc9ff;
+        --accent: #5bd6ae;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ede8df;
+          --surface: #f6f2ea;
+          --edge: #d8d0c2;
+          --ink-1: #14181d;
+          --ink-2: #3e4750;
+          --focus: #0f4794;
+          --accent: #0a6b4f;
+        }
+      }
       * { box-sizing: border-box; }
       body {
         margin: 0;
@@ -28,35 +57,65 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
-        background: #0b0d10;
-        color: #e6e9ee;
+        padding: 2.5rem 1.25rem;
+        background: var(--bg);
+        color: var(--ink-1);
         font: 400 17px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
-      main { max-width: 34rem; }
-      p.code {
-        margin: 0 0 1rem;
-        font: 500 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-        letter-spacing: 0.14em;
+      main { width: 100%; max-width: 60rem; }
+      .code {
+        margin: 0 0 0.9rem;
+        font: 500 12.5px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
-        color: #8b95a3;
+        color: var(--ink-2);
       }
-      h1 { margin: 0 0 0.75rem; font-size: 1.85rem; line-height: 1.2; font-weight: 600; }
-      p.lede { margin: 0 0 1.75rem; color: #b8c0cc; }
-      ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+      h1 { margin: 0 0 0.7rem; font-size: clamp(1.6rem, 4vw, 2.1rem); line-height: 1.2; font-weight: 650; }
+      .lede { margin: 0 0 2.5rem; max-width: 46rem; color: var(--ink-2); }
+      /* `align-items: start` so each card sizes to its own content. Grid items
+         stretch to the row height by default, which left the two short columns
+         with a tall empty tail below their last link. */
+      .grid {
+        display: grid;
+        gap: 1.25rem;
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        align-items: start;
+      }
+      section {
+        background: var(--surface);
+        border: 1px solid var(--edge);
+        border-radius: 14px;
+        padding: 1.15rem 1.25rem 1.4rem;
+      }
+      h2 {
+        margin: 0 0 0.9rem;
+        font: 600 11.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+      }
+      ul { margin: 0; padding: 0; list-style: none; }
+      li + li { margin-top: 0.15rem; }
       a {
-        display: inline-block;
-        padding: 0.7rem 1.1rem;
-        border: 1px solid #2b323c;
-        border-radius: 10px;
-        color: #e6e9ee;
-        text-decoration: none;
-        background: #141821;
+        display: flex;
+        align-items: center;
+        gap: 0.55em;
         min-height: 44px;
+        padding: 0.35rem 0.5rem;
+        margin: 0 -0.5rem;
+        border-radius: 8px;
+        color: var(--ink-1);
+        text-decoration: none;
       }
-      a:hover { border-color: #3d4653; }
-      a:focus-visible { outline: 3px solid #7fb0e8; outline-offset: 2px; }
-      a.primary { background: #e6e9ee; color: #0b0d10; border-color: #e6e9ee; }
+      a .sub { color: var(--ink-2); font-size: 0.87em; }
+      a:hover { background: var(--bg); }
+      a:hover .label { text-decoration: underline; }
+      a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+      .primary { color: var(--accent); font-weight: 600; }
+      svg { width: 1.1em; height: 1.1em; flex-shrink: 0; }
+      .foot { margin-top: 2.25rem; color: var(--ink-2); font-size: 0.9em; }
+      .foot code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95em; }
     </style>
   </head>
   <body>
@@ -66,13 +125,87 @@
       <p class="lede">
         The address did not match anything on this site. Nothing was measured and nothing
         was lost — Gimbal keeps every session in your own browser, so there is no account
-        to recover and nothing to sign back in to.
+        to recover and nothing to sign back in to. Every page this site has is below.
       </p>
-      <ul>
-        <li><a class="primary" href="/">Back to the landing page</a></li>
-        <li><a href="/app">Open the instrument</a></li>
-        <li><a href="/app?blank">Start with a blank card</a></li>
-      </ul>
+
+      <div class="grid">
+        <section>
+          <h2>Open it</h2>
+          <ul>
+            <li>
+              <a class="primary" href="/">
+                <span class="label">The landing page</span>
+              </a>
+            </li>
+            <li>
+              <a href="/app?demo">
+                <span><span class="label">The instrument</span><br /><span class="sub">with an example prescription</span></span>
+              </a>
+            </li>
+            <li>
+              <a href="/app?blank">
+                <span><span class="label">A blank card</span><br /><span class="sub">the eight empty fields the product ships</span></span>
+              </a>
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Read the build</h2>
+          <ul>
+            <li>
+              <a href="https://github.com/edycutjong/gimbal#readme">
+                <span><span class="label">README</span><br /><span class="sub">the whole argument</span></span>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/edycutjong/gimbal/blob/main/METHODS.md">
+                <span><span class="label">METHODS</span><br /><span class="sub">the derivations</span></span>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/edycutjong/gimbal/blob/main/LIMITATIONS.md">
+                <span><span class="label">LIMITATIONS</span><br /><span class="sub">in full</span></span>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/edycutjong/gimbal/blob/main/DEMO.md">
+                <span><span class="label">DEMO</span><br /><span class="sub">what to watch for</span></span>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/edycutjong/gimbal">
+                <!-- GitHub's Octicon mark, MIT (github/octicons) — attributed in NOTICE.md. -->
+                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+                </svg>
+                <span class="label">Source on GitHub</span>
+              </a>
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Attribution</h2>
+          <ul>
+            <li>
+              <a href="/fonts/Inter-OFL.txt">
+                <span><span class="label">Typeface licence</span><br /><span class="sub">Inter, SIL OFL 1.1</span></span>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/edycutjong/gimbal/blob/main/NOTICE.md">
+                <span><span class="label">NOTICE</span><br /><span class="sub">third-party attribution in full</span></span>
+              </a>
+            </li>
+          </ul>
+        </section>
+      </div>
+
+      <p class="foot">
+        MIT licensed. No data is collected by this site, so there is nothing to have a policy
+        about — and that includes this page: it made <code>0</code> network requests to reach you.
+      </p>
     </main>
   </body>
 </html>
