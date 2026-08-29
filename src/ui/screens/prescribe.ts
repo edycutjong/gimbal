@@ -243,7 +243,28 @@ export function renderPrescribe(host: HTMLElement, props: PrescribeProps): void 
       const pasted = event.clipboardData?.getData('text');
       if (!pasted || !pasted.includes(',')) return;
       event.preventDefault();
-      input.value = pasted.trim().replace(',', '.');
+      const trimmed = pasted.trim();
+      /*
+       * ONE separator means a decimal comma — `1,7` is the case this guard
+       * exists for. MORE than one is a thousands separator or a list, and
+       * neither is a number this field can accept: `replace(',', '.')` only
+       * ever replaced the FIRST comma, so `1,000` arrived as `1.000` and was
+       * read as ONE, a thousand-fold under-dose, while `1,7,5` became `1.7,5`
+       * and the number input silently sanitised it to empty. Refusing is the
+       * house rule — a field left untouched is caught by the range check and
+       * the reader is told; a quietly mangled number is not.
+       */
+      // More than one comma is a list or a grouped number, never a decimal.
+      // `1,7,5` used to become `1.7,5`, which the number input then sanitised
+      // to empty — the field silently cleared itself.
+      if (trimmed.split(',').length > 2) return;
+      // ONE comma followed by exactly three digits is ambiguous: `1,000` is a
+      // thousand to most of the world and one to the rest. It used to be
+      // rewritten to `1.000` and read as ONE — a thousand-fold UNDER-dose
+      // arriving from a clipboard. There is no reading of it this code is
+      // entitled to pick, so it refuses and leaves the field for the reader.
+      if (/,\d{3}(?:\D|$)/.test(trimmed)) return;
+      input.value = trimmed.replace(',', '.');
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
   }
