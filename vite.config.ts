@@ -1,5 +1,35 @@
 import { defineConfig, type Plugin } from 'vite';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+/**
+ * The published version is READ, never typed.
+ *
+ * `scripts/version.mjs` writes `package.json` on release, so that file is the
+ * single source of truth and everything downstream derives from it: the release
+ * badge in the landing footer, and `APP_VERSION`, which is stamped onto every
+ * printed report. Before this plugin existed `src/main.ts` carried the string
+ * `gimbal 0.1.0` by hand and had drifted five releases behind — every report
+ * printed since v0.2.0 named the wrong build on paper, which is exactly the
+ * class of quiet inaccuracy this project refuses everywhere else.
+ *
+ * `%GIMBAL_VERSION%` in HTML and `__GIMBAL_VERSION__` in TypeScript are the two
+ * ways in. `npm run check:build` greps the built output for a surviving
+ * placeholder, so a mis-spelled token fails the build instead of shipping.
+ */
+const VERSION = (JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as { version: string }).version;
+
+function versionStamp(): Plugin {
+  return {
+    name: 'gimbal-version-stamp',
+    // `order: 'pre'` so the token is gone before any other HTML transform reads
+    // the document — a later plugin should never see a placeholder.
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html) => html.replaceAll('%GIMBAL_VERSION%', VERSION),
+    },
+  };
+}
 
 /**
  * `/app` without a trailing slash, in dev and preview.
@@ -44,7 +74,10 @@ function appRoute(): Plugin {
 // Rollup needs both named here or it only ever walks the root one. They share
 // every stylesheet and several UI modules, so the shared chunk is emitted once.
 export default defineConfig({
-  plugins: [appRoute()],
+  plugins: [appRoute(), versionStamp()],
+  define: {
+    __GIMBAL_VERSION__: JSON.stringify(VERSION),
+  },
   build: {
     target: 'es2022',
     assetsInlineLimit: 0,

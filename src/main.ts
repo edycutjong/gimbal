@@ -44,7 +44,20 @@ import { FFT_SIZE } from './dsp/fft.ts';
  * 30 Hz loop, and a virtual DOM diff inside it is pure downside.
  */
 
-export const APP_VERSION = 'gimbal 0.1.0';
+/**
+ * READ from `package.json` at build time, never typed here.
+ *
+ * This string is stamped onto every printed report, which is the one artifact
+ * that leaves the browser and reaches a clinician on paper. It said
+ * `gimbal 0.1.0` by hand while `package.json` was at 1.3.0, so every report
+ * printed since v0.2.0 named a build that was five releases stale — a report
+ * you cannot tie to the code that produced it is not evidence of anything.
+ * `__GIMBAL_VERSION__` is substituted by the `gimbal-version-stamp` plugin in
+ * `vite.config.ts` (and by the matching `define` in `vitest.config.ts`), from
+ * the same `package.json` that `scripts/version.mjs` writes on release.
+ */
+declare const __GIMBAL_VERSION__: string;
+export const APP_VERSION = `gimbal ${__GIMBAL_VERSION__}`;
 const METHODS_REV = 'METHODS.md@unreleased';
 
 type Screen = 'prescribe' | 'setup' | 'block' | 'gate' | 'report' | 'ledger';
@@ -431,8 +444,23 @@ function persist(): void {
 }
 
 async function openReport(): Promise<void> {
+  /*
+   * Both halves of this line are defensive and NEITHER can fire.
+   * `viewingSession` is only ever assigned non-null, and nothing sets it back.
+   * Of the two call sites, the ledger's "Back to report" is already guarded by
+   * `&& viewingSession`, and the final gate's ruling is only reachable through
+   * `finishBlock`, whose unconditional `persist()` assigns `viewingSession`
+   * before any gate is rendered — and which returns before rendering a gate at
+   * all in the one case where `persist()` skips that assignment.
+   *
+   * Kept because `openReport` must not render a report out of nothing if a
+   * future call site appears; ignored because the alternative is a test that
+   * fakes a state the module cannot hold.
+   */
+  /* v8 ignore start */
   const session = viewingSession ?? toPersisted();
   if (!session) return;
+  /* v8 ignore stop */
   viewingSession = session;
   renderReport(hosts.report, {
     model: buildReport(session),

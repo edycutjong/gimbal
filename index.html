@@ -216,7 +216,7 @@
             <span class="lp-fact-s">Open DevTools, clear the Network tab, run a block. Not “no personal data” — no requests.</span>
           </li>
           <li>
-            <span class="lp-fact-n tnum">90</span>
+            <span class="lp-fact-n tnum">1057</span>
             <span class="lp-fact-l">automated tests, plus 8 source checks</span>
             <span class="lp-fact-s">All inside <code>npm test</code>, on a clean clone, with no flags and no keys.</span>
           </li>
@@ -522,7 +522,7 @@ Permissions-Policy:
           <div class="lp-body">
             <h2 id="s-eng">Small enough to audit in an afternoon.</h2>
             <!--
-              A DATASHEET, NOT FOUR STAT CARDS. `Automated tests … 90` in a spec
+              A DATASHEET, NOT FOUR STAT CARDS. `Automated tests … 1057` in a spec
               table reads as a specification; the same numeral centred in a card
               with a caption underneath reads as a boast. Same numbers, and
               specification is the register this product needs. The hero's proof
@@ -532,7 +532,7 @@ Permissions-Policy:
             <dl class="lp-spec">
               <div class="lp-spec-row">
                 <dt class="lp-spec-k">Automated tests<span class="lp-spec-n">unit suite, <code>npm test</code></span></dt>
-                <dd class="lp-spec-v tnum">90</dd>
+                <dd class="lp-spec-v tnum">1057</dd>
               </div>
               <div class="lp-spec-row">
                 <dt class="lp-spec-k">Mechanical source checks<span class="lp-spec-n">greps, in the same command</span></dt>
@@ -730,6 +730,21 @@ npm run check:build # builds the bundle, then greps it</code></pre>
             <span class="wordmark">Gimbal</span>
           </p>
           <p>A dose meter for prescribed gaze-stabilization exercise. VORx1, yaw axis, one browser tab.</p>
+          <!--
+            THE RELEASE BADGE, AND WHY IT IS NOT AN IMAGE.
+            Every badge service — shields.io and the rest — is a third-party
+            origin, and `img-src 'self' data: blob:` means the browser would
+            BLOCK it rather than merely disallow it. A page whose headline claim
+            is zero third-party requests cannot open its footer with one.
+            So the badge is markup: no request, nothing to 404, readable by a
+            screen reader as text, and it inherits all three palettes.
+            The version is stamped at build time from `package.json` by the
+            `gimbal-version-stamp` plugin in `vite.config.ts` — never typed here.
+          -->
+          <a class="lp-badge" href="https://github.com/edycutjong/gimbal/releases/latest">
+            <span class="lp-badge-k">release</span
+            ><span class="lp-badge-v">v%GIMBAL_VERSION%</span>
+          </a>
         </div>
         <!--
           THE REPOSITORY IS PUBLIC. It was private while the submission was being

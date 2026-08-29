@@ -126,6 +126,23 @@ const landing = readFileSync(join(DIST, 'index.html'), 'utf8');
 if (!/<script[^>]+type="module"/.test(landing)) problems.push('dist/index.html: no module script');
 if (!/LIMITATIONS-BODY-START/.test(landing)) problems.push('dist/index.html: the limitations block did not ship');
 
+// The release badge names a version, and a version a reader cannot trust is
+// worse than no version at all. Two ways it could ship wrong, so both are
+// checked: the token could survive unsubstituted (a typo in the placeholder,
+// which renders the literal `v%GIMBAL_VERSION%` in the footer), or it could
+// substitute a STALE number (the plugin reading some other package.json). The
+// second is the one a human reviewer never catches.
+const pkgVersion = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
+if (landing.includes('%GIMBAL_VERSION%')) {
+  problems.push('dist/index.html: %GIMBAL_VERSION% was never substituted — the footer would print the raw token');
+}
+const badge = landing.match(/class="lp-badge-v"[^>]*>v([\d.]+)</);
+if (!badge) {
+  problems.push('dist/index.html: the release badge did not ship');
+} else if (badge[1] !== pkgVersion) {
+  problems.push(`dist/index.html: the release badge says v${badge[1]} but package.json is ${pkgVersion}`);
+}
+
 if (problems.length > 0) {
   process.stderr.write(`\nU-DIST failed — ${problems.length} problem(s):\n\n`);
   for (const p of problems) process.stderr.write(`  ${p}\n`);

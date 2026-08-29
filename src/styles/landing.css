@@ -2640,6 +2640,55 @@
   height: 28px;
 }
 
+/*
+  THE RELEASE BADGE — markup, not an image, and sized to this page's own rules.
+
+  A shields.io strip is 20 px tall and sets its own 11 px type. Both numbers
+  fail assertions this page already holds: `e2e/a11y.spec.ts` requires every
+  visible `a, button, summary, input` to clear 44 x 44, and no computed
+  font-size on the page may fall below 15 px at any viewport. So the badge is
+  44 px tall at `--lp-t-micro`, which IS the floor. It reads as a control
+  because on this page it is one.
+
+  The version text comes from `package.json` via the `gimbal-version-stamp`
+  plugin in `vite.config.ts`. Nothing here is hand-typed, so it cannot drift.
+*/
+.landing .lp-badge {
+  display: inline-flex;
+  align-items: stretch;
+  min-height: 44px;
+  margin-bottom: var(--lp-s3);
+  border: 1px solid var(--lp-line-2);
+  border-radius: var(--lp-r1);
+  overflow: hidden;
+  font-size: var(--lp-t-micro);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+}
+.landing .lp-badge > span {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.85em;
+}
+.landing .lp-badge-k {
+  color: var(--lp-ink-2);
+  background: var(--lp-well);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.landing .lp-badge-v {
+  color: var(--lp-ink-1);
+  background: var(--lp-panel);
+  border-left: 1px solid var(--lp-line-2);
+  /* Tabular figures so the pill does not resize between 1.9.0 and 1.10.0. */
+  font-variant-numeric: tabular-nums;
+}
+.landing .lp-badge:hover .lp-badge-v {
+  color: var(--lp-ink-1);
+  background: var(--lp-well);
+}
+
 .landing .lp-foot-h {
   color: var(--lp-ink-1);
   font-size: var(--lp-t-micro);
