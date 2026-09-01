@@ -20,7 +20,7 @@
     <title>Gimbal — a dose meter for prescribed vestibular rehab</title>
     <meta
       name="description"
-      content="Gimbal is a webcam dose meter that proves prescribed gaze-stabilization exercise was delivered at therapeutic velocity. Nothing leaves your device."
+      content="After a concussion, the exercise that steadies your vision only works above a certain head speed. Gimbal is a webcam dose meter that proves it was delivered."
     />
     <meta name="author" content="Edy Cu" />
     <link rel="canonical" href="https://gimbal.edycu.dev/" />
@@ -49,7 +49,7 @@
     <meta property="og:title" content="Gimbal — a dose meter for prescribed vestibular rehab" />
     <meta
       property="og:description"
-      content="Proves your prescribed gaze-stabilization exercise was delivered at therapeutic velocity. Nothing leaves your device."
+      content="After a concussion, the exercise that steadies your vision only works above a certain head speed. Gimbal proves it was delivered. Nothing leaves your device."
     />
     <meta property="og:image" content="https://gimbal.edycu.dev/og.png" />
     <meta property="og:image:type" content="image/png" />
@@ -124,9 +124,25 @@
         lede and both buttons before reaching the thing the headline is about.
       -->
       <section class="lp-hero">
-        <!-- Short enough to hold one line at 320 px. The full claim ran to three
-             lines there, with the rule on a line of its own. -->
-        <p class="lp-eyebrow">VORx1, yaw · one browser tab</p>
+        <!--
+          Names the CONDITION first, then the technique.
+
+          It used to read "VORx1, yaw · one browser tab" — two pieces of jargon
+          and a hosting detail, as the first text on the page. Nothing above the
+          fold said what condition this is for, and "concussion" appeared on this
+          page ONLY inside the limitations list, i.e. only in the sentences
+          saying what Gimbal cannot do. A reader who did not already know what
+          VORx1 means had no way in.
+
+          MEASURED, not asserted: the old comment here claimed the string was
+          "short enough to hold one line at 320 px", and it was NOT — the
+          28-character original wrapped to two lines at 320, 360 and 414 px. It
+          had presumably been true once and went stale silently, because nothing
+          checks it. This string is 18 characters and was measured at one line at
+          320 px in a real browser. Anything past ~20 characters wraps; re-measure
+          rather than trusting this sentence, which is how the last one rotted.
+        -->
+        <p class="lp-eyebrow">Concussion · VORx1</p>
 
         <h1 class="lp-h1">
           Turn your head lazily and watch the counter
@@ -176,8 +192,24 @@
         -->
         <p id="chapter-slot" class="lp-chapter"></p>
 
+        <!--
+          The lede LEADS WITH THE PROBLEM, not with the product noun.
+
+          It used to open "Gimbal is a webcam dose meter for prescribed
+          gaze-stabilization exercise" — a definition, addressed to a reader who
+          already knew why such a thing would exist. Between that and the
+          eyebrow, the first fold named a technique, a hosting fact and a
+          product category, and never once named the person or the condition.
+          The two sentences added here are the same opening the video narration
+          and the YouTube description already use; the page was the one surface
+          missing it. Everything from "It does not choose your therapy" onward is
+          the original text, unchanged.
+        -->
         <p class="lp-lede">
-          Gimbal is a webcam <strong>dose meter</strong> for prescribed gaze-stabilization
+          After a concussion, turning your head can make the room slide. The exercise that
+          retrains that reflex only works above a certain head speed — and at home, without
+          an instrument, almost everyone drifts below it and nobody finds out. Gimbal is a
+          webcam <strong>dose meter</strong> for that prescribed gaze-stabilization
           exercise. It does not choose your therapy, set your parameters, or diagnose
           anything. It measures whether the exercise your clinician prescribed was
           actually delivered — at the velocity that makes it a dose rather than a movement.
