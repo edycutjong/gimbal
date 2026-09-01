@@ -2,6 +2,13 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.5.3 — 2026-09-01
+
+### Fixes
+
+- **landing:** the first fold names the condition, not the technique
+- **app:** the brand is a link, so /app is not a dead end
+
 ## 1.5.2 — 2026-08-29
 
 ### Fixes
