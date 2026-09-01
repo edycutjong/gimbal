@@ -598,11 +598,23 @@ details > .disclosure-body {
   border-bottom: 1px solid var(--edge);
 }
 
+/* A link, not a span — see `settingsRow` in src/ui/dom.ts. `color: inherit` and
+   `text-decoration: none` keep it looking identical to the mark it replaced;
+   the opacity shift is the same hover affordance `.lp-brand` uses on the
+   landing page, so the two brands behave the same way across the two pages.
+   The focus ring comes from the global `:focus-visible` rule. */
 .app-brand {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
   min-height: var(--target);
+  color: inherit;
+  text-decoration: none;
+  transition: opacity 140ms ease;
+}
+
+.app-brand:hover {
+  opacity: 0.78;
 }
 
 .app-mark {

@@ -221,12 +221,12 @@ capability executes for real on the default path, or it does not execute at all.
 
 ```bash
 npm ci
-npm test            # 1062 tests against analytic ground truth + 8 mechanical source checks
+npm test            # 1063 tests against analytic ground truth + 8 mechanical source checks
 npm run bench       # all six gate outcomes end-to-end, then the frame-budget timings
 npm run check:build # builds the production bundle, then greps it
 ```
 
-`npm test` runs **1062** automated tests plus eight mechanical source checks. Four
+`npm test` runs **1063** automated tests plus eight mechanical source checks. Four
 more checks — `U-DIST`, `U-CFG`, `U-DOC`, `U-DEP` — read a build artifact or a
 deployed URL and therefore live in `check:build` and `check:deploy` instead, for
 **twelve** in total. The split is a rule rather than a convenience: a check that
@@ -342,7 +342,7 @@ is not worth trading it for.
 | Layer | What runs | Where |
 |---|---|---|
 | Types | `tsc --noEmit` over `src/` and `tests/` on every build — `strict`, plus `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` and `noUncheckedIndexedAccess` | `npm run build`, `tsconfig.json` |
-| Unit | 1062 tests against analytic ground truth | `npm test` → `vitest` |
+| Unit | 1063 tests against analytic ground truth | `npm test` → `vitest` |
 | Mechanical checks | 12 greps, each closing one documented failure pattern: `U-FLAG` `U-DEV` `U-CARD` `U-LIMITS` `U-SRC` `U-OUTLINE` `U-COUNT` `greppable` in `npm test`; `U-DIST` `U-CFG` `U-DOC` `U-DEP` in the builder commands | `scripts/checks.mjs`, `check-dist.mjs`, `check-deploy.mjs` |
 | Behavioural | the six-outcome gate partition, then p50/p95/p99 against the frame budget | `npm run bench` |
 | End-to-end | the accessibility, origin, print, measurement and disclosure suites in Chromium | `npx playwright test` |

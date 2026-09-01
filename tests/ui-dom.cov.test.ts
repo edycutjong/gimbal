@@ -499,6 +499,21 @@ describe('settingsRow', () => {
     ).toEqual(['light']);
   });
 
+  // Regression: the brand was a <span>, so `/app` had no route back to `/` —
+  // `href="/"` appeared nowhere in src/ or app/. The mark and the wordmark read
+  // as a home affordance on every site, so a reader clicks them and nothing
+  // happens. It is an anchor now, and this asserts it stays one.
+  it('makes the brand a labelled link home, so /app is not a dead end', () => {
+    installMatchMedia({ [COLOR_LIGHT]: false });
+    document.body.innerHTML = settingsRow('light');
+
+    const brand = el<HTMLAnchorElement>(document, '.app-brand');
+    expect(brand.tagName).toBe('A');
+    expect(brand.getAttribute('href')).toBe('/');
+    // The mark is aria-hidden, so the link carries its own accessible name.
+    expect(brand.getAttribute('aria-label')).toBe('Gimbal, home');
+  });
+
   it('resolves a null theme through the OS, so the row never paints an empty picker', () => {
     installMatchMedia({ [COLOR_LIGHT]: true });
     document.body.innerHTML = settingsRow(null);

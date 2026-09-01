@@ -151,10 +151,17 @@ export const APP_MARK_SVG = `<svg class="app-mark" viewBox="0 0 40 40" aria-hidd
 /**
  * The application bar. Rendered at the top of every screen except the block
  * screen, which has no chrome at all by design.
+ *
+ * The brand is a LINK to `/`, matching `.lp-brand` on the landing page. It used
+ * to be a `<span>`, which made `/app` a dead end: the mark and the wordmark look
+ * exactly like every site's home affordance, a reader clicks them, and nothing
+ * happens. There was no route back to `/` from anywhere in the app — `href="/"`
+ * appeared nowhere in `src/` or `app/`. The block screen still has no chrome, so
+ * this cannot be clicked mid-exercise.
  */
 export function settingsRow(current: ThemeName | null): string {
   return `<div class="settings-row no-print">
-    <span class="app-brand">${APP_MARK_SVG}<span class="wordmark">Gimbal</span></span>
+    <a class="app-brand" href="/" aria-label="Gimbal, home">${APP_MARK_SVG}<span class="wordmark">Gimbal</span></a>
     ${themePickerHtml(current)}
   </div>`;
 }
