@@ -205,6 +205,15 @@ const ok = (id, message) => process.stdout.write(`  ✓ ${id}  ${message}\n`);
         // allowlist that forbids it would force the choice between a red check
         // and an unattributed asset. Host-and-path matched like the others.
         atHostPath(url, 'github.com', '/primer/octicons') ||
+        // The project's OWN demo video. A different category from the four
+        // above — not an upstream attribution, and deliberately not a whole-host
+        // allowance either. It is one exact address, path-matched, because the
+        // rule this check enforces is "no SECOND live address for the app", and
+        // a video is not an address for the app: it cannot be opened, measured
+        // or reproduced against. Widening this to `hostMatches(url,
+        // 'youtu.be')` would let any future paste of any video pass, which is
+        // the substring-matching mistake this file already argues against.
+        atHostPath(url, 'youtu.be', '/7eJMT9FRzM4') ||
         hostMatches(url, 'conventionalcommits.org');
       if (!allowed) problems.push(`U-DOC: ${name} states a URL that is not canonical: ${url}`);
     }
