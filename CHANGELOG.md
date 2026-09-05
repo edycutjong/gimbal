@@ -2,6 +2,16 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.6.0 — 2026-09-05
+
+### Features
+
+- **docs:** the demo video, the deck, and seven seconds of the refusal
+
+### Chores
+
+- **deps:** bump actions/upload-artifact in the actions group (#5)
+
 ## 1.5.3 — 2026-09-01
 
 ### Fixes
