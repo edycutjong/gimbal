@@ -14,7 +14,7 @@
      alt="Gimbal — the amber arc stalls short of the green band; the marker commits slate and the dose numeral holds."
      width="100%">
 
-**[https://gimbal.edycu.dev](https://gimbal.edycu.dev)** · [Demo walkthrough](DEMO.md) · [Methods](METHODS.md) · [Limitations](LIMITATIONS.md)
+**[https://gimbal.edycu.dev](https://gimbal.edycu.dev)** · [Demo video](https://youtu.be/7eJMT9FRzM4) · [Pitch deck](https://gimbal.edycu.dev/deck) · [Demo walkthrough](DEMO.md) · [Methods](METHODS.md) · [Limitations](LIMITATIONS.md)
 
 *This repository is **public**, and so is the hosted application at the address
 above. Nothing here is gated.*
@@ -35,6 +35,18 @@ a folded paper handout she has been doing at half speed, every day, for nothing.
 *(Maya is a composite of the patient this is built for, not a real named
 individual. No testimonial, quote, or record in this project is attributed to a
 real person.)*
+
+## 📸 See it in Action
+
+<img src="docs/assets/refusal-loop.gif"
+     alt="Seven seconds of a live session: the velocity arc sweeps past the prescribed band and back, three consecutive repetitions are refused — tracking unreliable, off the pacing tempo, and too fast at 364 degrees per second — and the delivered dose stays at 0.0"
+     width="480">
+
+*Seven seconds of a real session, unedited. Three of the five named refusals fire
+in a row — `tracking unreliable`, `off the pacing tempo`, `too fast (above
+350 °/s; measured 364 °/s)` — and `0.0 / 1.0 min in zone` does not move. A refused
+cycle contributes exactly zero seconds to delivered dose. That is the whole
+product.*
 
 ## 💡 The problem, in three sentences
 

@@ -1,0 +1,1524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gimbal — pitch deck</title>
+
+<!--
+  ══════════════════════════════════════════════════════════════════════════
+  GIMBAL — 12-slide pitch deck. Single self-contained file.
+  Built for Devpost "Hack for Humanity | Summer 2026" · Best Tech for
+  Concussion Recovery. Submission deadline 2026-09-04 23:45 EDT.
+
+  KEYS
+    → / ␣ / PageDown   next slide
+    ← / PageUp         previous slide
+    Home / End         first / last slide
+    Esc                slide overview grid (Esc again, or click, to return)
+    P                  presenter mode — speaker notes panel, cursor hides idle
+    C                  contrast debug — outlines every text run for projector QA
+    1…9, 0             jump to slide 1…9, 10
+
+  PRINT TO PDF
+    Cmd/Ctrl+P → Destination "Save as PDF" → Margins: Default →
+    "Background graphics": ON. Leave Paper size and Layout alone: `@page`
+    already declares 16in × 9in, which is landscape by its own proportions.
+    Produces a clean 12-page 16:9 PDF. All chrome, notes and grids hide.
+    DO NOT write `size: 16in 9in landscape` — mixing explicit lengths with the
+    `landscape` keyword is invalid CSS, the whole declaration is dropped, and
+    the PDF silently becomes 12 pages of US Letter PORTRAIT with the right-hand
+    45 % of every slide cut off. Verified: 1152 × 648 pt with, 612 × 792 without.
+
+  SWAPPING IN REAL SCREENSHOTS
+    Every product visual in this deck is an HONEST VECTOR RECREATION of the
+    real interface, drawn from build/src/ui/{dial,strip,copy}.ts using
+    Gimbal's own tokens from build/src/styles/themes.css. None of them is a
+    photograph of the running app and none claims to be. Each is preceded by
+    an HTML comment beginning "SWAP:" naming the screenshot that should
+    replace it and the size it should be. Search this file for "SWAP:".
+
+  NETWORK
+    Zero external requests by design — no CDN, no web font, no remote image.
+    The product's own hard constraint is default-src 'self'; a deck about that
+    product that phoned home would be self-refuting. System font stack only.
+
+  REBRAND
+    All colour and type handles live in the :root block directly below.
+    They are copied verbatim from the product's dark theme.
+  ══════════════════════════════════════════════════════════════════════════
+-->
+
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+   TOKENS — copied verbatim from build/src/styles/themes.css (dark, default).
+   Every ratio in the comments there is WCAG-computed against s0/s1/s2.
+   There are exactly two state hues because the instrument emits exactly two
+   semantic states about head velocity: in the prescribed band, or outside it.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  --surface-0: #0b0e12;
+  --surface-1: #141922;
+  --surface-2: #1d2530;
+
+  --ink-1: #e6edf3;        /* 16.37 / 14.91 / 13.07 */
+  --ink-2: #a8b4c0;        /*  9.17 /  8.35 /  7.32 */
+  --ink-3: #7c8895;        /*  5.35 /  4.88 — never used on --surface-2 */
+  --edge: #2a3542;
+  --edge-strong: #5e7186;  /*  3.85 /  3.51 /  3.08 */
+
+  --zone-in: #5bd6ae;      /* 10.75 — the primary */
+  --zone-out: #d9a63c;     /*  8.72 — the accent, kept under 5% of pixels */
+  --refused: #98a2b0;      /*  7.49 — a refusal is slate, never red */
+  --halt: #f08a6c;         /*  end-session stop rule ONLY */
+  --focus: #9bc9ff;        /* 11.23 — a hue used for nothing else */
+  --optotype: #f4f8fb;     /* 18.11 — highest contrast on screen, by design */
+
+  /* master.md rebrand handles */
+  --color-bg: var(--surface-0);
+  --color-primary: var(--zone-in);
+  --color-accent: var(--zone-out);
+
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display",
+                  "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: #05070a;
+  color: var(--ink-1);
+  font-family: var(--font-display);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── Stage: fixed 1920×1080, scaled to the viewport. Letterbox the BROWSER. ── */
+#stage {
+  position: absolute; top: 50%; left: 50%;
+  width: 1920px; height: 1080px;
+  transform-origin: 50% 50%;
+  transform: translate(-50%, -50%) scale(1);
+  background: var(--surface-0);
+  box-shadow: 0 0 0 1px #000, 0 40px 120px rgba(0,0,0,.6);
+}
+
+.slide {
+  position: absolute; inset: 0;
+  width: 1920px; height: 1080px;
+  padding: 76px 96px 84px;
+  display: none;
+  flex-direction: column;
+  background: var(--surface-0);
+  overflow: hidden;
+}
+.slide.is-active { display: flex; }
+
+/* ── Type scale ──────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────
+   CONTRAST POLICY, stated once and enforced by the C debug mode.
+   themes.css computes --ink-3 at 5.35 on surface-0, 4.88 on surface-1 and
+   4.28 on surface-2 — and says in its own comment that it is "never used on
+   --surface-2". 4.28 is below AA. So in this deck --ink-3 is used for exactly
+   one thing: the decorative pipeline arrow, at 26px on surface-0, where 5.35
+   clears AAA for large text. Every text run — including labels, captions,
+   eyebrows and attributions — is --ink-2 or better, which is 9.17 / 8.35 /
+   7.32 and therefore AAA on all three surfaces. There is no fine-print tier
+   in this project, and there is no low-contrast tier either.
+   ───────────────────────────────────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 19px; line-height: 1.2;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0 22px;
+}
+.eyebrow b { color: var(--zone-in); font-weight: 600; letter-spacing: .18em; }
+
+h1.display {
+  font-size: 118px; line-height: .94; letter-spacing: -.045em;
+  font-weight: 700; margin: 0; color: var(--ink-1);
+}
+h2.head {
+  font-size: 66px; line-height: 1.02; letter-spacing: -.028em;
+  font-weight: 680; margin: 0 0 20px; color: var(--ink-1);
+  max-width: 22ch;
+}
+h2.head.wide { max-width: none; }
+h2.head .q { color: var(--zone-in); }
+h2.head .o { color: var(--zone-out); }
+h2.head .r { color: var(--refused); }
+
+.lede {
+  font-size: 32px; line-height: 1.38; letter-spacing: -.012em;
+  color: var(--ink-2); margin: 0; max-width: 44ch;
+}
+.body { font-size: 23px; line-height: 1.5; color: var(--ink-2); margin: 0; max-width: 56ch; }
+.body strong { color: var(--ink-1); font-weight: 620; }
+.small { font-size: 19px; line-height: 1.5; color: var(--ink-2); margin: 0; }
+.tnum { font-variant-numeric: tabular-nums; }
+code, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+code {
+  font-size: .92em; color: var(--ink-1);
+  background: var(--surface-2); border: 1px solid var(--edge);
+  border-radius: 4px; padding: 1px 6px;
+}
+
+/* ── Layout primitives ───────────────────────────────────────────────────── */
+.slide-body { flex: 1; display: flex; min-height: 0; gap: 64px; }
+.col { display: flex; flex-direction: column; min-width: 0; }
+.col.center { justify-content: center; }
+/* margin-top:auto must win over any inline spacing on the same element */
+.push { margin-top: auto !important; }
+.gap-s { padding-top: 24px; }
+.gap-m { padding-top: 34px; }
+.rule { height: 1px; background: var(--edge); border: 0; margin: 0; }
+.vrule { width: 1px; background: var(--edge); align-self: stretch; }
+
+.panel {
+  background: var(--surface-1);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  padding: 30px 34px;
+}
+.panel.flush { padding: 0; overflow: hidden; }
+.panel-title {
+  font-family: var(--font-mono); font-size: 18px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-2); margin: 0 0 16px;
+}
+
+/* Numbered demo callouts */
+.callout { display: flex; gap: 18px; align-items: flex-start; }
+.callout + .callout { margin-top: 22px; }
+.cnum {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  border: 1.5px solid var(--zone-out); color: var(--zone-out);
+  font-family: var(--font-mono); font-size: 20px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.cnum.n-in { border-color: var(--zone-in); color: var(--zone-in); }
+.ctext { font-size: 22px; line-height: 1.42; color: var(--ink-2); }
+.ctext b { color: var(--ink-1); font-weight: 620; }
+
+/* Big numbers */
+.statgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--edge); border: 1px solid var(--edge); border-radius: 12px; overflow: hidden; }
+.stat { background: var(--surface-1); padding: 26px 30px 24px; }
+.stat .n { font-family: var(--font-mono); font-size: 56px; line-height: 1; font-weight: 600; color: var(--zone-in); font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.stat .n.neutral { color: var(--ink-1); }
+.stat .l { font-size: 19px; line-height: 1.35; color: var(--ink-2); margin-top: 12px; }
+
+/* Verbatim product strings */
+.verbatim {
+  font-family: var(--font-mono); font-size: 22px; line-height: 1.45;
+  color: var(--ink-1); background: var(--surface-2);
+  border-left: 3px solid var(--refused); border-radius: 0 6px 6px 0;
+  padding: 16px 20px;
+}
+.verbatim.in { border-left-color: var(--zone-in); }
+.attrib { font-family: var(--font-mono); font-size: 17px; color: var(--ink-2); margin-top: 10px; letter-spacing: .04em; }
+
+/* Kicker line — the sentence a judge should retell */
+.kicker {
+  font-size: 30px; line-height: 1.32; letter-spacing: -.015em;
+  color: var(--ink-1); font-weight: 560; margin: 0;
+}
+.kicker em { font-style: normal; color: var(--zone-in); }
+
+/* Deck chrome */
+#counter {
+  position: absolute; right: 40px; bottom: 30px; z-index: 40;
+  font-family: var(--font-mono); font-size: 18px; letter-spacing: .12em;
+  color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+#counter .cur { color: var(--ink-1); }
+#progress {
+  position: absolute; left: 0; bottom: 0; height: 3px; z-index: 40;
+  background: var(--zone-in); width: 0; transition: width 220ms ease;
+}
+#brandmark {
+  position: absolute; left: 40px; bottom: 26px; z-index: 40;
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--font-mono); font-size: 17px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-2);
+}
+
+/* Speaker notes */
+.speaker-notes { display: none; }
+body.presenter #notes {
+  display: block;
+  position: fixed; left: 0; right: 0; bottom: 0; height: 20vh; z-index: 60;
+  background: #05070a; border-top: 1px solid var(--edge);
+  padding: 20px 40px; overflow: auto;
+}
+#notes { display: none; }
+#notes .nlabel {
+  font-family: var(--font-mono); font-size: 15px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--zone-in); margin: 0 0 8px;
+}
+#notes .ntext { font-size: 17px; line-height: 1.5; color: var(--ink-2); margin: 0; max-width: 130ch; }
+#notes .ntext p { margin: 0 0 6px; }
+body.presenter.idle, body.presenter.idle * { cursor: none; }
+
+/* Overview grid */
+#overview {
+  display: none; position: fixed; inset: 0; z-index: 70;
+  background: #05070a; padding: 40px; overflow: auto;
+}
+body.overview #overview { display: block; }
+#ovgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.ovcell {
+  position: relative; aspect-ratio: 16/9; border: 1px solid var(--edge);
+  border-radius: 8px; background: var(--surface-1); cursor: pointer;
+  padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between;
+  color: var(--ink-2); font-size: 15px; text-align: left;
+  font-family: var(--font-display); overflow: hidden;
+}
+.ovcell:hover, .ovcell:focus-visible { border-color: var(--edge-strong); color: var(--ink-1); }
+.ovcell[aria-current="true"] { border-color: var(--zone-in); }
+.ovcell .ovn { font-family: var(--font-mono); font-size: 15px; letter-spacing: .14em; color: var(--ink-2); }
+.ovcell .ovt { font-size: 17px; line-height: 1.28; color: var(--ink-1); font-weight: 600; }
+#ovhint { font-family: var(--font-mono); font-size: 15px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 20px; }
+
+/* Focus is never removed — the product's own U-OUTLINE rule, honoured here. */
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* Press C to toggle contrast debug mode */
+body.debug-contrast .contrast-check,
+body.debug-contrast h1, body.debug-contrast h2, body.debug-contrast h3,
+body.debug-contrast p, body.debug-contrast li,
+body.debug-contrast dt, body.debug-contrast dd,
+body.debug-contrast .ctext, body.debug-contrast .verbatim,
+body.debug-contrast .checkout, body.debug-contrast .strip-note,
+body.debug-contrast .stat .n, body.debug-contrast .stat .l {
+  outline: 1px solid var(--zone-out); outline-offset: 1px;
+}
+
+/* ── Product-recreation components ───────────────────────────────────────── */
+.ring-wrap { position: relative; display: block; }
+.ring-wrap svg.ring { display: block; width: 100%; height: auto; }
+.ring-wrap .opto {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 30%; height: auto;
+}
+.blockscreen {
+  background: var(--surface-0); border: 1px solid var(--edge); border-radius: 14px;
+  padding: 30px 36px 26px; display: flex; flex-direction: column; align-items: center;
+}
+/* The cycle strip is laid out in HTML, not SVG, on purpose. An SVG strip has to
+   be stretched with preserveAspectRatio="none" to fill a wide, short box, and
+   that anisotropic scale turns a 45° <pattern> hatch into a grey smear and
+   shrinks a refused cell below the height of a credited one. Flex cells plus a
+   repeating-linear-gradient never distort: the refused cell is the SAME height
+   as a credited one, outlined and hatched, so it reads as a hole punched in the
+   row rather than as a rendering artifact — by shape, at any size, in grey. */
+.blockscreen .strip { width: 100%; height: 40px; display: flex; gap: 4px; margin: 24px 0 0; }
+.strip .cell { flex: 1 1 0; min-width: 0; background: var(--zone-in); border-radius: 1px; }
+.strip .cell.refused {
+  background-color: var(--surface-0);
+  background-image: repeating-linear-gradient(45deg,
+    var(--refused) 0 2px, rgba(0,0,0,0) 2px 6px);
+  box-shadow: inset 0 0 0 2px var(--refused);
+}
+.strip-note {
+  width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 17px; color: var(--refused);
+  margin: 8px 0 14px; letter-spacing: .04em;
+}
+.strip-note .caret { color: var(--refused); font-size: 15px; line-height: 1; }
+.status-line {
+  font-size: 22px; line-height: 1.35; color: var(--refused); margin: 0;
+  min-height: 30px; text-align: center;
+}
+.status-line.blank { color: var(--ink-2); }
+.dose-readout {
+  font-family: var(--font-mono); font-size: 46px; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; color: var(--ink-1); margin: 14px 0 4px;
+}
+.dose-sub { font-family: var(--font-mono); font-size: 18px; color: var(--ink-2); margin: 0; letter-spacing: .04em; }
+.key-legend { font-family: var(--font-mono); font-size: 17px; color: var(--ink-2); margin: 16px 0 0; letter-spacing: .06em; }
+
+/* Paper handout, drawn in the product's LIGHT theme tokens (warm paper, never #FFF) */
+.handout {
+  background: #f6f2ea; color: #14181d; border-radius: 6px;
+  padding: 30px 34px 28px; box-shadow: 0 22px 50px rgba(0,0,0,.45);
+  transform: rotate(-1.15deg); position: relative;
+}
+.handout::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 52%; height: 1px;
+  background: linear-gradient(to right, rgba(20,24,29,0), rgba(20,24,29,.28), rgba(20,24,29,0));
+}
+.handout h3 { font-size: 25px; margin: 0 0 4px; letter-spacing: -.01em; color: #14181d; }
+.handout .sub { font-size: 18px; color: #3e4750; margin: 0 0 20px; }
+.handout dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 13px 20px; align-items: baseline; }
+.handout dt { font-size: 19px; line-height: 1.2; color: #3e4750; }
+.handout dd { margin: 0; font-family: var(--font-mono); font-size: 19px; line-height: 1.2; color: #14181d; font-variant-numeric: tabular-nums; text-align: right; }
+.handout .foot { font-size: 17px; color: #3e4750; margin: 22px 0 0; line-height: 1.45; }
+
+/* Terminal-ish check output */
+.checkout {
+  font-family: var(--font-mono); font-size: 20px; line-height: 1.75;
+  background: var(--surface-2); border: 1px solid var(--edge); border-radius: 10px;
+  padding: 20px 24px; color: var(--ink-2);
+}
+.checkout .pass { color: var(--zone-in); }
+.checkout .id { color: var(--ink-1); }
+
+/* Empty form fields — the eight numbers, and their absence */
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
+.field .flabel { font-size: 18px; color: var(--ink-2); margin: 0 0 6px; }
+.field .fbox {
+  height: 46px; border: 1px solid var(--edge-strong); border-radius: 6px;
+  background: var(--surface-0);
+}
+.field .fbox.filled {
+  display: flex; align-items: center; padding: 0 12px;
+  font-family: var(--font-mono); font-size: 21px; color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+}
+
+ul.reasons { list-style: none; margin: 0; padding: 0; }
+ul.reasons li {
+  display: grid; grid-template-columns: 252px 1fr; gap: 24px;
+  padding: 14px 0; border-top: 1px solid var(--edge);
+  font-size: 21px; line-height: 1.4; color: var(--ink-2);
+}
+ul.reasons li:last-child { border-bottom: 1px solid var(--edge); }
+ul.reasons .k { font-family: var(--font-mono); font-size: 19px; color: var(--ink-1); letter-spacing: .01em; }
+
+/* ── Pipeline diagram (slide 7) ──────────────────────────────────────────── */
+.pipe-wrap { margin: auto 0; }
+.pipe { display: flex; align-items: stretch; gap: 0; }
+.pipe-node {
+  flex: 1 1 0; min-width: 0;
+  background: var(--surface-1); border: 1px solid var(--edge); border-radius: 10px;
+  padding: 22px 24px 24px;
+  display: flex; flex-direction: column;
+}
+.pipe-node.gate { border-color: var(--zone-in); }
+.pipe-node .pn {
+  font-family: var(--font-mono); font-size: 17px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-2); margin: 0 0 14px;
+}
+.pipe-node .pt {
+  font-size: 24px; line-height: 1.15; font-weight: 640; color: var(--ink-1);
+  margin: 0 0 14px; letter-spacing: -.012em;
+}
+.pipe-node .pl {
+  font-family: var(--font-mono); font-size: 17.5px; line-height: 1.55;
+  color: var(--ink-2); margin: 0;
+}
+.pipe-node .pl .out { color: var(--zone-in); display: block; margin-top: 8px; }
+.pipe-arrow {
+  flex: none; width: 54px; align-self: center;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-3); font-size: 26px; line-height: 1;
+}
+.pipe-lower { display: flex; gap: 26px; margin-top: 26px; }
+.note {
+  flex: 1 1 0; min-width: 0;
+  border: 1px solid var(--edge); border-radius: 10px; padding: 20px 24px 22px;
+  background: var(--surface-0);
+}
+.note.dashed { border-style: dashed; }
+.note.keyed { border-color: var(--zone-in); }
+.note .nt {
+  font-family: var(--font-mono); font-size: 17px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-2); margin: 0 0 12px;
+}
+.note.keyed .nt { color: var(--zone-in); }
+.note .nb { font-size: 19.5px; line-height: 1.5; color: var(--ink-2); margin: 0; }
+.note .nb code { font-size: 17px; }
+
+/* ── Cover ───────────────────────────────────────────────────────────────── */
+/* The cover ring breathes three times and then RESTS IN THE BAND — the same
+   resting frame the reduced-motion path and the print path produce. In-zone is
+   this product's resting state, so a cover that settled below the floor would
+   contradict its own caption, and settling somewhere the still versions do not
+   would mean three different pictures for one slide. Keyframe 100% is the rest
+   frame (animation-fill-mode: both), so all three agree by construction. */
+@keyframes breathe {
+  0%   { stroke-dasharray: 98.17 263.894; }
+  27%  { stroke-dasharray: 36.02 263.894; }
+  73%  { stroke-dasharray: 36.02 263.894; }
+  100% { stroke-dasharray: 98.17 263.894; }
+}
+.cover-live { animation: breathe 4.4s cubic-bezier(.42,0,.58,1) 3 both; }
+@keyframes markerdrift {
+  0%   { transform: rotate(-1.1deg); }
+  27%  { transform: rotate(-85.9deg); }
+  73%  { transform: rotate(-85.9deg); }
+  100% { transform: rotate(-1.1deg); }
+}
+.cover-marker {
+  transform-origin: 50px 50px;
+  transform: rotate(-1.1deg);
+  animation: markerdrift 4.4s cubic-bezier(.42,0,.58,1) 3 both;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Reduced motion. This is a concussion product. A deck about vestibular
+   symptoms that autoplays motion is self-refuting, so every animation here
+   has a still, fully legible resting state — not a degraded one.
+   ───────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .cover-live { stroke-dasharray: 98.17 263.894 !important; }
+  .cover-marker { transform: rotate(-1.1deg) !important; }
+}
+
+/* ── Print ───────────────────────────────────────────────────────────────── */
+@page { size: 16in 9in; margin: 0; }   /* NEVER add `landscape` — `<length>{2} landscape` is invalid and drops to US Letter */
+@media print {
+  html, body { overflow: visible; height: auto; background: var(--surface-0); }
+  /* The fit() routine writes transform/top as INLINE styles, so the print
+     overrides must be !important or the whole stage stays translated. */
+  #stage {
+    position: static !important;
+    transform: none !important;
+    top: auto !important; left: auto !important;
+    width: auto; height: auto;
+    box-shadow: none; background: transparent;
+  }
+  .slide {
+    position: static !important; display: flex !important;
+    width: 1920px; height: 1080px; zoom: .8;
+    page-break-after: always; break-after: page;
+    break-inside: auto; page-break-inside: auto;
+  }
+  .slide:last-of-type { page-break-after: auto; break-after: auto; }
+  #counter, #progress, #brandmark, #notes, #overview, #hint { display: none !important; }
+  .cover-live { animation: none; stroke-dasharray: 98.17 263.894; }
+  .cover-marker { animation: none; transform: rotate(-1.1deg); }
+}
+
+/* First-run hint */
+#hint {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 45;
+  font-family: var(--font-mono); font-size: 15px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-2);
+  background: rgba(11,14,18,.9); border: 1px solid var(--edge);
+  border-radius: 999px; padding: 8px 18px;
+  transition: opacity 400ms ease;
+}
+#hint[hidden] { display: none; }
+/* In presenter mode the hint pill would sit inside the notes panel. */
+body.presenter #hint, body.overview #hint { display: none; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+<!-- ════════════════════════ 1 · COVER ════════════════════════ -->
+<section class="slide is-active" data-title="Gimbal">
+  <p class="eyebrow">Devpost · Hack for Humanity, Summer 2026 &nbsp;·&nbsp; <b>Best Tech for Concussion Recovery</b></p>
+
+  <div class="slide-body" style="align-items:center; gap:88px;">
+    <div class="col center" style="flex:1.15;">
+      <h1 class="display">Gimbal</h1>
+      <p class="lede" style="margin-top:34px; max-width:26ch; font-size:36px; color:var(--ink-1); font-weight:520;">
+        A webcam dose meter that proves you actually did your prescribed
+        vestibular rehab <em style="font-style:normal; color:var(--zone-in);">at therapeutic velocity</em>.
+      </p>
+      <p class="body" style="margin-top:30px; max-width:48ch;">
+        Turn your head lazily and watch the counter refuse you by name.
+      </p>
+      <hr class="rule" style="margin:40px 0 28px; max-width:700px;">
+      <p class="small mono" style="letter-spacing:.05em; line-height:2; white-space:nowrap;">
+        <span style="color:var(--zone-in);">gimbal.edycu.dev</span> &nbsp;·&nbsp; vite 5 + vanilla typescript &nbsp;·&nbsp; 1 runtime dependency<br>
+        no llm &nbsp;·&nbsp; no server &nbsp;·&nbsp; no account &nbsp;·&nbsp; no upload path &nbsp;·&nbsp; on purpose
+      </p>
+    </div>
+
+    <!-- SWAP: assets/screenshot-ring-inzone.png (860×860) — the velocity ring alone, cropped
+         square from a mid-session capture, marker at the top and the fill in --zone-in. (Slide 5
+         wants the whole block screen at 820×620; this one wants only the dial.)
+         The SVG below is an honest vector recreation of the ring built from build/src/ui/dial.ts geometry — 270° sweep from −135° (0 °/s)
+         through 12 o'clock to +135° (2 × band centre) — not a capture of the app. -->
+    <div class="col center" style="flex:1; align-items:center;">
+      <div class="ring-wrap" style="width:640px;" aria-hidden="true">
+        <svg class="ring" viewBox="0 0 100 100" role="img">
+          <g transform="rotate(135 50 50)">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--surface-2)" stroke-width="6"
+                    stroke-dasharray="197.920 263.894" stroke-linecap="butt"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--edge-strong)" stroke-width="6"
+                    stroke-dasharray="0 59.376 79.168 263.894"/>
+            <circle class="cover-live" cx="50" cy="50" r="42" fill="none" stroke="var(--zone-in)" stroke-width="6"
+                    stroke-dasharray="36.02 263.894" stroke-linecap="butt"/>
+          </g>
+          <line class="cover-marker" x1="50" y1="3" x2="50" y2="16"
+                stroke="var(--zone-in)" stroke-width="2.5"/>
+        </svg>
+        <svg class="opto" viewBox="0 0 50 50" aria-hidden="true">
+          <path d="M44.38 29.95 A20 20 0 1 1 44.38 20.05" fill="none"
+                stroke="var(--optotype)" stroke-width="10" stroke-linecap="butt"/>
+        </svg>
+      </div>
+      <p class="small mono" style="margin-top:30px; letter-spacing:.05em; text-align:center; max-width:46ch;">
+        the velocity ring<br>270&#176;&#160;sweep &nbsp;·&nbsp; band centred on 12&#160;o'clock
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 2 · THE PROBLEM ════════════════════════ -->
+<section class="slide" data-title="The dose nobody measures">
+  <p class="eyebrow">The problem</p>
+
+  <div class="slide-body" style="gap:76px;">
+    <div class="col" style="flex:1.08;">
+      <h2 class="head">Prescribed like a drug.<br>Measured like a rumour.</h2>
+      <p class="body" style="margin-top:8px; max-width:52ch;">
+        Gaze-stabilization exercise carries <strong>parameters</strong> — head frequency,
+        peak velocity, duration, repetitions per day. The clinic sets all of them
+        and then measures <strong>none</strong> of them, because the exercise happens
+        at a kitchen table six days out of seven.
+      </p>
+
+      <div class="panel" style="margin-top:38px;">
+        <p class="panel-title">The only instrument the clinic currently has</p>
+        <p style="font-size:31px; line-height:1.35; color:var(--ink-1); margin:0 0 16px; letter-spacing:-.012em;">
+          &ldquo;How did the home exercises go?&rdquo;
+        </p>
+        <p style="font-size:26px; line-height:1.35; color:var(--refused); margin:0;">
+          &ldquo;Yeah &mdash; most days, I think.&rdquo;
+        </p>
+        <hr class="rule" style="margin:22px 0 18px;">
+        <p class="small" style="font-size:20px; color:var(--ink-2); line-height:1.45;">
+          Answered from memory, in minutes-claimed. That sentence is the entire
+          adherence evidence base for the exercise on the left.
+        </p>
+      </div>
+
+      <p class="kicker push" style="margin-top:40px;">
+        Every tool in this space watches, asks, or chats.
+        <em>Nothing measures the delivered dose of the prescribed treatment.</em>
+      </p>
+    </div>
+
+    <div class="col center" style="flex:.92;">
+      <!-- SWAP: assets/photo-clinic-handout.jpg (720×540) — a photograph of a real home-programme
+           sheet, and ONLY if one is obtained with written permission and de-identified first.
+           Until then this stays drawn: a generic handout in the product's own LIGHT theme tokens
+           (warm paper, never #FFFFFF), which is not a reproduction of any real clinic's document. -->
+      <div class="handout">
+        <h3>Gaze stabilization &mdash; VORx1, yaw</h3>
+        <p class="sub">Home programme &middot; sheet 1 of 1</p>
+        <dl>
+          <dt>Head frequency</dt><dd>1.7 &ndash; 2.3 Hz</dd>
+          <dt>Peak velocity</dt><dd>150 &ndash; 350 &deg;/s</dd>
+          <dt>Block length</dt><dd>60 sec</dd>
+          <dt>Blocks per session</dt><dd>1</dd>
+          <dt>Stop if symptoms rise</dt><dd>3 points</dd>
+          <dt>Stop at</dt><dd>7 / 10</dd>
+        </dl>
+        <p class="foot">
+          Six weeks after the collision, Maya still cannot check a blind spot without
+          the room sliding sideways &mdash; and this is the sheet she has been doing at
+          half speed, every day, for nothing.
+        </p>
+      </div>
+      <p class="small" style="margin-top:30px; max-width:none; align-self:stretch; line-height:1.55;">
+        Maya is a composite of the patient this is built for, not a real named individual, and no
+        testimonial, quote or record anywhere in this project is attributed to a real person. The
+        parameters shown are the evaluation values printed in the README &mdash; an illustration of
+        what a card contains, and never a recommendation.
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 3 · THE INSIGHT ════════════════════════ -->
+<section class="slide" data-title="Measure velocity, not reps">
+  <p class="eyebrow">The insight</p>
+  <h2 class="head wide" style="max-width:32ch;">A rep counter rewards the exact behaviour that makes the therapy useless.</h2>
+
+  <div class="slide-body" style="gap:56px; margin-top:6px;">
+    <div class="col center" style="flex:1.5;">
+      <!-- SWAP: assets/chart-bench-cycles.svg (1000×476) — and ONLY once a real recording exists,
+           at which point the drawn cycles become plotted ones and the "schematic" caption below has
+           to change with them. Until then this stays a schematic: drawn deliberately, labelled as
+           drawn on the slide, and carrying no number that was not derived on paper. -->
+      <div class="panel flush" style="display:flex; flex-direction:column; background:var(--surface-0);">
+        <svg viewBox="0 0 1000 476" style="width:100%; height:auto; display:block;" role="img"
+             aria-label="Schematic: peak head velocity per cycle drawn against the prescribed band. Every cycle falls far below the band floor. A rep counter credits all twenty as solid marks; Gimbal draws all twenty as empty outlines and credits zero seconds.">
+
+          <!-- plot frame: x 120..960, y 40..300 maps 500..0 deg/s -->
+          <rect x="120" y="40" width="840" height="260" fill="var(--surface-0)"/>
+
+          <!-- prescribed band 150-350 deg/s -->
+          <rect x="120" y="118" width="840" height="104" fill="var(--zone-in)" opacity="0.10"/>
+          <line x1="120" y1="118" x2="960" y2="118" stroke="var(--zone-in)" stroke-width="1.5" stroke-dasharray="6 5"/>
+          <line x1="120" y1="222" x2="960" y2="222" stroke="var(--zone-in)" stroke-width="1.5" stroke-dasharray="6 5"/>
+          <text x="944" y="146" text-anchor="end" font-family="ui-monospace, Menlo, monospace" font-size="17" fill="var(--zone-in)">350 &#176;/s ceiling</text>
+          <text x="944" y="212" text-anchor="end" font-family="ui-monospace, Menlo, monospace" font-size="17" fill="var(--zone-in)">150 &#176;/s floor</text>
+          <text x="130" y="176" font-family="ui-monospace, Menlo, monospace" font-size="19" fill="var(--zone-in)">PRESCRIBED BAND</text>
+
+          <!-- axes -->
+          <line x1="120" y1="300" x2="960" y2="300" stroke="var(--edge-strong)" stroke-width="1.5"/>
+          <line x1="120" y1="40" x2="120" y2="300" stroke="var(--edge-strong)" stroke-width="1.5"/>
+          <text x="104" y="46" text-anchor="end" font-family="ui-monospace, Menlo, monospace" font-size="17" fill="var(--ink-2)">500</text>
+          <text x="104" y="228" text-anchor="end" font-family="ui-monospace, Menlo, monospace" font-size="17" fill="var(--ink-2)">150</text>
+          <text x="104" y="305" text-anchor="end" font-family="ui-monospace, Menlo, monospace" font-size="17" fill="var(--ink-2)">0</text>
+          <text x="46" y="176" font-family="ui-monospace, Menlo, monospace" font-size="17" fill="var(--ink-2)" transform="rotate(-90 46 176)" text-anchor="middle">peak |&#969;| &#176;/s</text>
+
+          <!-- measured peaks, all far below the floor -->
+          <g fill="var(--refused)">
+            <circle cx="160" cy="252" r="6"/><circle cx="200" cy="256" r="6"/><circle cx="240" cy="249" r="6"/>
+            <circle cx="280" cy="258" r="6"/><circle cx="320" cy="251" r="6"/><circle cx="360" cy="254" r="6"/>
+            <circle cx="400" cy="247" r="6"/><circle cx="440" cy="257" r="6"/><circle cx="480" cy="250" r="6"/>
+            <circle cx="520" cy="253" r="6"/><circle cx="560" cy="248" r="6"/><circle cx="600" cy="256" r="6"/>
+            <circle cx="640" cy="252" r="6"/><circle cx="680" cy="245" r="6"/><circle cx="720" cy="255" r="6"/>
+            <circle cx="760" cy="250" r="6"/><circle cx="800" cy="258" r="6"/><circle cx="840" cy="247" r="6"/>
+            <circle cx="880" cy="253" r="6"/><circle cx="920" cy="251" r="6"/>
+          </g>
+          <path d="M160 252 200 256 240 249 280 258 320 251 360 254 400 247 440 257 480 250 520 253 560 248 600 256 640 252 680 245 720 255 760 250 800 258 840 247 880 253 920 251"
+                fill="none" stroke="var(--refused)" stroke-width="1.5" opacity=".55"/>
+          <text x="160" y="286" font-family="ui-monospace, Menlo, monospace" font-size="18" fill="var(--refused)">drawn, every cycle: 85 &ndash; 105 &#176;/s &#8212; illustrative, not recorded</text>
+
+          <!-- The SAME twenty cycles, two verdicts. Lanes share the plot's x positions. -->
+          <line x1="120" y1="318" x2="960" y2="318" stroke="var(--edge)" stroke-width="1"/>
+
+          <!-- lane A: a rep counter -->
+          <text x="120" y="346" font-family="ui-monospace, Menlo, monospace" font-size="18" fill="var(--ink-2)" letter-spacing="1.6">A REP COUNTER CREDITS</text>
+          <text x="960" y="346" text-anchor="end" font-family="ui-monospace, Menlo, monospace" font-size="21" fill="var(--zone-out)">20 of 20 reps</text>
+          <g fill="var(--zone-out)">
+            <rect x="155" y="358" width="10" height="26"/><rect x="195" y="358" width="10" height="26"/>
+            <rect x="235" y="358" width="10" height="26"/><rect x="275" y="358" width="10" height="26"/>
+            <rect x="315" y="358" width="10" height="26"/><rect x="355" y="358" width="10" height="26"/>
+            <rect x="395" y="358" width="10" height="26"/><rect x="435" y="358" width="10" height="26"/>
+            <rect x="475" y="358" width="10" height="26"/><rect x="515" y="358" width="10" height="26"/>
+            <rect x="555" y="358" width="10" height="26"/><rect x="595" y="358" width="10" height="26"/>
+            <rect x="635" y="358" width="10" height="26"/><rect x="675" y="358" width="10" height="26"/>
+            <rect x="715" y="358" width="10" height="26"/><rect x="755" y="358" width="10" height="26"/>
+            <rect x="795" y="358" width="10" height="26"/><rect x="835" y="358" width="10" height="26"/>
+            <rect x="875" y="358" width="10" height="26"/><rect x="915" y="358" width="10" height="26"/>
+          </g>
+
+          <!-- lane B: the dose meter -->
+          <text x="120" y="424" font-family="ui-monospace, Menlo, monospace" font-size="18" fill="var(--ink-2)" letter-spacing="1.6">GIMBAL CREDITS</text>
+          <text x="960" y="424" text-anchor="end" font-family="ui-monospace, Menlo, monospace" font-size="21" fill="var(--refused)">0.0 / 1.0 min in zone</text>
+          <g fill="none" stroke="var(--refused)" stroke-width="2.5" vector-effect="non-scaling-stroke">
+            <rect x="155" y="436" width="10" height="26"/><rect x="195" y="436" width="10" height="26"/>
+            <rect x="235" y="436" width="10" height="26"/><rect x="275" y="436" width="10" height="26"/>
+            <rect x="315" y="436" width="10" height="26"/><rect x="355" y="436" width="10" height="26"/>
+            <rect x="395" y="436" width="10" height="26"/><rect x="435" y="436" width="10" height="26"/>
+            <rect x="475" y="436" width="10" height="26"/><rect x="515" y="436" width="10" height="26"/>
+            <rect x="555" y="436" width="10" height="26"/><rect x="595" y="436" width="10" height="26"/>
+            <rect x="635" y="436" width="10" height="26"/><rect x="675" y="436" width="10" height="26"/>
+            <rect x="715" y="436" width="10" height="26"/><rect x="755" y="436" width="10" height="26"/>
+            <rect x="795" y="436" width="10" height="26"/><rect x="835" y="436" width="10" height="26"/>
+            <rect x="875" y="436" width="10" height="26"/><rect x="915" y="436" width="10" height="26"/>
+          </g>
+        </svg>
+        <p class="small" style="padding:0 26px 22px; margin:0;">
+          <strong style="color:var(--ink-1); font-weight:620;">Solid</strong> is a credited cycle,
+          an <strong style="color:var(--ink-1); font-weight:620;">empty outline</strong> a refused one
+          &mdash; the encoding is shape, so it survives greyscale and a bad projector. Schematic,
+          drawn rather than recorded: no bench recording exists yet.
+        </p>
+      </div>
+    </div>
+
+    <div class="col center" style="flex:.85;">
+      <p class="kicker" style="font-size:33px;">
+        Doing it too slowly is not a partial dose.<br>
+        <em>It is a different, non-therapeutic activity.</em>
+      </p>
+      <p class="body" style="margin-top:30px;">
+        The VOR adapts to a retinal-slip error signal. Below the prescribed velocity
+        the error signal that drives the adaptation is not produced, so the twenty
+        cycles on the left are not eighty percent of a dose. They are none of it.
+      </p>
+      <p class="body" style="margin-top:24px;">
+        <strong>So Gimbal counts seconds in the band, never repetitions.</strong>
+        A refused cycle contributes exactly <code>0.000 s</code>.
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 4 · HERO MOMENT ════════════════════════ -->
+<section class="slide" data-title="The counter refuses you by name">
+  <p class="eyebrow"><b>The hero moment</b> · one gesture, thirty seconds</p>
+  <h2 class="head wide" style="max-width:none; margin-bottom:26px;">
+    Turn your head lazily and watch<br>the counter <span class="r">refuse you by name</span>.
+  </h2>
+
+  <div class="slide-body" style="gap:64px;">
+    <!-- SWAP: replace with assets/screenshot-block-refused.png (820×620) — a real capture of the
+         block screen at the instant of a too-slow refusal, marker off the top, newest strip cell
+         hatched. Everything below is a vector recreation from build/src/ui/{dial,strip,copy}.ts;
+         the status string is byte-identical to the one the app renders. -->
+    <div class="col" style="flex:1.02;">
+      <div class="blockscreen" style="flex:1;">
+        <div class="ring-wrap" style="width:340px;" aria-hidden="true">
+          <svg class="ring" viewBox="0 0 100 100">
+            <g transform="rotate(135 50 50)">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="var(--surface-2)" stroke-width="6"
+                      stroke-dasharray="197.920 263.894" stroke-linecap="butt"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="var(--edge-strong)" stroke-width="6"
+                      stroke-dasharray="0 59.376 79.168 263.894"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="var(--zone-out)" stroke-width="6"
+                      stroke-dasharray="36.02 263.894" stroke-linecap="butt"/>
+            </g>
+            <line x1="50" y1="3" x2="50" y2="16" stroke="var(--refused)" stroke-width="2.5"
+                  transform="rotate(-85.9 50 50)"/>
+          </svg>
+          <svg class="opto" viewBox="0 0 50 50" aria-hidden="true">
+            <path d="M44.38 29.95 A20 20 0 1 1 44.38 20.05" fill="none"
+                  stroke="var(--optotype)" stroke-width="10" stroke-linecap="butt"/>
+          </svg>
+        </div>
+
+        <!-- 23 credited cycles, then the newest one refused: same width, same height, but
+             outlined and hatched instead of filled. Shape carries the meaning, so the hole
+             survives greyscale, a washed-out projector and a bad print. -->
+        <div class="strip" aria-hidden="true">
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell refused"></span>
+        </div>
+        <p class="strip-note"><span class="caret">&#9650;</span> the newest cycle &mdash; a hole, not a mark</p>
+
+        <p class="status-line">Rep not counted &mdash; too slow (below 150 &#176;/s; measured 91 &#176;/s).</p>
+        <p class="dose-readout tnum">0.6 / 1.0 min in zone</p>
+        <p class="dose-sub">Block 1 of 1 &middot; 0:24 left</p>
+        <p class="key-legend">&larr; &rarr; answer &middot; &#9251; pause &middot; esc end session</p>
+      </div>
+      <p class="small" style="margin-top:12px;">
+        Vector recreation &mdash; status string verbatim from <code>src/ui/copy.ts</code>.
+      </p>
+    </div>
+
+    <div class="col center" style="flex:.98;">
+      <p class="body" style="font-size:24px; color:var(--ink-1); margin-bottom:32px; max-width:44ch;">
+        Three things happen at once, and none of them is red.
+      </p>
+
+      <div class="callout">
+        <div class="cnum">1</div>
+        <div class="ctext">The committed marker snaps <b>visibly off the top</b> and turns
+          slate. Red would be a lie about who failed &mdash; half of all refusals are
+          instrument conditions, not patient ones.</div>
+      </div>
+      <div class="callout">
+        <div class="cnum">2</div>
+        <div class="ctext">The newest cell in the cycle strip is drawn as an
+          <b>outlined, hatched hole</b> instead of a filled block. The ledger has a
+          gap in it, and the gap has a reason.</div>
+      </div>
+      <div class="callout">
+        <div class="cnum">3</div>
+        <div class="ctext">The status line <b>names the reason and shows both numbers</b> &mdash;
+          the threshold it missed and the value it measured.</div>
+      </div>
+
+      <hr class="rule" style="margin:36px 0 26px;">
+      <p class="kicker" style="font-size:36px;">And the dose numeral <em>does not move</em>.</p>
+      <p class="small" style="margin-top:18px; font-size:20px; color:var(--ink-2);">
+        A dose meter that credits everything is a stopwatch.
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 5 · IN ZONE, NOTHING ════════════════════════ -->
+<section class="slide" data-title="In zone, nothing happens">
+  <p class="eyebrow">The other half of the mechanism</p>
+  <h2 class="head wide" style="max-width:none; margin-bottom:26px;">
+    Now speed up into the band.<br><span class="q">Nothing happens.</span>
+  </h2>
+
+  <div class="slide-body" style="gap:64px;">
+    <!-- SWAP: replace with assets/screenshot-block-inzone.png (820×620) — a real capture of the
+         block screen with the marker at twelve o'clock and an empty status line. Vector
+         recreation below, same geometry as slide 4 with the credited state applied. -->
+    <div class="col" style="flex:1.02;">
+      <div class="blockscreen" style="flex:1;">
+        <div class="ring-wrap" style="width:340px;" aria-hidden="true">
+          <svg class="ring" viewBox="0 0 100 100">
+            <g transform="rotate(135 50 50)">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="var(--surface-2)" stroke-width="6"
+                      stroke-dasharray="197.920 263.894" stroke-linecap="butt"/>
+              <!-- The band TRACK keeps the same --edge-strong it has on slide 4. Drawing it in
+                   --zone-in as well made the prescribed band invisible on the one slide whose
+                   headline is "speed up into the band", and identical in greyscale to the live
+                   arc. The band is a track; only the fill and the marker carry a state. -->
+              <circle cx="50" cy="50" r="42" fill="none" stroke="var(--edge-strong)" stroke-width="6"
+                      stroke-dasharray="0 59.376 79.168 263.894"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="var(--zone-in)" stroke-width="6"
+                      stroke-dasharray="98.17 263.894" stroke-linecap="butt"/>
+            </g>
+            <line x1="50" y1="3" x2="50" y2="16" stroke="var(--zone-in)" stroke-width="2.5"
+                  transform="rotate(-1.1 50 50)"/>
+          </svg>
+          <svg class="opto" viewBox="0 0 50 50" aria-hidden="true">
+            <path d="M44.38 29.95 A20 20 0 1 1 44.38 20.05" fill="none"
+                  stroke="var(--optotype)" stroke-width="10" stroke-linecap="butt"
+                  transform="rotate(180 25 25)"/>
+          </svg>
+        </div>
+
+        <!-- Twenty-four credited cycles and no hole: the same strip component as slide 4,
+             one cell further on, with nothing to announce. -->
+        <div class="strip" aria-hidden="true">
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+          <span class="cell"></span><span class="cell"></span><span class="cell"></span>
+        </div>
+        <p class="strip-note" style="color:var(--zone-in);"><span class="caret">&#9650;</span> the newest cycle &mdash; solid, and no announcement</p>
+
+        <p class="status-line blank" style="font-family:var(--font-mono); font-size:19px; letter-spacing:.06em;">
+          &mdash;&nbsp; the status line is empty &nbsp;&mdash;
+        </p>
+        <p class="dose-readout tnum">0.9 / 1.0 min in zone</p>
+        <p class="dose-sub">Block 1 of 1 &middot; 0:06 left</p>
+        <p class="key-legend">&larr; &rarr; answer &middot; &#9251; pause &middot; esc end session</p>
+      </div>
+      <p class="small" style="margin-top:14px;">
+        Same screen, credited state. The tone stops bending. The ring holds. One number climbs.
+      </p>
+    </div>
+
+    <div class="col center" style="flex:.98;">
+      <p class="body" style="font-size:26px; color:var(--ink-1); max-width:42ch;">
+        <strong>In-zone is the resting state.</strong> Out-of-zone is the only thing
+        in this interface that produces change.
+      </p>
+      <p class="body" style="margin-top:24px; max-width:46ch;">
+        There is no celebration, because a reward loop that encourages <em>more</em> of a
+        symptom-limited therapy is clinically backwards. No streaks. No badges.
+        No XP. No daily-goal confetti. Nothing flashes anywhere in the application,
+        at all &mdash; WCAG 2.3.1's three-flash threshold is treated as an architectural
+        constraint in a population that gets symptomatic from motion.
+      </p>
+
+      <div class="panel" style="margin-top:34px; border-color:var(--edge-strong);">
+        <p class="panel-title">The organizer's own rubric, level 2 of 5</p>
+        <p style="font-size:23px; line-height:1.42; color:var(--ink-1); margin:0;">
+          &ldquo;A very common hackathon idea (e.g., a basic habit tracker or generic
+          mood journal) with minor aesthetic changes.&rdquo;
+        </p>
+        <p class="attrib">design-and-innovation.pdf &middot; innovation &amp; novelty</p>
+      </div>
+
+      <p class="kicker" style="margin-top:30px; font-size:27px;">
+        The confetti is not missing. <em>It is the thing being refused.</em>
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 6 · TWO REFUSALS ════════════════════════ -->
+<section class="slide" data-title="Two refusals, one policy">
+  <p class="eyebrow">Why there are two refusal reasons and not one</p>
+  <h2 class="head wide" style="max-width:36ch; margin-bottom:30px;">
+    One reads as a bug. <span class="q">Both together read as a policy.</span>
+  </h2>
+
+  <!-- SWAP: assets/screenshot-refusal-pair.png (1240×420) — one capture of the block screen
+       mid-'too-slow' beside one mid-'low-confidence', cropped to the status line. The two panels
+       below already print those two strings byte-identically from src/ui/copy.ts, so a screenshot
+       adds the room and the face, not the words. -->
+  <!-- The three columns size to their content (flex:0 1 auto) and the closing line takes the
+       remaining height as a full-width band. Left as flex:1 the two panels stretched 250px past
+       their text and the slide read as three half-empty boxes over a strip of nothing. -->
+  <div class="slide-body" style="gap:44px; flex:0 1 auto;">
+    <div class="col" style="flex:1;">
+      <p class="panel-title" style="color:var(--zone-out); margin-bottom:18px;">Refusal one &mdash; the motion</p>
+      <div class="panel" style="display:flex; flex-direction:column;">
+        <p class="verbatim" style="font-size:21px;">Rep not counted &mdash; too slow<br>(below 150&#160;&#176;/s;<br>measured 91&#160;&#176;/s).</p>
+        <p class="attrib">src/ui/copy.ts &middot; 'too-slow'</p>
+        <p class="body" style="margin-top:26px; font-size:22px;">
+          Proves the velocity is <strong>actually measured</strong> and the prescribed
+          band <strong>actually enforced</strong>. Both numbers are shown, so the
+          refusal is auditable rather than authoritative.
+        </p>
+        <p class="body" style="margin-top:26px; font-size:22px;">
+          The floor and the ceiling are <strong>card fields</strong>. Neither exists
+          in the application until a patient types it.
+        </p>
+      </div>
+    </div>
+
+    <div class="col" style="flex:1;">
+      <p class="panel-title" style="color:var(--refused); margin-bottom:18px;">Refusal two &mdash; the instrument</p>
+      <div class="panel" style="display:flex; flex-direction:column;">
+        <p class="verbatim" style="font-size:21px;">Rep not counted &mdash; tracking<br>unreliable.<br>Try more light.</p>
+        <p class="attrib">src/ui/copy.ts &middot; 'low-confidence'</p>
+        <p class="body" style="margin-top:26px; font-size:22px;">
+          The biggest technical risk in the build is head-pose fidelity at 2 Hz on a
+          cheap webcam. Gimbal answers it by <strong>refusing to emit rather than by
+          smoothing</strong>.
+        </p>
+        <p class="body" style="margin-top:26px; font-size:22px;">
+          Cover part of your face or dim the room and the instrument
+          <strong>declines to produce a number it cannot stand behind</strong>.
+        </p>
+      </div>
+    </div>
+
+    <div class="col" style="flex:1.06;">
+      <p class="panel-title" style="margin-bottom:18px;">Precedence, when more than one holds</p>
+      <ul class="reasons">
+        <li><span class="k">face-lost</span><span>the instrument could not see</span></li>
+        <li><span class="k">low-confidence</span><span>the instrument does not trust itself</span></li>
+        <li><span class="k">too-slow / too-fast</span><span>the measurement is good and the motion missed the prescription</span></li>
+        <li><span class="k">off-cadence</span><span>&hellip; and missed the pacing tempo</span></li>
+      </ul>
+      <p class="body" style="margin-top:26px; font-size:22px;">
+        The order runs from instrument failure to patient motion, in that direction,
+        <strong>because reporting an instrument failure as a patient failure would be
+        the wrong way round</strong>.
+      </p>
+    </div>
+  </div>
+
+  <div style="margin-top:auto; padding-top:34px; border-top:1px solid var(--edge); display:flex; align-items:baseline; gap:44px;">
+    <p class="kicker" style="flex:1.6; font-size:30px; margin:0;">
+      Six outcomes total: <em>ok</em>, plus five named refusals &mdash; and every refused cycle
+      contributes exactly <code style="font-size:26px;">0.000&nbsp;s</code>.
+    </p>
+    <p class="small" style="flex:1; max-width:none; margin:0; line-height:1.5;">
+      All six live in <code>src/dsp/score.ts</code> &mdash; the only module allowed to decide &mdash;
+      and the precedence above is the order in which it evaluates them.
+    </p>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 7 · HOW IT WORKS ════════════════════════ -->
+<section class="slide" data-title="How it works">
+  <p class="eyebrow">How it works &mdash; one 30 Hz loop, entirely inside the tab</p>
+  <h2 class="head wide" style="max-width:none; margin-bottom:16px;">
+    Smooth. Differentiate. <span class="q">Then correct the bias.</span>
+  </h2>
+  <p class="lede" style="max-width:none; font-size:27px; margin-bottom:26px;">
+    We differentiate with the one operator whose bias has a closed form &mdash; so the
+    correction is <strong style="color:var(--ink-1); font-weight:600;">derived on paper and
+    published</strong>, not tuned until the demo looked right.
+  </p>
+
+  <!-- SWAP: assets/architecture-pipeline.svg (1728×300) — a redrawn vector export, never a
+       screenshot. This is the architecture diagram, so it is drawn on purpose: if the pipeline
+       changes, redraw it at that size. Do not photograph a whiteboard and do not raster it. -->
+  <div class="pipe-wrap">
+  <div class="pipe" role="img"
+       aria-label="Measurement pipeline: webcam frames to face landmarker to yaw angle, then Savitzky-Golay smoothing, central-difference velocity with a times 1.0299 bias correction, Hann FFT cycle segmentation, and the scoreCycle credit gate.">
+    <div class="pipe-node">
+      <p class="pn">01 &nbsp;Capture</p>
+      <p class="pt">Webcam, ~30 Hz</p>
+      <p class="pl">getUserMedia<br>frames discarded<br>one by one</p>
+    </div>
+    <div class="pipe-arrow" aria-hidden="true">&#10230;</div>
+    <div class="pipe-node">
+      <p class="pn">02 &nbsp;Pose</p>
+      <p class="pt">FaceLandmarker</p>
+      <p class="pl">WASM, vendored<br>same-origin<span class="out">&#8594; yaw&#176;, measured dt</span></p>
+    </div>
+    <div class="pipe-arrow" aria-hidden="true">&#10230;</div>
+    <div class="pipe-node">
+      <p class="pn">03 &nbsp;Velocity</p>
+      <p class="pt">&#969; = d&#952;/dt</p>
+      <p class="pl">5-pt Savitzky&#8211;Golay<br>3-pt central difference<span class="out">bias &#215; 1.0299</span></p>
+    </div>
+    <div class="pipe-arrow" aria-hidden="true">&#10230;</div>
+    <div class="pipe-node">
+      <p class="pn">04 &nbsp;Segment</p>
+      <p class="pt">Cycles, not reps</p>
+      <p class="pl">256-pt Hann FFT<br>bins of 0.1172 Hz<span class="out">&#8594; peak |&#969;| per cycle</span></p>
+    </div>
+    <div class="pipe-arrow" aria-hidden="true">&#10230;</div>
+    <div class="pipe-node gate">
+      <p class="pn">05 &nbsp;The gate</p>
+      <p class="pt">scoreCycle()</p>
+      <p class="pl">ok + 5 refusals<br>credited: 0 or dose s<span class="out">&#8594; the printable report</span></p>
+    </div>
+  </div>
+
+  <div class="pipe-lower">
+    <div class="note">
+      <p class="nt">Latency, stated rather than hidden</p>
+      <p class="nb">The symmetric smoother costs 2 frames and the difference 1 more, so
+        &#969; is reported <strong style="color:var(--ink-1);">3 frames &mdash; about 100 ms &mdash;
+        behind the head that produced it</strong>. One sweep at 2 Hz is 250 ms, so the
+        coaching still lands inside the same head turn.</p>
+    </div>
+    <div class="note dashed">
+      <p class="nt">The eyes-free coach</p>
+      <p class="nb">A Web Audio click train sets the tempo and one oscillator's pitch bends
+        as peak velocity leaves the band &mdash; so
+        <strong style="color:var(--ink-1);">the primary feedback loop works with the screen
+        off</strong>. Output-only: the Permissions-Policy denies the microphone.</p>
+    </div>
+    <div class="note keyed">
+      <p class="nt">The protocol card &mdash; typed by the patient</p>
+      <p class="nb">Every clinical threshold enters at the gate and nowhere else.
+        <code>src/dsp/score.ts</code> contains no numeric literal other than
+        <code>0</code> and <code>1000</code>, and a test greps the module and fails if
+        one appears.</p>
+    </div>
+  </div>
+  </div>
+
+  <div style="display:flex; gap:56px; align-items:flex-end; margin-top:auto; padding-top:30px;">
+    <p class="body" style="flex:1.45; font-size:22px; max-width:none;">
+      A 3-point central difference on a sinusoid reports exactly
+      <code style="font-size:21px;">sin(2&#960;fT)/(2&#960;fT)</code> of the true peak &mdash;
+      <strong>0.9710 at 2 Hz and 30 fps, a 2.90 % under-read, corrected by &times;1.0299.</strong>
+      A unit test asserts the identity at 1.0, 1.5, 2.0 and 2.5 Hz, and asserts the
+      correction is applied <strong>once, not twice</strong>.
+    </p>
+    <p class="small" style="flex:1; font-size:20px; color:var(--ink-2); line-height:1.5;">
+      <strong style="color:var(--ink-1);">Vite 5 + vanilla TypeScript.</strong>
+      No framework, no SSR, no server runtime, no LLM. The only judged code path is
+      a hot loop, and a re-render model is a hazard inside one.
+    </p>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 8 · SAFETY BOUNDARY ════════════════════════ -->
+<section class="slide" data-title="Gimbal cannot write a prescription">
+  <p class="eyebrow">Safety &amp; responsible design &mdash; claim C1</p>
+  <h2 class="head wide" style="max-width:34ch; margin-bottom:24px;">
+    Gimbal has <span class="r">no path</span> to originate a prescription.
+  </h2>
+
+  <div class="slide-body" style="gap:64px;">
+    <div class="col" style="flex:1.05;">
+      <!-- SWAP: replace with assets/screenshot-prescribe-empty.png (760×560) — a real capture of
+           the Prescribe screen on first load, all eight fields empty. Recreation below uses the
+           real field set from build/README.md; the emptiness is the point being illustrated. -->
+      <div class="panel" style="flex:1; display:flex; flex-direction:column;">
+        <p class="panel-title">Prescribe &mdash; first load, every load</p>
+        <div class="fields">
+          <div class="field"><p class="flabel">Frequency band, low (Hz)</p><div class="fbox"></div></div>
+          <div class="field"><p class="flabel">Frequency band, high (Hz)</p><div class="fbox"></div></div>
+          <div class="field"><p class="flabel">Peak velocity floor (&#176;/s)</p><div class="fbox"></div></div>
+          <div class="field"><p class="flabel">Peak velocity ceiling (&#176;/s)</p><div class="fbox"></div></div>
+          <div class="field"><p class="flabel">Block length (sec)</p><div class="fbox"></div></div>
+          <div class="field"><p class="flabel">Blocks</p><div class="fbox"></div></div>
+          <div class="field"><p class="flabel">Stop rule: rise over baseline</p><div class="fbox"></div></div>
+          <div class="field"><p class="flabel">Stop rule: absolute ceiling</p><div class="fbox"></div></div>
+        </div>
+        <p class="small" style="margin-top:26px; font-size:20px; color:var(--ink-2); line-height:1.5;">
+          Eight required numeric fields. <strong style="color:var(--ink-1);">No defaults, no presets,
+          no sample card on screen.</strong> The patient types the eight numbers their
+          clinician wrote down, and the emptiness is the safety property rather than
+          an oversight.
+        </p>
+
+        <div class="push" style="display:flex; gap:16px; align-items:flex-start; padding-top:28px; border-top:1px solid var(--edge); margin-top:28px;">
+          <span aria-hidden="true" style="flex:none; width:26px; height:26px; border:1.5px solid var(--edge-strong); border-radius:4px; margin-top:2px;"></span>
+          <span style="font-size:21px; line-height:1.4; color:var(--ink-1);">
+            My clinician prescribed these exercises and I am entering their parameters.
+          </span>
+        </div>
+        <p class="attrib" style="margin-top:12px;">src/ui/copy.ts &middot; GATE_CHECKBOX_LABEL &mdash; the gate before any camera</p>
+      </div>
+    </div>
+
+    <div class="col" style="flex:.95;">
+      <p class="body" style="font-size:24px; max-width:46ch;">
+        A safety claim that lives in a README is a promise.
+        <strong>This one is a check that fails the build.</strong>
+      </p>
+
+      <div class="checkout" style="margin-top:26px;">
+        <span class="id">U-CARD&nbsp;&nbsp;</span> Gimbal has no path to originate<br>
+        <span style="opacity:0">U-CARD&nbsp;&nbsp;</span> a prescription (claim C1) &nbsp;&nbsp;<span class="pass">PASS</span>
+      </div>
+      <p class="attrib">scripts/checks.mjs &middot; runs inside <code style="font-size:16px;">npm test</code></p>
+
+      <p class="body" style="margin-top:30px; font-size:22px;">
+        It is one of <strong>twelve mechanical source checks</strong> &mdash; eight that
+        <code>npm test</code> runs on a clean clone, four more in the build and deploy gates
+        &mdash; that assert properties the prose merely claims. The others fail the build on a
+        flag appearing in the reproduce path, on <code>outline: none</code> anywhere in the
+        stylesheets, on a card field shipping without a stated source, and on the five copies
+        of the limitations text drifting apart.
+      </p>
+
+      <div class="panel push" style="margin-top:34px; border-color:var(--edge-strong);">
+        <p style="font-size:25px; line-height:1.4; color:var(--ink-1); margin:0;">
+          Gimbal does not diagnose, does not clear anyone to return to play or to
+          learn, and does not decide.
+        </p>
+        <p style="font-size:22px; line-height:1.45; color:var(--ink-2); margin:14px 0 0;">
+          It reports a delivered dose against a prescribed one, and nothing else.
+          That sentence prints at body size on the report &mdash; never as small print.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 9 · PRIVACY ════════════════════════ -->
+<section class="slide" data-title="Zero requests">
+  <p class="eyebrow">Privacy, verifiable in fifteen seconds</p>
+  <h2 class="head wide" style="max-width:36ch; margin-bottom:24px;">
+    Not &ldquo;no personal data&rdquo;. <span class="q">No requests at all.</span>
+  </h2>
+
+  <div class="slide-body" style="gap:60px;">
+    <div class="col" style="flex:1.12;">
+      <!-- SWAP: replace with assets/screenshot-devtools-network.png (860×470) — a real capture of
+           the DevTools Network panel after a full session, showing 0 requests. The panel below is
+           a vector recreation and is labelled as one; it is not a screenshot of a browser. -->
+      <div class="panel flush" style="border-color:var(--edge-strong);">
+        <div style="display:flex; align-items:center; gap:26px; padding:16px 24px; border-bottom:1px solid var(--edge); background:var(--surface-2);">
+          <span class="mono" style="font-size:18px; color:var(--ink-1); border-bottom:2px solid var(--zone-in); padding-bottom:4px;">Network</span>
+          <span class="mono" style="font-size:18px; color:var(--ink-2);">Console</span>
+          <span class="mono" style="font-size:18px; color:var(--ink-2);">Application</span>
+          <span class="mono" style="font-size:18px; color:var(--ink-2); margin-left:auto;">Preserve log &#9745;</span>
+        </div>
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; padding:12px 24px; border-bottom:1px solid var(--edge);">
+          <span class="mono" style="font-size:17px; color:var(--ink-2);">Name</span>
+          <span class="mono" style="font-size:17px; color:var(--ink-2);">Status</span>
+          <span class="mono" style="font-size:17px; color:var(--ink-2);">Type</span>
+          <span class="mono" style="font-size:17px; color:var(--ink-2);">Size</span>
+        </div>
+        <div style="height:300px; display:flex; align-items:center; justify-content:center; background:var(--surface-0);">
+          <p class="mono" style="font-size:22px; color:var(--refused); margin:0;">no requests recorded</p>
+        </div>
+        <div style="display:flex; gap:34px; padding:14px 24px; border-top:1px solid var(--edge); background:var(--surface-2);">
+          <span class="mono tnum" style="font-size:19px; color:var(--zone-in);">0 requests</span>
+          <span class="mono tnum" style="font-size:19px; color:var(--ink-2);">0 B transferred</span>
+          <span class="mono tnum" style="font-size:19px; color:var(--ink-2);">full session, start to report</span>
+        </div>
+      </div>
+      <p class="small" style="margin-top:14px;">
+        Vector recreation of the DevTools Network panel. Open the real one at
+        <code style="font-size:17px;">gimbal.edycu.dev</code> and clear it before you start &mdash;
+        that is the whole verification.
+      </p>
+
+      <div class="checkout push" style="margin-top:28px; font-size:18px; line-height:1.7;">
+        <span style="color:var(--ink-2);">Content-Security-Policy:</span> default-src 'self'; <span class="pass">connect-src 'self'</span>;<br>
+        <span style="opacity:0">Content-Security-Policy: </span>font-src 'self'; script-src 'self' 'wasm-unsafe-eval'<br>
+        <span style="color:var(--ink-2);">Permissions-Policy:</span> camera=(self), microphone=(), geolocation=(),<br>
+        <span style="opacity:0">Permissions-Policy: </span>interest-cohort=()
+      </div>
+    </div>
+
+    <div class="col center" style="flex:.88;">
+      <p class="body" style="font-size:24px; max-width:44ch;">
+        <strong>The browser would block an upload even if a future commit tried to add
+        one.</strong> The privacy claim is enforced by a response header, not by our
+        good intentions &mdash; and headers are something a judge can check without
+        trusting us.
+      </p>
+
+      <div class="statgrid" style="margin-top:34px;">
+        <div class="stat">
+          <div class="n tnum">0</div>
+          <div class="l">network requests of any kind &mdash; first paint to printed report, same-origin included</div>
+        </div>
+        <div class="stat">
+          <div class="n tnum">10 / 10</div>
+          <div class="l">browser gates green against production</div>
+        </div>
+        <div class="stat">
+          <div class="n tnum neutral">3,758,596</div>
+          <div class="l">bytes of face-landmarker model, vendored same-origin, content-addressed and committed</div>
+        </div>
+        <div class="stat">
+          <div class="n tnum neutral">0</div>
+          <div class="l">servers, accounts, databases, portals or share links &mdash; a share link is an upload with better manners</div>
+        </div>
+      </div>
+
+      <p class="kicker" style="margin-top:32px; font-size:26px;">
+        No CDN fetch, either. <em>Which is what makes the DevTools proof honest rather
+        than a stunt.</em>
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 10 · WHAT IS NOT MEASURED ════════════════════════ -->
+<section class="slide" data-title="What has not been measured">
+  <p class="eyebrow" style="color:var(--zone-out);">Calibrated honesty &mdash; the number that is not here</p>
+  <h2 class="head wide" style="max-width:40ch; margin-bottom:22px;">
+    No bench-agreement figure appears anywhere in this repository,
+    <span class="r">because none has been recorded.</span>
+  </h2>
+
+  <div class="slide-body" style="gap:60px;">
+    <div class="col" style="flex:1;">
+      <!-- SWAP: assets/chart-bland-altman.svg (640×150) — and ONLY when the bench recording
+           exists, at which point this panel carries the measured figure and its Bland-Altman plot
+           and the headline above has to change with it. Until then the absence is drawn
+           deliberately, in the same hatch the product uses for a refused cycle. -->
+      <div class="panel" style="border-color:var(--zone-out); flex:none;">
+        <p class="panel-title" style="color:var(--zone-out);">Agreement vs. an independent sensor</p>
+        <svg viewBox="0 0 640 150" style="width:100%; height:auto; display:block;" role="img"
+             aria-label="A hatched placeholder standing in for a bench-agreement figure that has not been measured.">
+          <defs>
+            <pattern id="hatch10" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="7" stroke="var(--refused)" stroke-width="1.6"/>
+            </pattern>
+          </defs>
+          <rect x="1" y="1" width="638" height="148" rx="8" fill="url(#hatch10)" opacity=".5"
+                stroke="var(--refused)" stroke-width="1.5" stroke-dasharray="8 6"/>
+          <rect x="90" y="42" width="460" height="66" rx="6" fill="var(--surface-1)"/>
+          <text x="320" y="90" text-anchor="middle" font-family="ui-monospace, Menlo, monospace"
+                font-size="40" fill="var(--refused)">not measured</text>
+        </svg>
+        <p class="small" style="margin-top:18px; font-size:20px; color:var(--ink-2); line-height:1.5;">
+          <code style="font-size:17px;">README.md</code> and
+          <code style="font-size:17px;">DEMO.md</code> both say so outright, and no document
+          in the repository quotes an agreement figure at all. There is no quieter version
+          somewhere that says something better.
+        </p>
+      </div>
+
+      <div class="panel" style="margin-top:26px;">
+        <p class="panel-title">Also provisional, and labelled in the code</p>
+        <p class="body" style="font-size:22px; max-width:none;">
+          Two instrument thresholds &mdash; <code>qFloor</code> and
+          <code>deadbandFraction</code> &mdash; are set from a tracking spike that does not
+          exist yet. <code>PROVISIONAL_FROM_SPIKE</code> in
+          <code>src/dsp/limits.ts</code> names exactly which ones, and no claim is
+          made that they are calibrated.
+        </p>
+      </div>
+    </div>
+
+    <div class="col" style="flex:1.04;">
+      <p class="panel-title">Exactly what would produce the number</p>
+      <div class="callout" style="margin-top:6px;">
+        <div class="cnum n-in">1</div>
+        <div class="ctext">A phone gyroscope <b>logged rigidly at the temple</b> while the
+          webcam runs Gimbal on the same head, in the same session.</div>
+      </div>
+      <div class="callout">
+        <div class="cnum n-in">2</div>
+        <div class="ctext">The two traces <b>aligned by cross-correlation</b>, so the
+          comparison does not depend on either clock being right.</div>
+      </div>
+      <div class="callout">
+        <div class="cnum n-in">3</div>
+        <div class="ctext"><b>Compared per cycle</b> &mdash; peak against peak &mdash; and reported
+          as a bench validation: single subject, one camera, one lighting condition.
+          Never as a study.</div>
+      </div>
+
+      <hr class="rule" style="margin:32px 0 26px;">
+
+      <p class="body" style="font-size:22px; max-width:none;">
+        The tolerance was <strong>fixed before the measurement</strong>: 6.0 &#176;/s, chosen
+        below the 7.3 &#176;/s size of the bias-correction effect, so deleting the
+        correction fails the gate.
+      </p>
+      <p class="kicker" style="margin-top:22px; font-size:27px;">
+        If the recording comes back worse than 6.0, we <em>publish the measured number
+        and lower the prescribed band</em> &mdash; never raise the tolerance.
+      </p>
+
+      <p class="small push" style="margin-top:34px; font-size:20px; color:var(--ink-2); line-height:1.5;">
+        There is likewise no user count, no clinician count, no adoption figure and no
+        testimonial in this deck, because there are none. In a rubric that scores
+        Safety and Research Foundation, naming your own unmeasured quantity is worth
+        more than a confident invented one.
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 11 · WHAT IS BUILT ════════════════════════ -->
+<section class="slide" data-title="One exercise, all the way down">
+  <p class="eyebrow">What is built, and what was deliberately not</p>
+  <h2 class="head wide" style="max-width:34ch; margin-bottom:26px;">
+    One exercise, <span class="q">done all the way down</span>.
+  </h2>
+
+  <!-- SWAP: assets/screenshot-report-page.png (860×1110) — the printed one-page report, which is
+       the artifact the four counts below exist to produce. It is deliberately NOT here yet: the
+       report is the one surface a clinician would hold, and a low-resolution capture of it would
+       undersell the thing this slide is arguing for. -->
+  <div class="slide-body" style="gap:56px;">
+    <div class="col" style="flex:1;">
+      <div class="statgrid">
+        <div class="stat"><div class="n tnum">88</div><div class="l">automated tests against analytic ground truth &mdash; and <code style="font-size:16px;">U-COUNT</code> fails the build if the README prints a different number</div></div>
+        <div class="stat"><div class="n tnum">12</div><div class="l">mechanical source checks &mdash; 8 in <code style="font-size:16px;">npm test</code>, 4 in the build and deploy gates</div></div>
+        <div class="stat"><div class="n tnum">1</div><div class="l">runtime dependency &mdash; <code style="font-size:16px;">@mediapipe/tasks-vision</code>. Four dev dependencies. <code style="font-size:16px;">npm audit</code>: 0 vulnerabilities</div></div>
+        <div class="stat"><div class="n tnum">3</div><div class="l">themes &mdash; dark, dim for deep photophobia, warm paper. 33 token/surface pairs, every contrast ratio computed</div></div>
+      </div>
+
+      <div class="panel" style="margin-top:26px;">
+        <p class="panel-title">Accessibility is the design constraint, not a checklist</p>
+        <p class="body" style="font-size:21px; max-width:none;">
+          During the exercise the patient's eyes are on the optotype and cannot reach
+          a dial &mdash; so the coaching signal had to be audio, which means
+          <strong>the primary feedback loop works with the screen off.</strong>
+          The two zone colours are deliberately near-iso-luminant (1.26 : 1 in dark)
+          so the ring cannot strobe in the peripheral field of a photophobic user.
+          Nothing renders below 15 px anywhere, at any viewport, in any state.
+        </p>
+      </div>
+    </div>
+
+    <div class="col" style="flex:1;">
+      <p class="panel-title" style="margin-bottom:16px;">Deliberate non-features &mdash; each absence is load-bearing</p>
+      <ul class="reasons">
+        <li><span class="k">any LLM</span><span>the output is a <em>count</em>. A generative model would import the whole hallucination surface into a submission judged on safety</span></li>
+        <li><span class="k">iris / gaze tracking</span><span>unsolved on commodity webcams at 250 &#176;/s, and its error is confounded with the rotation being measured</span></li>
+        <li><span class="k">server &middot; account &middot; export</span><span>each falsifies the on-device claim. A share link is an upload with better manners</span></li>
+        <li><span class="k">an exercise library</span><span>one exercise done devastatingly beats six done adequately</span></li>
+        <li><span class="k">posture detection</span><span>unverifiable from a face mesh. Building it means claiming it &mdash; so stage is self-attested and the report says so</span></li>
+        <li><span class="k">streaks &middot; badges &middot; XP</span><span>incentivising <em>more</em> of a symptom-limited therapy is clinically&nbsp;backwards</span></li>
+      </ul>
+
+      <p class="kicker push" style="margin-top:32px;">
+        The anti-gaming property is structural, not cryptographic:
+        <em>the only way to fake the dose is to perform the therapy.</em>
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════ 12 · THE ASK ════════════════════════ -->
+<section class="slide" data-title="The ask">
+  <p class="eyebrow">The ask</p>
+
+  <div class="slide-body" style="gap:80px;">
+    <div class="col" style="flex:1.25;">
+      <h2 class="head" style="font-size:74px; max-width:none;">
+        Open it and turn<br><span class="q">your head lazily</span>.
+      </h2>
+      <p class="body" style="font-size:24px; margin-top:6px; max-width:50ch;">
+        Do not take the mechanism on trust &mdash; it takes about a minute and it runs on
+        the laptop you are judging from.
+      </p>
+
+      <div class="callout" style="margin-top:38px;">
+        <div class="cnum n-in">1</div>
+        <div class="ctext">Type the eight numbers from the README, allow the camera, and let
+          the ten-second light-and-frame-rate check finish. <b>There are no flags</b> &mdash;
+          no demo mode, no environment variable, no key, no account.</div>
+      </div>
+      <div class="callout">
+        <div class="cnum n-in">2</div>
+        <div class="ctext">Turn your head <b>gently</b>. Watch the marker snap off the top,
+          the strip open a hatched hole, and the numeral hold still while the status
+          line names the reason.</div>
+      </div>
+      <div class="callout">
+        <div class="cnum n-in">3</div>
+        <div class="ctext">Then open DevTools &rarr; Network and confirm that
+          <b>nothing was sent anywhere</b>, before or after.</div>
+      </div>
+
+      <hr class="rule" style="margin:36px 0 24px;">
+      <p class="small" style="font-size:20px; line-height:1.6; color:var(--ink-2);">
+        Repo: <code style="font-size:18px;">github.com/edycutjong/gimbal</code> &mdash;
+        <strong style="color:var(--ink-1);">private until submission</strong>, then public with its full
+        commit history. MIT. No demo video is linked here because none has been
+        recorded yet.
+      </p>
+    </div>
+
+    <!-- SWAP: assets/qr-gimbal.svg (212×212) — already inline below, and it stays inline.
+         The QR is generated offline and encodes https://gimbal.edycu.dev as
+         a 25x25 version-2 matrix drawn in path data — no remote image, no generator service, no
+         second URL. Replacing it with a raster would reintroduce exactly the third-party origin
+         this deck spends slide 9 ruling out. If the address ever changes, regenerate the matrix. -->
+    <div class="col center" style="flex:1; align-items:flex-start;">
+      <div class="panel" style="align-self:stretch; border-color:var(--edge-strong); display:flex; gap:34px; align-items:center;">
+        <!-- Real, scannable QR for https://gimbal.edycu.dev — generated offline, no remote image. -->
+        <svg viewBox="-2 -2 29 29" width="212" height="212" role="img"
+             aria-label="QR code linking to https://gimbal.edycu.dev"
+             style="flex:none; background:var(--optotype); border-radius:8px; padding:0;">
+          <rect x="-2" y="-2" width="29" height="29" fill="var(--optotype)"/>
+          <path fill="#0a0d10" d="M0 0h7v1h-7zM8 0h2v1h-2zM18 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM12 1h1v1h-1zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM11 2h3v1h-3zM15 2h1v1h-1zM18 2h1v1h-1zM20 2h3v1h-3zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM10 3h1v1h-1zM13 3h2v1h-2zM18 3h1v1h-1zM20 3h3v1h-3zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h1v1h-1zM12 4h3v1h-3zM18 4h1v1h-1zM20 4h3v1h-3zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h2v1h-2zM12 5h2v1h-2zM16 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h7v1h-7zM9 7h2v1h-2zM12 7h1v1h-1zM14 7h1v1h-1zM16 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM6 8h2v1h-2zM10 8h3v1h-3zM15 8h2v1h-2zM19 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM0 9h2v1h-2zM3 9h3v1h-3zM8 9h4v1h-4zM14 9h3v1h-3zM18 9h2v1h-2zM21 9h1v1h-1zM23 9h2v1h-2zM1 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM8 10h2v1h-2zM13 10h1v1h-1zM15 10h3v1h-3zM21 10h2v1h-2zM24 10h1v1h-1zM0 11h1v1h-1zM4 11h2v1h-2zM9 11h3v1h-3zM14 11h4v1h-4zM19 11h1v1h-1zM21 11h1v1h-1zM1 12h2v1h-2zM4 12h3v1h-3zM9 12h1v1h-1zM11 12h2v1h-2zM14 12h1v1h-1zM16 12h1v1h-1zM18 12h2v1h-2zM24 12h1v1h-1zM2 13h1v1h-1zM12 13h2v1h-2zM15 13h1v1h-1zM18 13h2v1h-2zM23 13h2v1h-2zM0 14h2v1h-2zM3 14h2v1h-2zM6 14h1v1h-1zM9 14h1v1h-1zM12 14h1v1h-1zM15 14h2v1h-2zM21 14h2v1h-2zM24 14h1v1h-1zM2 15h1v1h-1zM4 15h1v1h-1zM7 15h1v1h-1zM10 15h3v1h-3zM16 15h2v1h-2zM19 15h3v1h-3zM0 16h3v1h-3zM4 16h1v1h-1zM6 16h1v1h-1zM8 16h1v1h-1zM10 16h1v1h-1zM12 16h1v1h-1zM16 16h5v1h-5zM23 16h1v1h-1zM8 17h1v1h-1zM10 17h1v1h-1zM16 17h1v1h-1zM20 17h1v1h-1zM24 17h1v1h-1zM0 18h7v1h-7zM8 18h6v1h-6zM16 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM24 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM9 19h2v1h-2zM15 19h2v1h-2zM20 19h1v1h-1zM0 20h1v1h-1zM2 20h3v1h-3zM6 20h1v1h-1zM11 20h2v1h-2zM15 20h6v1h-6zM23 20h1v1h-1zM0 21h1v1h-1zM2 21h3v1h-3zM6 21h1v1h-1zM9 21h1v1h-1zM15 21h1v1h-1zM17 21h1v1h-1zM20 21h1v1h-1zM22 21h2v1h-2zM0 22h1v1h-1zM2 22h3v1h-3zM6 22h1v1h-1zM8 22h1v1h-1zM10 22h4v1h-4zM15 22h3v1h-3zM19 22h3v1h-3zM23 22h2v1h-2zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h4v1h-4zM14 23h1v1h-1zM16 23h1v1h-1zM19 23h2v1h-2zM0 24h7v1h-7zM8 24h2v1h-2zM11 24h1v1h-1zM16 24h2v1h-2zM21 24h1v1h-1zM24 24h1v1h-1z"/>
+        </svg>
+        <div style="min-width:0;">
+          <p class="panel-title" style="margin-bottom:10px;">The one address</p>
+          <p class="mono" style="font-size:34px; color:var(--zone-in); margin:0; letter-spacing:-.01em; word-break:break-all;">gimbal.edycu.dev</p>
+          <p class="small" style="margin-top:14px; font-size:19px; line-height:1.45;">
+            Live, valid TLS, headers verified. It is the only address this project
+            has &mdash; no platform alias is written anywhere, and three checks fail the
+            build if one appears.
+          </p>
+        </div>
+      </div>
+
+      <div class="panel" style="align-self:stretch; margin-top:26px;">
+        <p class="panel-title">What would help most from a judge</p>
+        <p class="body" style="font-size:21px; max-width:none;">
+          A clinician's read on the refusal reasons and the report page &mdash; whether the
+          six outcomes are the right six, and whether the delivered-vs-prescribed
+          block table is the artifact a physical therapist would actually want on
+          paper. That is the one question the build cannot answer by itself.
+        </p>
+      </div>
+
+      <hr class="rule push" style="align-self:stretch; margin:32px 0 24px;">
+      <p class="kicker" style="font-size:38px; line-height:1.22;">
+        A dose meter that credits everything<br><em>is a stopwatch.</em>
+      </p>
+    </div>
+  </div>
+
+</section>
+
+</div><!-- /#stage -->
+
+<div id="brandmark" aria-hidden="true">
+  <svg width="18" height="18" viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--edge-strong)" stroke-width="10"
+            stroke-dasharray="197.920 263.894" transform="rotate(135 50 50)"/>
+    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--zone-in)" stroke-width="10"
+            stroke-dasharray="0 59.376 79.168 263.894" transform="rotate(135 50 50)"/>
+  </svg>
+  <span>Gimbal</span>
+</div>
+<div id="counter" aria-hidden="true"><span class="cur">01</span> / 12</div>
+<div id="progress" aria-hidden="true"></div>
+<div id="hint">&larr; &rarr; navigate &nbsp;·&nbsp; P presenter &nbsp;·&nbsp; Esc overview</div>
+
+<div id="notes" aria-live="polite">
+  <p class="nlabel">Speaker notes</p>
+  <div class="ntext" id="notes-text"></div>
+</div>
+
+<div id="overview" role="dialog" aria-label="Slide overview">
+  <p id="ovhint">Slide overview &mdash; click a slide, or press Esc to return</p>
+  <div id="ovgrid"></div>
+</div>
+
+<script src="./deck.js"></script>
+</body>
+</html>
