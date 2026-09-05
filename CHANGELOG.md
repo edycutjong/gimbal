@@ -2,6 +2,12 @@
 
 Generated from Conventional Commits by `scripts/version.mjs`.
 
+## 1.6.1 — 2026-09-05
+
+### Fixes
+
+- **checks:** U-DOC allows the demo video, as one exact address
+
 ## 1.6.0 — 2026-09-05
 
 ### Features
